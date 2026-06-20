@@ -246,61 +246,64 @@ for s in session_stats:
         <div class="session-n">{s['n']}</div>
     </div>"""
 
-full_html = f"""
+css = """
 <style>
-  .stApp {{
+  .stApp {
     background:#0a0a0f;
     background-image: radial-gradient(circle at 20% 20%, rgba(74,222,128,0.04), transparent 40%),
                        radial-gradient(circle at 80% 0%, rgba(96,165,250,0.04), transparent 40%);
-  }}
-  * {{ box-sizing:border-box; }}
-  .report-wrap {{ color:#d4d4dc; font-family:'Segoe UI',system-ui,sans-serif; max-width:1300px; margin:0 auto; }}
-  .header {{ padding:20px 0 30px; margin-bottom:20px; }}
-  .header h1 {{ font-size:1.7em; font-weight:600; color:#fff; letter-spacing:0.5px; }}
-  .header p {{ color:#666; margin-top:8px; font-size:0.85em; }}
-  .section-label {{ font-size:0.7em; font-weight:600; letter-spacing:3px; text-transform:uppercase; color:#555; margin:30px 0 16px; }}
-  .stats-grid {{ display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:14px; margin-bottom:30px; }}
-  .stat-card {{ background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07); border-radius:16px; padding:22px 14px; text-align:center; }}
-  .stat-value {{ font-size:1.5em; font-weight:600; }}
-  .stat-label {{ color:#666; font-size:0.68em; margin-top:6px; letter-spacing:0.5px; }}
-  .chart-card {{ background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07); border-radius:18px; padding:26px; margin-bottom:16px; }}
-  .chart-title {{ font-size:1.05em; font-weight:600; color:#eee; margin-bottom:4px; }}
-  .chart-subtitle {{ font-size:0.8em; color:#666; margin-bottom:14px; }}
-  .divider {{ border:none; border-top:1px solid rgba(255,255,255,0.07); margin:30px 0; }}
-  .session-card {{ background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07); border-radius:18px; padding:8px 22px; }}
-  .session-header {{ display:grid; grid-template-columns: 100px 1fr 70px 60px 40px; gap:16px; padding:14px 0 10px; color:#666; font-size:0.75em; letter-spacing:0.5px; border-bottom:1px solid rgba(255,255,255,0.07); }}
-  .session-row {{ display:grid; grid-template-columns: 100px 1fr 70px 60px 40px; gap:16px; padding:14px 0; align-items:center; border-bottom:1px solid rgba(255,255,255,0.04); }}
-  .session-row:last-child {{ border-bottom:none; }}
-  .session-value {{ color:#60a5fa; font-size:0.9em; font-weight:500; }}
-  .session-bar-track {{ background:rgba(255,255,255,0.06); border-radius:6px; height:14px; overflow:hidden; }}
-  .session-bar-fill {{ height:100%; border-radius:6px; }}
-  .session-exp {{ font-size:0.9em; font-weight:600; text-align:right; }}
-  .session-wr {{ font-size:0.85em; color:#aaa; text-align:right; }}
-  .session-n {{ font-size:0.85em; color:#666; text-align:right; }}
+  }
+  * { box-sizing:border-box; }
+  .report-wrap { color:#d4d4dc; font-family:'Segoe UI',system-ui,sans-serif; max-width:1300px; margin:0 auto; }
+  .header { padding:20px 0 30px; margin-bottom:20px; }
+  .header h1 { font-size:1.7em; font-weight:600; color:#fff; letter-spacing:0.5px; }
+  .header p { color:#666; margin-top:8px; font-size:0.85em; }
+  .section-label { font-size:0.7em; font-weight:600; letter-spacing:3px; text-transform:uppercase; color:#555; margin:30px 0 16px; }
+  .stats-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:14px; margin-bottom:30px; }
+  .stat-card { background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07); border-radius:16px; padding:22px 14px; text-align:center; }
+  .stat-value { font-size:1.5em; font-weight:600; }
+  .stat-label { color:#666; font-size:0.68em; margin-top:6px; letter-spacing:0.5px; }
+  .chart-card { background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07); border-radius:18px; padding:26px; margin-bottom:16px; }
+  .chart-title { font-size:1.05em; font-weight:600; color:#eee; margin-bottom:4px; }
+  .chart-subtitle { font-size:0.8em; color:#666; margin-bottom:14px; }
+  .divider { border:none; border-top:1px solid rgba(255,255,255,0.07); margin:30px 0; }
+  .session-card { background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07); border-radius:18px; padding:8px 22px; }
+  .session-header { display:grid; grid-template-columns: 100px 1fr 70px 60px 40px; gap:16px; padding:14px 0 10px; color:#666; font-size:0.75em; letter-spacing:0.5px; border-bottom:1px solid rgba(255,255,255,0.07); }
+  .session-row { display:grid; grid-template-columns: 100px 1fr 70px 60px 40px; gap:16px; padding:14px 0; align-items:center; border-bottom:1px solid rgba(255,255,255,0.04); }
+  .session-row:last-child { border-bottom:none; }
+  .session-value { color:#60a5fa; font-size:0.9em; font-weight:500; }
+  .session-bar-track { background:rgba(255,255,255,0.06); border-radius:6px; height:14px; overflow:hidden; }
+  .session-bar-fill { height:100%; border-radius:6px; }
+  .session-exp { font-size:0.9em; font-weight:600; text-align:right; }
+  .session-wr { font-size:0.85em; color:#aaa; text-align:right; }
+  .session-n { font-size:0.85em; color:#666; text-align:right; }
 </style>
+"""
+st.markdown(css, unsafe_allow_html=True)
 
+content_html = f"""
 <div class="report-wrap">
 <div class="header">
   <h1>Trading Data</h1>
-  <p>Generated {now} &nbsp;·&nbsp; {main_stats.get('total_trades','—')} Trades</p>
+  <p>Generated {now} &nbsp;\u00b7&nbsp; {main_stats.get('total_trades','\u2014')} Trades</p>
 </div>
 
 <div class="section-label">Performance Overview</div>
 <div class="stats-grid">
-  {stat_card('Total Trades', main_stats.get('total_trades','—'))}
-  {stat_card('Win Rate', f"{main_stats.get('win_rate','—')}%", '#4ade80')}
-  {stat_card('Total R', main_stats.get('total_r','—'))}
-  {stat_card('Avg R / Trade', main_stats.get('avg_r','—'))}
-  {stat_card('Expectancy', main_stats.get('expectancy','—'))}
-  {stat_card('Avg Win', main_stats.get('avg_win','—'), '#4ade80')}
-  {stat_card('Avg Loss', main_stats.get('avg_loss','—'), '#f87171')}
-  {stat_card('Best Trade', main_stats.get('best_trade','—'), '#4ade80')}
-  {stat_card('Worst Trade', main_stats.get('worst_trade','—'), '#f87171')}
-  {stat_card('Max Drawdown', main_stats.get('max_drawdown','—'), '#f87171')}
-  {stat_card('Max Consec. Losses', main_stats.get('max_consec_losses','—'), '#f87171')}
-  {stat_card('Wins', main_stats.get('wins','—'), '#4ade80')}
-  {stat_card('Losses', main_stats.get('losses','—'), '#f87171')}
-  {stat_card('Breakevens', main_stats.get('breakevens','—'), '#60a5fa')}
+  {stat_card('Total Trades', main_stats.get('total_trades','\u2014'))}
+  {stat_card('Win Rate', f"{main_stats.get('win_rate','\u2014')}%", '#4ade80')}
+  {stat_card('Total R', main_stats.get('total_r','\u2014'))}
+  {stat_card('Avg R / Trade', main_stats.get('avg_r','\u2014'))}
+  {stat_card('Expectancy', main_stats.get('expectancy','\u2014'))}
+  {stat_card('Avg Win', main_stats.get('avg_win','\u2014'), '#4ade80')}
+  {stat_card('Avg Loss', main_stats.get('avg_loss','\u2014'), '#f87171')}
+  {stat_card('Best Trade', main_stats.get('best_trade','\u2014'), '#4ade80')}
+  {stat_card('Worst Trade', main_stats.get('worst_trade','\u2014'), '#f87171')}
+  {stat_card('Max Drawdown', main_stats.get('max_drawdown','\u2014'), '#f87171')}
+  {stat_card('Max Consec. Losses', main_stats.get('max_consec_losses','\u2014'), '#f87171')}
+  {stat_card('Wins', main_stats.get('wins','\u2014'), '#4ade80')}
+  {stat_card('Losses', main_stats.get('losses','\u2014'), '#f87171')}
+  {stat_card('Breakevens', main_stats.get('breakevens','\u2014'), '#60a5fa')}
 </div>
 
 <div class="section-label">Charts</div>
@@ -322,5 +325,4 @@ full_html = f"""
 </div>
 </div>
 """
-
-st.markdown(full_html, unsafe_allow_html=True)
+st.markdown(content_html, unsafe_allow_html=True)
