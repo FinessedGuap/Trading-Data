@@ -6,10 +6,6 @@ from datetime import datetime
 
 st.set_page_config(page_title="Trading Data", layout="wide", initial_sidebar_state="collapsed")
 
-# ============================================================
-# SETTINGS
-# ============================================================
-
 NOTION_TOKEN = st.secrets["NOTION_TOKEN"]
 DATABASE_ID = st.secrets["DATABASE_ID"]
 
@@ -18,10 +14,6 @@ headers = {
     "Content-Type": "application/json",
     "Notion-Version": "2022-06-28"
 }
-
-# ============================================================
-# DATA FUNCTIONS
-# ============================================================
 
 def get_all_trades():
     all_results = []
@@ -104,7 +96,7 @@ def calc_r(row):
     else:
         return None
 
-def calc_stats(df_in, label=""):
+def calc_stats(df_in):
     stats = {}
     r = df_in['R_Result'].dropna()
     if len(r) == 0:
@@ -163,12 +155,49 @@ def calc_session_stats(df_in, col='3SL Window'):
         results.append({'session': session, 'exp': exp, 'wr': wr, 'n': n})
     return sorted(results, key=lambda x: x['exp'], reverse=True)
 
-# ============================================================
-# LOAD DATA
-# ============================================================
+def stat_card(label, value, color="#ffffff"):
+    return f"""
+    <div class="stat-card">
+        <div class="stat-value" style="color:{color}">{value}</div>
+        <div class="stat-label">{label}</div>
+    </div>"""
 
-st.title("📈 Trading Data")
+def make_chart(fig, title, subtitle=""):
+    fig.update_layout(
+        template='plotly_dark', paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
+        height=340, margin=dict(l=40, r=20, t=20, b=40),
+        font=dict(color='#8a8a99', size=11), showlegend=False,
+        xaxis=dict(gridcolor='rgba(255,255,255,0.05)', zeroline=False),
+        yaxis=dict(gridcolor='rgba(255,255,255,0.05)', zeroline=False),
+    )
+    chart_html = fig.to_html(full_html=False, include_plotlyjs='cdn')
+    subtitle_html = f'<p class="chart-subtitle">{subtitle}</p>' if subtitle else ''
+    return f"""
+    <div class="chart-card">
+        <div class="chart-title">{title}</div>
+        {subtitle_html}
+        {chart_html}
+    </div>"""
 
+def make_donut(stats):
+    if not stats:
+        return ""
+    labels = ['Win', 'Loss', 'Breakeven']
+    values = [stats.get('wins',0), stats.get('losses',0), stats.get('breakevens',0)]
+    colors = ['#4ade80', '#f87171', '#60a5fa']
+    fig = go.Figure(go.Pie(labels=labels, values=values, hole=0.65,
+        marker=dict(colors=colors), textinfo='label+percent', textfont=dict(size=11, color='#ccc')))
+    fig.update_layout(template='plotly_dark', paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
+        height=340, margin=dict(l=20, r=20, t=20, b=20), font=dict(color='#8a8a99', size=11), showlegend=False)
+    chart_html = fig.to_html(full_html=False, include_plotlyjs='cdn')
+    return f"""
+    <div class="chart-card">
+        <div class="chart-title">Result Distribution</div>
+        <p class="chart-subtitle">Win / Loss / Breakeven breakdown</p>
+        {chart_html}
+    </div>"""
+
+# Load data
 with st.spinner("Pulling fresh data from Notion..."):
     raw_trades = get_all_trades()
     rows = []
@@ -184,70 +213,114 @@ with st.spinner("Pulling fresh data from Notion..."):
     df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
     df['RR_numeric'] = df['RR'].apply(parse_rr)
     df['R_Result'] = df.apply(calc_r, axis=1)
-    df['Type of Trade'] = df['Type of Trade'].astype(str).str.strip()
-    df['Rules Followed? Y/N'] = df['Rules Followed? Y/N'].astype(str).str.strip()
 
     df_main = df.copy()
-    df_forward = df[df['Type of Trade'].str.lower().str.contains('forward', na=False)].copy()
-    df_rules_no = df[df['Rules Followed? Y/N'].str.lower().str.startswith('no', na=False)].copy()
-
     df_main = df_main.sort_values('Date').reset_index(drop=True)
 
     main_stats = calc_stats(df_main)
     session_stats = calc_session_stats(df_main)
 
-st.caption(f"Generated {datetime.now().strftime('%B %d, %Y %I:%M %p')} · {main_stats.get('total_trades','—')} Trades")
+eq_fig = go.Figure()
+eq_fig.add_trace(go.Scatter(y=main_stats['equity_curve'], mode='lines+markers',
+    line=dict(color='#4ade80', width=2.5), marker=dict(size=5, color='#4ade80'),
+    fill='tozeroy', fillcolor='rgba(74,222,128,0.08)'))
+eq_html = make_chart(eq_fig, 'Equity Curve', f'Cumulative R across {main_stats["total_trades"]} trades')
+donut_html = make_donut(main_stats)
 
-# ============================================================
-# PERFORMANCE OVERVIEW
-# ============================================================
+now = datetime.now().strftime("%B %d, %Y %I:%M %p")
 
-st.subheader("Performance Overview")
-cols = st.columns(7)
-cols[0].metric("Total Trades", main_stats.get('total_trades','—'))
-cols[1].metric("Win Rate", f"{main_stats.get('win_rate','—')}%")
-cols[2].metric("Total R", main_stats.get('total_r','—'))
-cols[3].metric("Avg R/Trade", main_stats.get('avg_r','—'))
-cols[4].metric("Expectancy", main_stats.get('expectancy','—'))
-cols[5].metric("Avg Win", main_stats.get('avg_win','—'))
-cols[6].metric("Avg Loss", main_stats.get('avg_loss','—'))
+max_abs_exp = max([abs(s['exp']) for s in session_stats]) if session_stats else 1
+if max_abs_exp == 0:
+    max_abs_exp = 1
 
-cols2 = st.columns(7)
-cols2[0].metric("Best Trade", main_stats.get('best_trade','—'))
-cols2[1].metric("Worst Trade", main_stats.get('worst_trade','—'))
-cols2[2].metric("Max Drawdown", main_stats.get('max_drawdown','—'))
-cols2[3].metric("Max Consec. Losses", main_stats.get('max_consec_losses','—'))
-cols2[4].metric("Wins", main_stats.get('wins','—'))
-cols2[5].metric("Losses", main_stats.get('losses','—'))
-cols2[6].metric("Breakevens", main_stats.get('breakevens','—'))
+session_rows_html = ""
+for s in session_stats:
+    bar_pct = round(abs(s['exp']) / max_abs_exp * 100, 1)
+    bar_color = '#4ade80' if s['exp'] >= 0 else '#f87171'
+    session_rows_html += f"""
+    <div class="session-row">
+        <div class="session-value">{s['session']}</div>
+        <div class="session-bar-track"><div class="session-bar-fill" style="width:{bar_pct}%; background:{bar_color}"></div></div>
+        <div class="session-exp" style="color:{bar_color}">{s['exp']}</div>
+        <div class="session-wr">{s['wr']}</div>
+        <div class="session-n">{s['n']}</div>
+    </div>"""
 
-# ============================================================
-# CHARTS
-# ============================================================
+full_html = f"""
+<style>
+  .stApp {{
+    background:#0a0a0f;
+    background-image: radial-gradient(circle at 20% 20%, rgba(74,222,128,0.04), transparent 40%),
+                       radial-gradient(circle at 80% 0%, rgba(96,165,250,0.04), transparent 40%);
+  }}
+  * {{ box-sizing:border-box; }}
+  .report-wrap {{ color:#d4d4dc; font-family:'Segoe UI',system-ui,sans-serif; max-width:1300px; margin:0 auto; }}
+  .header {{ padding:20px 0 30px; margin-bottom:20px; }}
+  .header h1 {{ font-size:1.7em; font-weight:600; color:#fff; letter-spacing:0.5px; }}
+  .header p {{ color:#666; margin-top:8px; font-size:0.85em; }}
+  .section-label {{ font-size:0.7em; font-weight:600; letter-spacing:3px; text-transform:uppercase; color:#555; margin:30px 0 16px; }}
+  .stats-grid {{ display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:14px; margin-bottom:30px; }}
+  .stat-card {{ background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07); border-radius:16px; padding:22px 14px; text-align:center; }}
+  .stat-value {{ font-size:1.5em; font-weight:600; }}
+  .stat-label {{ color:#666; font-size:0.68em; margin-top:6px; letter-spacing:0.5px; }}
+  .chart-card {{ background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07); border-radius:18px; padding:26px; margin-bottom:16px; }}
+  .chart-title {{ font-size:1.05em; font-weight:600; color:#eee; margin-bottom:4px; }}
+  .chart-subtitle {{ font-size:0.8em; color:#666; margin-bottom:14px; }}
+  .divider {{ border:none; border-top:1px solid rgba(255,255,255,0.07); margin:30px 0; }}
+  .session-card {{ background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07); border-radius:18px; padding:8px 22px; }}
+  .session-header {{ display:grid; grid-template-columns: 100px 1fr 70px 60px 40px; gap:16px; padding:14px 0 10px; color:#666; font-size:0.75em; letter-spacing:0.5px; border-bottom:1px solid rgba(255,255,255,0.07); }}
+  .session-row {{ display:grid; grid-template-columns: 100px 1fr 70px 60px 40px; gap:16px; padding:14px 0; align-items:center; border-bottom:1px solid rgba(255,255,255,0.04); }}
+  .session-row:last-child {{ border-bottom:none; }}
+  .session-value {{ color:#60a5fa; font-size:0.9em; font-weight:500; }}
+  .session-bar-track {{ background:rgba(255,255,255,0.06); border-radius:6px; height:14px; overflow:hidden; }}
+  .session-bar-fill {{ height:100%; border-radius:6px; }}
+  .session-exp {{ font-size:0.9em; font-weight:600; text-align:right; }}
+  .session-wr {{ font-size:0.85em; color:#aaa; text-align:right; }}
+  .session-n {{ font-size:0.85em; color:#666; text-align:right; }}
+</style>
 
-st.subheader("Charts")
+<div class="report-wrap">
+<div class="header">
+  <h1>Trading Data</h1>
+  <p>Generated {now} &nbsp;·&nbsp; {main_stats.get('total_trades','—')} Trades</p>
+</div>
 
-if main_stats:
-    eq_fig = go.Figure()
-    eq_fig.add_trace(go.Scatter(
-        y=main_stats['equity_curve'], mode='lines+markers',
-        line=dict(color='#4ade80', width=2.5),
-        fill='tozeroy', fillcolor='rgba(74,222,128,0.08)'))
-    eq_fig.update_layout(template='plotly_dark', height=350, title="Equity Curve")
-    st.plotly_chart(eq_fig, use_container_width=True)
+<div class="section-label">Performance Overview</div>
+<div class="stats-grid">
+  {stat_card('Total Trades', main_stats.get('total_trades','—'))}
+  {stat_card('Win Rate', f"{main_stats.get('win_rate','—')}%", '#4ade80')}
+  {stat_card('Total R', main_stats.get('total_r','—'))}
+  {stat_card('Avg R / Trade', main_stats.get('avg_r','—'))}
+  {stat_card('Expectancy', main_stats.get('expectancy','—'))}
+  {stat_card('Avg Win', main_stats.get('avg_win','—'), '#4ade80')}
+  {stat_card('Avg Loss', main_stats.get('avg_loss','—'), '#f87171')}
+  {stat_card('Best Trade', main_stats.get('best_trade','—'), '#4ade80')}
+  {stat_card('Worst Trade', main_stats.get('worst_trade','—'), '#f87171')}
+  {stat_card('Max Drawdown', main_stats.get('max_drawdown','—'), '#f87171')}
+  {stat_card('Max Consec. Losses', main_stats.get('max_consec_losses','—'), '#f87171')}
+  {stat_card('Wins', main_stats.get('wins','—'), '#4ade80')}
+  {stat_card('Losses', main_stats.get('losses','—'), '#f87171')}
+  {stat_card('Breakevens', main_stats.get('breakevens','—'), '#60a5fa')}
+</div>
 
-    donut_labels = ['Win', 'Loss', 'Breakeven']
-    donut_values = [main_stats.get('wins',0), main_stats.get('losses',0), main_stats.get('breakevens',0)]
-    donut_fig = go.Figure(go.Pie(labels=donut_labels, values=donut_values, hole=0.65,
-        marker=dict(colors=['#4ade80', '#f87171', '#60a5fa'])))
-    donut_fig.update_layout(template='plotly_dark', height=350, title="Result Distribution")
-    st.plotly_chart(donut_fig, use_container_width=True)
+<div class="section-label">Charts</div>
+{eq_html}
+{donut_html}
 
-# ============================================================
-# 3SL WINDOW
-# ============================================================
+<hr class="divider">
 
-st.subheader("3SL Window")
-session_df = pd.DataFrame(session_stats)
-if not session_df.empty:
-    st.dataframe(session_df, use_container_width=True, hide_index=True)
+<div class="section-label">3SL Window</div>
+<div class="session-card">
+    <div class="session-header">
+        <div class="session-value">Value</div>
+        <div>Chart</div>
+        <div class="session-exp">Exp</div>
+        <div class="session-wr">WR</div>
+        <div class="session-n">N</div>
+    </div>
+    {session_rows_html}
+</div>
+</div>
+"""
+
+st.markdown(full_html, unsafe_allow_html=True)
