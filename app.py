@@ -5,7 +5,7 @@ import plotly.graph_objects as go
 from datetime import datetime
 
 st.set_page_config(page_title="Trading Data", layout="wide", initial_sidebar_state="collapsed")
-
+st.markdown("<style>.element-container{overflow:visible;}</style>", unsafe_allow_html=True)
 NOTION_TOKEN = st.secrets["NOTION_TOKEN"]
 DATABASE_ID = st.secrets["DATABASE_ID"]
 
