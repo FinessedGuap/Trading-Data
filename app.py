@@ -133,6 +133,22 @@ def calc_stats(df_in):
     stats['max_consec_losses'] = max_streak
     return stats
 
+def calc_period_summary(df_in, freq='W'):
+    df_temp = df_in.dropna(subset=['Date', 'R_Result']).copy()
+    if len(df_temp) == 0:
+        return []
+    df_temp['period'] = df_temp['Date'].dt.to_period(freq)
+    grouped = df_temp.groupby('period')['R_Result'].agg(['count', 'sum'])
+    grouped = grouped.sort_index(ascending=False)
+    results = []
+    for period, row in grouped.iterrows():
+        if freq == 'W':
+            label = f"{period.start_time.strftime('%b %d')} - {period.end_time.strftime('%b %d')}"
+        else:
+            label = period.strftime('%B %Y')
+        results.append({'label': label, 'trades': int(row['count']), 'total_r': round(row['sum'], 2)})
+    return results
+
 def calc_session_stats(df_in, col='3SL Window'):
     if col not in df_in.columns:
         return []
@@ -177,6 +193,8 @@ with st.spinner("Pulling fresh data from Notion..."):
 
     main_stats = calc_stats(df_main)
     session_stats = calc_session_stats(df_main)
+    weekly_summary = calc_period_summary(df_main, freq='W')
+    monthly_summary = calc_period_summary(df_main, freq='M')
 
 now = datetime.now().strftime("%B %d, %Y %I:%M %p")
 
@@ -288,3 +306,33 @@ for s in session_stats:
     row_cols[2].markdown(f'<span style="color:{bar_color};font-weight:600;">{s["exp"]}</span>', unsafe_allow_html=True)
     row_cols[3].markdown(f'<span style="color:#aaa;">{s["wr"]}</span>', unsafe_allow_html=True)
     row_cols[4].markdown(f'<span style="color:#666;">{s["n"]}</span>', unsafe_allow_html=True)
+
+# ============ WEEKLY / MONTHLY SUMMARY ============
+st.markdown('<hr class="divider-line">', unsafe_allow_html=True)
+st.markdown('<div class="section-label">Monthly Summary</div>', unsafe_allow_html=True)
+
+mh_cols = st.columns([2, 1, 1])
+mh_cols[0].markdown('<span style="color:#666;font-size:0.75em;">Period</span>', unsafe_allow_html=True)
+mh_cols[1].markdown('<span style="color:#666;font-size:0.75em;">Trades</span>', unsafe_allow_html=True)
+mh_cols[2].markdown('<span style="color:#666;font-size:0.75em;">Total R</span>', unsafe_allow_html=True)
+
+for m in monthly_summary:
+    r_color = '#4ade80' if m['total_r'] >= 0 else '#f87171'
+    row = st.columns([2, 1, 1])
+    row[0].markdown(f'<span style="color:#ddd;">{m["label"]}</span>', unsafe_allow_html=True)
+    row[1].markdown(f'<span style="color:#aaa;">{m["trades"]}</span>', unsafe_allow_html=True)
+    row[2].markdown(f'<span style="color:{r_color};font-weight:600;">{m["total_r"]}</span>', unsafe_allow_html=True)
+
+st.markdown('<div class="section-label">Weekly Summary</div>', unsafe_allow_html=True)
+
+wh_cols = st.columns([2, 1, 1])
+wh_cols[0].markdown('<span style="color:#666;font-size:0.75em;">Period</span>', unsafe_allow_html=True)
+wh_cols[1].markdown('<span style="color:#666;font-size:0.75em;">Trades</span>', unsafe_allow_html=True)
+wh_cols[2].markdown('<span style="color:#666;font-size:0.75em;">Total R</span>', unsafe_allow_html=True)
+
+for w in weekly_summary:
+    r_color = '#4ade80' if w['total_r'] >= 0 else '#f87171'
+    row = st.columns([2, 1, 1])
+    row[0].markdown(f'<span style="color:#ddd;">{w["label"]}</span>', unsafe_allow_html=True)
+    row[1].markdown(f'<span style="color:#aaa;">{w["trades"]}</span>', unsafe_allow_html=True)
+    row[2].markdown(f'<span style="color:{r_color};font-weight:600;">{w["total_r"]}</span>', unsafe_allow_html=True)
