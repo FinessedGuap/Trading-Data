@@ -5,7 +5,7 @@ import plotly.graph_objects as go
 from datetime import datetime
 
 st.set_page_config(page_title="Trading Data", layout="wide", initial_sidebar_state="collapsed")
-st.markdown("<style>.element-container{overflow:visible;}</style>", unsafe_allow_html=True)
+
 NOTION_TOKEN = st.secrets["NOTION_TOKEN"]
 DATABASE_ID = st.secrets["DATABASE_ID"]
 
@@ -155,48 +155,6 @@ def calc_session_stats(df_in, col='3SL Window'):
         results.append({'session': session, 'exp': exp, 'wr': wr, 'n': n})
     return sorted(results, key=lambda x: x['exp'], reverse=True)
 
-def stat_card(label, value, color="#ffffff"):
-    return f"""
-    <div class="stat-card">
-        <div class="stat-value" style="color:{color}">{value}</div>
-        <div class="stat-label">{label}</div>
-    </div>"""
-
-def make_chart(fig, title, subtitle=""):
-    fig.update_layout(
-        template='plotly_dark', paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
-        height=340, margin=dict(l=40, r=20, t=20, b=40),
-        font=dict(color='#8a8a99', size=11), showlegend=False,
-        xaxis=dict(gridcolor='rgba(255,255,255,0.05)', zeroline=False),
-        yaxis=dict(gridcolor='rgba(255,255,255,0.05)', zeroline=False),
-    )
-    chart_html = fig.to_html(full_html=False, include_plotlyjs='cdn')
-    subtitle_html = f'<p class="chart-subtitle">{subtitle}</p>' if subtitle else ''
-    return f"""
-    <div class="chart-card">
-        <div class="chart-title">{title}</div>
-        {subtitle_html}
-        {chart_html}
-    </div>"""
-
-def make_donut(stats):
-    if not stats:
-        return ""
-    labels = ['Win', 'Loss', 'Breakeven']
-    values = [stats.get('wins',0), stats.get('losses',0), stats.get('breakevens',0)]
-    colors = ['#4ade80', '#f87171', '#60a5fa']
-    fig = go.Figure(go.Pie(labels=labels, values=values, hole=0.65,
-        marker=dict(colors=colors), textinfo='label+percent', textfont=dict(size=11, color='#ccc')))
-    fig.update_layout(template='plotly_dark', paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
-        height=340, margin=dict(l=20, r=20, t=20, b=20), font=dict(color='#8a8a99', size=11), showlegend=False)
-    chart_html = fig.to_html(full_html=False, include_plotlyjs='cdn')
-    return f"""
-    <div class="chart-card">
-        <div class="chart-title">Result Distribution</div>
-        <p class="chart-subtitle">Win / Loss / Breakeven breakdown</p>
-        {chart_html}
-    </div>"""
-
 # Load data
 with st.spinner("Pulling fresh data from Notion..."):
     raw_trades = get_all_trades()
@@ -220,32 +178,13 @@ with st.spinner("Pulling fresh data from Notion..."):
     main_stats = calc_stats(df_main)
     session_stats = calc_session_stats(df_main)
 
-eq_fig = go.Figure()
-eq_fig.add_trace(go.Scatter(y=main_stats['equity_curve'], mode='lines+markers',
-    line=dict(color='#4ade80', width=2.5), marker=dict(size=5, color='#4ade80'),
-    fill='tozeroy', fillcolor='rgba(74,222,128,0.08)'))
-eq_html = make_chart(eq_fig, 'Equity Curve', f'Cumulative R across {main_stats["total_trades"]} trades')
-donut_html = make_donut(main_stats)
-
 now = datetime.now().strftime("%B %d, %Y %I:%M %p")
 
 max_abs_exp = max([abs(s['exp']) for s in session_stats]) if session_stats else 1
 if max_abs_exp == 0:
     max_abs_exp = 1
 
-session_rows_html = ""
-for s in session_stats:
-    bar_pct = round(abs(s['exp']) / max_abs_exp * 100, 1)
-    bar_color = '#4ade80' if s['exp'] >= 0 else '#f87171'
-    session_rows_html += f"""
-    <div class="session-row">
-        <div class="session-value">{s['session']}</div>
-        <div class="session-bar-track"><div class="session-bar-fill" style="width:{bar_pct}%; background:{bar_color}"></div></div>
-        <div class="session-exp" style="color:{bar_color}">{s['exp']}</div>
-        <div class="session-wr">{s['wr']}</div>
-        <div class="session-n">{s['n']}</div>
-    </div>"""
-
+# ============ CSS ============
 css = """
 <style>
   .stApp {
@@ -253,67 +192,62 @@ css = """
     background-image: radial-gradient(circle at 20% 20%, rgba(74,222,128,0.04), transparent 40%),
                        radial-gradient(circle at 80% 0%, rgba(96,165,250,0.04), transparent 40%);
   }
-  * { box-sizing:border-box; }
-  .report-wrap { color:#d4d4dc; font-family:'Segoe UI',system-ui,sans-serif; max-width:1300px; margin:0 auto; }
-  .header { padding:20px 0 30px; margin-bottom:20px; }
-  .header h1 { font-size:1.7em; font-weight:600; color:#fff; letter-spacing:0.5px; }
-  .header p { color:#666; margin-top:8px; font-size:0.85em; }
+  .header-title { font-size:1.7em; font-weight:600; color:#fff; letter-spacing:0.5px; }
+  .header-sub { color:#666; margin-top:8px; font-size:0.85em; }
   .section-label { font-size:0.7em; font-weight:600; letter-spacing:3px; text-transform:uppercase; color:#555; margin:30px 0 16px; }
-  .stats-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:14px; margin-bottom:30px; }
   .stat-card { background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07); border-radius:16px; padding:22px 14px; text-align:center; }
   .stat-value { font-size:1.5em; font-weight:600; }
   .stat-label { color:#666; font-size:0.68em; margin-top:6px; letter-spacing:0.5px; }
-  .chart-card { background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07); border-radius:18px; padding:10px; margin-bottom:16px; }
-  .divider { border:none; border-top:1px solid rgba(255,255,255,0.07); margin:30px 0; }
-  .session-card { background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07); border-radius:18px; padding:8px 22px; }
-  .session-header { display:grid; grid-template-columns: 100px 1fr 70px 60px 40px; gap:16px; padding:14px 0 10px; color:#666; font-size:0.75em; letter-spacing:0.5px; border-bottom:1px solid rgba(255,255,255,0.07); }
-  .session-row { display:grid; grid-template-columns: 100px 1fr 70px 60px 40px; gap:16px; padding:14px 0; align-items:center; border-bottom:1px solid rgba(255,255,255,0.04); }
-  .session-row:last-child { border-bottom:none; }
-  .session-value { color:#60a5fa; font-size:0.9em; font-weight:500; }
+  .divider-line { border:none; border-top:1px solid rgba(255,255,255,0.07); margin:30px 0; }
   .session-bar-track { background:rgba(255,255,255,0.06); border-radius:6px; height:14px; overflow:hidden; }
   .session-bar-fill { height:100%; border-radius:6px; }
-  .session-exp { font-size:0.9em; font-weight:600; text-align:right; }
-  .session-wr { font-size:0.85em; color:#aaa; text-align:right; }
-  .session-n { font-size:0.85em; color:#666; text-align:right; }
 </style>
 """
 st.markdown(css, unsafe_allow_html=True)
 
-header_html = f"""
-<div class="report-wrap">
-<div class="header">
-  <h1>Trading Data</h1>
-  <p>Generated {now} &nbsp;\u00b7&nbsp; {main_stats.get('total_trades','\u2014')} Trades</p>
-</div>
+# ============ HEADER ============
+st.markdown(f'<div class="header-title">Trading Data</div>', unsafe_allow_html=True)
+st.markdown(f'<div class="header-sub">Generated {now} &nbsp;·&nbsp; {main_stats.get("total_trades","—")} Trades</div>', unsafe_allow_html=True)
 
-<div class="section-label">Performance Overview</div>
-<div class="stats-grid">
-  {stat_card('Total Trades', main_stats.get('total_trades','\u2014'))}
-  {stat_card('Win Rate', f"{main_stats.get('win_rate','\u2014')}%", '#4ade80')}
-  {stat_card('Total R', main_stats.get('total_r','\u2014'))}
-  {stat_card('Avg R / Trade', main_stats.get('avg_r','\u2014'))}
-  {stat_card('Expectancy', main_stats.get('expectancy','\u2014'))}
-  {stat_card('Avg Win', main_stats.get('avg_win','\u2014'), '#4ade80')}
-  {stat_card('Avg Loss', main_stats.get('avg_loss','\u2014'), '#f87171')}
-  {stat_card('Best Trade', main_stats.get('best_trade','\u2014'), '#4ade80')}
-  {stat_card('Worst Trade', main_stats.get('worst_trade','\u2014'), '#f87171')}
-  {stat_card('Max Drawdown', main_stats.get('max_drawdown','\u2014'), '#f87171')}
-  {stat_card('Max Consec. Losses', main_stats.get('max_consec_losses','\u2014'), '#f87171')}
-  {stat_card('Wins', main_stats.get('wins','\u2014'), '#4ade80')}
-  {stat_card('Losses', main_stats.get('losses','\u2014'), '#f87171')}
-  {stat_card('Breakevens', main_stats.get('breakevens','\u2014'), '#60a5fa')}
-</div>
-<div class="section-label">Charts</div>
-</div>
-"""
-st.markdown(header_html, unsafe_allow_html=True)
+# ============ PERFORMANCE OVERVIEW ============
+st.markdown('<div class="section-label">Performance Overview</div>', unsafe_allow_html=True)
+
+stat_data = [
+    ('Total Trades', main_stats.get('total_trades','—'), '#ffffff'),
+    ('Win Rate', f"{main_stats.get('win_rate','—')}%", '#4ade80'),
+    ('Total R', main_stats.get('total_r','—'), '#ffffff'),
+    ('Avg R / Trade', main_stats.get('avg_r','—'), '#ffffff'),
+    ('Expectancy', main_stats.get('expectancy','—'), '#ffffff'),
+    ('Avg Win', main_stats.get('avg_win','—'), '#4ade80'),
+    ('Avg Loss', main_stats.get('avg_loss','—'), '#f87171'),
+    ('Best Trade', main_stats.get('best_trade','—'), '#4ade80'),
+    ('Worst Trade', main_stats.get('worst_trade','—'), '#f87171'),
+    ('Max Drawdown', main_stats.get('max_drawdown','—'), '#f87171'),
+    ('Max Consec. Losses', main_stats.get('max_consec_losses','—'), '#f87171'),
+    ('Wins', main_stats.get('wins','—'), '#4ade80'),
+    ('Losses', main_stats.get('losses','—'), '#f87171'),
+    ('Breakevens', main_stats.get('breakevens','—'), '#60a5fa'),
+]
+
+cols_per_row = 7
+for i in range(0, len(stat_data), cols_per_row):
+    row_data = stat_data[i:i+cols_per_row]
+    cols = st.columns(len(row_data))
+    for col, (label, value, color) in zip(cols, row_data):
+        col.markdown(
+            f'<div class="stat-card"><div class="stat-value" style="color:{color}">{value}</div><div class="stat-label">{label}</div></div>',
+            unsafe_allow_html=True
+        )
+
+# ============ CHARTS ============
+st.markdown('<div class="section-label">Charts</div>', unsafe_allow_html=True)
 
 eq_fig = go.Figure()
 eq_fig.add_trace(go.Scatter(y=main_stats['equity_curve'], mode='lines+markers',
     line=dict(color='#4ade80', width=2.5), marker=dict(size=5, color='#4ade80'),
     fill='tozeroy', fillcolor='rgba(74,222,128,0.08)'))
 eq_fig.update_layout(template='plotly_dark', paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
-    height=340, margin=dict(l=40, r=20, t=20, b=40), font=dict(color='#8a8a99', size=11), showlegend=False,
+    height=340, margin=dict(l=40, r=20, t=40, b=40), font=dict(color='#8a8a99', size=11), showlegend=False,
     xaxis=dict(gridcolor='rgba(255,255,255,0.05)', zeroline=False),
     yaxis=dict(gridcolor='rgba(255,255,255,0.05)', zeroline=False),
     title=dict(text='Equity Curve', font=dict(color='#eee', size=15)))
@@ -325,25 +259,32 @@ colors = ['#4ade80', '#f87171', '#60a5fa']
 donut_fig = go.Figure(go.Pie(labels=labels, values=values, hole=0.65,
     marker=dict(colors=colors), textinfo='label+percent', textfont=dict(size=11, color='#ccc')))
 donut_fig.update_layout(template='plotly_dark', paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
-    height=340, margin=dict(l=20, r=20, t=20, b=20), font=dict(color='#8a8a99', size=11), showlegend=False,
+    height=340, margin=dict(l=20, r=20, t=40, b=20), font=dict(color='#8a8a99', size=11), showlegend=False,
     title=dict(text='Result Distribution', font=dict(color='#eee', size=15)))
 st.plotly_chart(donut_fig, use_container_width=True)
 
-footer_html = f"""
-<div class="report-wrap">
-<hr class="divider">
+# ============ DIVIDER ============
+st.markdown('<hr class="divider-line">', unsafe_allow_html=True)
 
-<div class="section-label">3SL Window</div>
-<div class="session-card">
-    <div class="session-header">
-        <div class="session-value">Value</div>
-        <div>Chart</div>
-        <div class="session-exp">Exp</div>
-        <div class="session-wr">WR</div>
-        <div class="session-n">N</div>
-    </div>
-    {session_rows_html}
-</div>
-</div>
-"""
-st.markdown(footer_html, unsafe_allow_html=True)
+# ============ 3SL WINDOW ============
+st.markdown('<div class="section-label">3SL Window</div>', unsafe_allow_html=True)
+
+header_cols = st.columns([1, 3, 0.7, 0.6, 0.4])
+header_cols[0].markdown('<span style="color:#666;font-size:0.75em;">Value</span>', unsafe_allow_html=True)
+header_cols[1].markdown('<span style="color:#666;font-size:0.75em;">Chart</span>', unsafe_allow_html=True)
+header_cols[2].markdown('<span style="color:#666;font-size:0.75em;">Exp</span>', unsafe_allow_html=True)
+header_cols[3].markdown('<span style="color:#666;font-size:0.75em;">WR</span>', unsafe_allow_html=True)
+header_cols[4].markdown('<span style="color:#666;font-size:0.75em;">N</span>', unsafe_allow_html=True)
+
+for s in session_stats:
+    bar_pct = round(abs(s['exp']) / max_abs_exp * 100, 1)
+    bar_color = '#4ade80' if s['exp'] >= 0 else '#f87171'
+    row_cols = st.columns([1, 3, 0.7, 0.6, 0.4])
+    row_cols[0].markdown(f'<span style="color:#60a5fa;font-weight:500;">{s["session"]}</span>', unsafe_allow_html=True)
+    row_cols[1].markdown(
+        f'<div class="session-bar-track"><div class="session-bar-fill" style="width:{bar_pct}%;background:{bar_color};"></div></div>',
+        unsafe_allow_html=True
+    )
+    row_cols[2].markdown(f'<span style="color:{bar_color};font-weight:600;">{s["exp"]}</span>', unsafe_allow_html=True)
+    row_cols[3].markdown(f'<span style="color:#aaa;">{s["wr"]}</span>', unsafe_allow_html=True)
+    row_cols[4].markdown(f'<span style="color:#666;">{s["n"]}</span>', unsafe_allow_html=True)
