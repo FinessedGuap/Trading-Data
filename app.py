@@ -263,9 +263,7 @@ css = """
   .stat-card { background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07); border-radius:16px; padding:22px 14px; text-align:center; }
   .stat-value { font-size:1.5em; font-weight:600; }
   .stat-label { color:#666; font-size:0.68em; margin-top:6px; letter-spacing:0.5px; }
-  .chart-card { background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07); border-radius:18px; padding:26px; margin-bottom:16px; }
-  .chart-title { font-size:1.05em; font-weight:600; color:#eee; margin-bottom:4px; }
-  .chart-subtitle { font-size:0.8em; color:#666; margin-bottom:14px; }
+  .chart-card { background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07); border-radius:18px; padding:10px; margin-bottom:16px; }
   .divider { border:none; border-top:1px solid rgba(255,255,255,0.07); margin:30px 0; }
   .session-card { background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07); border-radius:18px; padding:8px 22px; }
   .session-header { display:grid; grid-template-columns: 100px 1fr 70px 60px 40px; gap:16px; padding:14px 0 10px; color:#666; font-size:0.75em; letter-spacing:0.5px; border-bottom:1px solid rgba(255,255,255,0.07); }
@@ -281,7 +279,7 @@ css = """
 """
 st.markdown(css, unsafe_allow_html=True)
 
-content_html = f"""
+header_html = f"""
 <div class="report-wrap">
 <div class="header">
   <h1>Trading Data</h1>
@@ -305,11 +303,34 @@ content_html = f"""
   {stat_card('Losses', main_stats.get('losses','\u2014'), '#f87171')}
   {stat_card('Breakevens', main_stats.get('breakevens','\u2014'), '#60a5fa')}
 </div>
-
 <div class="section-label">Charts</div>
-{eq_html}
-{donut_html}
+</div>
+"""
+st.markdown(header_html, unsafe_allow_html=True)
 
+eq_fig = go.Figure()
+eq_fig.add_trace(go.Scatter(y=main_stats['equity_curve'], mode='lines+markers',
+    line=dict(color='#4ade80', width=2.5), marker=dict(size=5, color='#4ade80'),
+    fill='tozeroy', fillcolor='rgba(74,222,128,0.08)'))
+eq_fig.update_layout(template='plotly_dark', paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
+    height=340, margin=dict(l=40, r=20, t=20, b=40), font=dict(color='#8a8a99', size=11), showlegend=False,
+    xaxis=dict(gridcolor='rgba(255,255,255,0.05)', zeroline=False),
+    yaxis=dict(gridcolor='rgba(255,255,255,0.05)', zeroline=False),
+    title=dict(text='Equity Curve', font=dict(color='#eee', size=15)))
+st.plotly_chart(eq_fig, use_container_width=True)
+
+labels = ['Win', 'Loss', 'Breakeven']
+values = [main_stats.get('wins',0), main_stats.get('losses',0), main_stats.get('breakevens',0)]
+colors = ['#4ade80', '#f87171', '#60a5fa']
+donut_fig = go.Figure(go.Pie(labels=labels, values=values, hole=0.65,
+    marker=dict(colors=colors), textinfo='label+percent', textfont=dict(size=11, color='#ccc')))
+donut_fig.update_layout(template='plotly_dark', paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
+    height=340, margin=dict(l=20, r=20, t=20, b=20), font=dict(color='#8a8a99', size=11), showlegend=False,
+    title=dict(text='Result Distribution', font=dict(color='#eee', size=15)))
+st.plotly_chart(donut_fig, use_container_width=True)
+
+footer_html = f"""
+<div class="report-wrap">
 <hr class="divider">
 
 <div class="section-label">3SL Window</div>
@@ -325,4 +346,4 @@ content_html = f"""
 </div>
 </div>
 """
-st.markdown(content_html, unsafe_allow_html=True)
+st.markdown(footer_html, unsafe_allow_html=True)
