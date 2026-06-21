@@ -174,31 +174,79 @@ if max_abs_exp == 0:
 # ============ CSS ============
 css = """
 <style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
   .stApp {
-    background:#0a0a0f;
-    background-image: radial-gradient(circle at 20% 20%, rgba(74,222,128,0.04), transparent 40%),
-                       radial-gradient(circle at 80% 0%, rgba(96,165,250,0.04), transparent 40%);
+    background:#08080d;
+    background-image: radial-gradient(circle at 15% 10%, rgba(74,222,128,0.05), transparent 35%),
+                       radial-gradient(circle at 85% 0%, rgba(96,165,250,0.05), transparent 35%),
+                       radial-gradient(circle at 50% 100%, rgba(248,113,113,0.03), transparent 40%);
+    font-family: 'Inter', sans-serif;
   }
-  .header-title { font-size:1.7em; font-weight:600; color:#fff; letter-spacing:0.5px; }
-  .header-sub { color:#666; margin-top:8px; font-size:0.85em; }
-  .section-label { font-size:0.7em; font-weight:600; letter-spacing:3px; text-transform:uppercase; color:#555; margin:30px 0 16px; }
-  .stat-card { background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07); border-radius:16px; padding:22px 14px; text-align:center; }
-  .stat-value { font-size:1.5em; font-weight:600; }
-  .stat-label { color:#666; font-size:0.68em; margin-top:6px; letter-spacing:0.5px; }
-  .divider-line { border:none; border-top:1px solid rgba(255,255,255,0.07); margin:30px 0; }
-  .session-bar-track { background:rgba(255,255,255,0.06); border-radius:6px; height:14px; overflow:hidden; }
-  .session-bar-fill { height:100%; border-radius:6px; }
-  .cal-header { color:#666; font-size:0.75em; text-align:center; letter-spacing:1px; text-transform:uppercase; padding:8px 0; }
-  .cal-day { border-radius:10px; padding:10px 6px; text-align:center; min-height:80px; }
-  .cal-day-num { color:#555; font-size:0.8em; }
-  .cal-day-r { font-size:1.1em; font-weight:700; margin-top:8px; }
-  .cal-day-trades { color:#666; font-size:0.65em; margin-top:2px; }
-  .cal-day-empty { background:rgba(255,255,255,0.015); }
-  .cal-day-win { background:rgba(74,222,128,0.12); border:1px solid rgba(74,222,128,0.25); }
-  .cal-day-loss { background:rgba(248,113,113,0.12); border:1px solid rgba(248,113,113,0.25); }
-  .cal-week-summary { background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:10px 6px; text-align:center; min-height:80px; }
-  .cal-week-label { color:#888; font-size:0.7em; font-weight:600; }
-  .cal-week-r { font-size:1.2em; font-weight:700; margin-top:8px; }
+
+  .header-title {
+    font-size:2.1em; font-weight:700; color:#fff; letter-spacing:-0.5px;
+    background: linear-gradient(135deg, #fff 30%, #999 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .header-sub { color:#666; margin-top:10px; font-size:0.88em; font-weight:500; }
+
+  .section-label {
+    font-size:0.72em; font-weight:700; letter-spacing:2.5px; text-transform:uppercase;
+    color:#5a5a6a; margin:42px 0 18px; display:flex; align-items:center; gap:10px;
+  }
+  .section-label::after { content:''; flex:1; height:1px; background:linear-gradient(90deg, rgba(255,255,255,0.08), transparent); }
+
+  .stat-card {
+    background: linear-gradient(145deg, rgba(255,255,255,0.045), rgba(255,255,255,0.015));
+    border:1px solid rgba(255,255,255,0.08);
+    border-radius:18px; padding:24px 14px; text-align:center;
+    transition: all 0.25s ease;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+  }
+  .stat-card:hover {
+    border-color: rgba(255,255,255,0.18);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 28px rgba(0,0,0,0.35);
+  }
+  .stat-value { font-size:1.65em; font-weight:700; letter-spacing:-0.3px; }
+  .stat-label { color:#6b6b7a; font-size:0.66em; margin-top:7px; letter-spacing:0.8px; font-weight:600; text-transform:uppercase; }
+
+  .divider-line { border:none; border-top:1px solid rgba(255,255,255,0.06); margin:42px 0; }
+
+  .session-bar-track { background:rgba(255,255,255,0.05); border-radius:8px; height:16px; overflow:hidden; }
+  .session-bar-fill { height:100%; border-radius:8px; transition: width 0.4s ease; }
+
+  .cal-header { color:#5a5a6a; font-size:0.72em; text-align:center; letter-spacing:1.5px; font-weight:600; text-transform:uppercase; padding:10px 0; }
+
+  .cal-day {
+    border-radius:14px; padding:12px 6px; text-align:center; min-height:88px;
+    transition: all 0.2s ease;
+  }
+  .cal-day:hover { transform: scale(1.03); }
+  .cal-day-num { color:#4a4a58; font-size:0.78em; font-weight:600; }
+  .cal-day-r { font-size:1.15em; font-weight:700; margin-top:10px; letter-spacing:-0.2px; }
+  .cal-day-trades { color:#5a5a6a; font-size:0.64em; margin-top:3px; font-weight:500; }
+  .cal-day-empty { background:rgba(255,255,255,0.012); }
+  .cal-day-win {
+    background: linear-gradient(150deg, rgba(74,222,128,0.16), rgba(74,222,128,0.04));
+    border:1px solid rgba(74,222,128,0.25);
+    box-shadow: 0 4px 16px rgba(74,222,128,0.08);
+  }
+  .cal-day-loss {
+    background: linear-gradient(150deg, rgba(248,113,113,0.16), rgba(248,113,113,0.04));
+    border:1px solid rgba(248,113,113,0.25);
+    box-shadow: 0 4px 16px rgba(248,113,113,0.08);
+  }
+
+  .cal-week-summary {
+    background: linear-gradient(145deg, rgba(255,255,255,0.05), rgba(255,255,255,0.015));
+    border:1px solid rgba(255,255,255,0.1); border-radius:14px; padding:12px 6px;
+    text-align:center; min-height:88px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+  }
+  .cal-week-label { color:#8a8a9a; font-size:0.68em; font-weight:700; letter-spacing:0.5px; }
+  .cal-week-r { font-size:1.25em; font-weight:700; margin-top:10px; letter-spacing:-0.3px; }
 </style>
 """
 st.markdown(css, unsafe_allow_html=True)
@@ -242,23 +290,23 @@ st.markdown('<div class="section-label">Charts</div>', unsafe_allow_html=True)
 
 eq_fig = go.Figure()
 eq_fig.add_trace(go.Scatter(y=main_stats['equity_curve'], mode='lines+markers',
-    line=dict(color='#4ade80', width=2.5), marker=dict(size=5, color='#4ade80'),
-    fill='tozeroy', fillcolor='rgba(74,222,128,0.08)'))
+    line=dict(color='#4ade80', width=3, shape='spline'), marker=dict(size=6, color='#4ade80', line=dict(width=1, color='#0a0a0a')),
+    fill='tozeroy', fillcolor='rgba(74,222,128,0.1)'))
 eq_fig.update_layout(template='plotly_dark', paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
-    height=340, margin=dict(l=40, r=20, t=40, b=40), font=dict(color='#8a8a99', size=11), showlegend=False,
-    xaxis=dict(gridcolor='rgba(255,255,255,0.05)', zeroline=False),
-    yaxis=dict(gridcolor='rgba(255,255,255,0.05)', zeroline=False),
-    title=dict(text='Equity Curve', font=dict(color='#eee', size=15)))
+    height=360, margin=dict(l=40, r=20, t=50, b=40), font=dict(color='#8a8a99', size=11, family='Inter'), showlegend=False,
+    xaxis=dict(gridcolor='rgba(255,255,255,0.04)', zeroline=False),
+    yaxis=dict(gridcolor='rgba(255,255,255,0.04)', zeroline=False),
+    title=dict(text='Equity Curve', font=dict(color='#f0f0f0', size=17, family='Inter')))
 st.plotly_chart(eq_fig, use_container_width=True)
 
 labels = ['Win', 'Loss', 'Breakeven']
 values = [main_stats.get('wins',0), main_stats.get('losses',0), main_stats.get('breakevens',0)]
 colors = ['#4ade80', '#f87171', '#60a5fa']
-donut_fig = go.Figure(go.Pie(labels=labels, values=values, hole=0.65,
-    marker=dict(colors=colors), textinfo='label+percent', textfont=dict(size=11, color='#ccc')))
+donut_fig = go.Figure(go.Pie(labels=labels, values=values, hole=0.68,
+    marker=dict(colors=colors, line=dict(color='#08080d', width=2)), textinfo='label+percent', textfont=dict(size=12, color='#ddd', family='Inter')))
 donut_fig.update_layout(template='plotly_dark', paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
-    height=340, margin=dict(l=20, r=20, t=40, b=20), font=dict(color='#8a8a99', size=11), showlegend=False,
-    title=dict(text='Result Distribution', font=dict(color='#eee', size=15)))
+    height=360, margin=dict(l=20, r=20, t=50, b=20), font=dict(color='#8a8a99', size=11, family='Inter'), showlegend=False,
+    title=dict(text='Result Distribution', font=dict(color='#f0f0f0', size=17, family='Inter')))
 st.plotly_chart(donut_fig, use_container_width=True)
 
 # ============ DIVIDER ============
@@ -268,24 +316,24 @@ st.markdown('<hr class="divider-line">', unsafe_allow_html=True)
 st.markdown('<div class="section-label">3SL Window</div>', unsafe_allow_html=True)
 
 header_cols = st.columns([1, 3, 0.7, 0.6, 0.4])
-header_cols[0].markdown('<span style="color:#666;font-size:0.75em;">Value</span>', unsafe_allow_html=True)
-header_cols[1].markdown('<span style="color:#666;font-size:0.75em;">Chart</span>', unsafe_allow_html=True)
-header_cols[2].markdown('<span style="color:#666;font-size:0.75em;">Exp</span>', unsafe_allow_html=True)
-header_cols[3].markdown('<span style="color:#666;font-size:0.75em;">WR</span>', unsafe_allow_html=True)
-header_cols[4].markdown('<span style="color:#666;font-size:0.75em;">N</span>', unsafe_allow_html=True)
+header_cols[0].markdown('<span style="color:#5a5a6a;font-size:0.72em;font-weight:600;letter-spacing:0.5px;">VALUE</span>', unsafe_allow_html=True)
+header_cols[1].markdown('<span style="color:#5a5a6a;font-size:0.72em;font-weight:600;letter-spacing:0.5px;">CHART</span>', unsafe_allow_html=True)
+header_cols[2].markdown('<span style="color:#5a5a6a;font-size:0.72em;font-weight:600;letter-spacing:0.5px;">EXP</span>', unsafe_allow_html=True)
+header_cols[3].markdown('<span style="color:#5a5a6a;font-size:0.72em;font-weight:600;letter-spacing:0.5px;">WR</span>', unsafe_allow_html=True)
+header_cols[4].markdown('<span style="color:#5a5a6a;font-size:0.72em;font-weight:600;letter-spacing:0.5px;">N</span>', unsafe_allow_html=True)
 
 for s in session_stats:
     bar_pct = round(abs(s['exp']) / max_abs_exp * 100, 1)
     bar_color = '#4ade80' if s['exp'] >= 0 else '#f87171'
     row_cols = st.columns([1, 3, 0.7, 0.6, 0.4])
-    row_cols[0].markdown(f'<span style="color:#60a5fa;font-weight:500;">{s["session"]}</span>', unsafe_allow_html=True)
+    row_cols[0].markdown(f'<span style="color:#60a5fa;font-weight:600;">{s["session"]}</span>', unsafe_allow_html=True)
     row_cols[1].markdown(
-        f'<div class="session-bar-track"><div class="session-bar-fill" style="width:{bar_pct}%;background:{bar_color};"></div></div>',
+        f'<div class="session-bar-track"><div class="session-bar-fill" style="width:{bar_pct}%;background:linear-gradient(90deg, {bar_color}99, {bar_color});"></div></div>',
         unsafe_allow_html=True
     )
-    row_cols[2].markdown(f'<span style="color:{bar_color};font-weight:600;">{s["exp"]}</span>', unsafe_allow_html=True)
-    row_cols[3].markdown(f'<span style="color:#aaa;">{s["wr"]}</span>', unsafe_allow_html=True)
-    row_cols[4].markdown(f'<span style="color:#666;">{s["n"]}</span>', unsafe_allow_html=True)
+    row_cols[2].markdown(f'<span style="color:{bar_color};font-weight:700;">{s["exp"]}</span>', unsafe_allow_html=True)
+    row_cols[3].markdown(f'<span style="color:#9a9aaa;font-weight:500;">{s["wr"]}</span>', unsafe_allow_html=True)
+    row_cols[4].markdown(f'<span style="color:#6b6b7a;font-weight:500;">{s["n"]}</span>', unsafe_allow_html=True)
 
 # ============ MONTHLY CALENDAR ============
 st.markdown('<hr class="divider-line">', unsafe_allow_html=True)
@@ -293,7 +341,7 @@ st.markdown('<hr class="divider-line">', unsafe_allow_html=True)
 today = datetime.now()
 month_total_r = sum(v['total_r'] for k, v in daily_r.items() if k.month == today.month and k.year == today.year)
 month_color = '#4ade80' if month_total_r >= 0 else '#f87171'
-st.markdown(f'<div class="section-label">Calendar — {today.strftime("%B %Y")} &nbsp;·&nbsp; Total R: <span style="color:{month_color}">{round(month_total_r,2)}</span></div>', unsafe_allow_html=True)
+st.markdown(f'<div class="section-label">Calendar — {today.strftime("%B %Y")} &nbsp;·&nbsp; Total R: <span style="color:{month_color};font-weight:700;">{round(month_total_r,2)}</span></div>', unsafe_allow_html=True)
 
 cal_module.setfirstweekday(cal_module.MONDAY)
 month_matrix = cal_module.monthcalendar(today.year, today.month)
