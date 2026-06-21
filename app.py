@@ -65,36 +65,13 @@ def extract_property(prop):
     else:
         return str(prop.get(ptype, ''))
 
-def parse_rr(value):
+def parse_r_result(value):
     if value is None or str(value).strip() == '' or str(value).lower() == 'nan':
         return None
-    val = str(value).strip().upper().replace('RR', '').strip()
-    if val.startswith('-'):
-        try:
-            return float(val)
-        except:
-            return None
-    if '-' in val:
-        parts = val.split('-')
-        try:
-            nums = [float(p.strip()) for p in parts if p.strip()]
-            return sum(nums) / len(nums)
-        except:
-            return None
+    val = str(value).strip().upper().replace('RR', '').replace('+', '').strip()
     try:
         return float(val)
     except:
-        return None
-
-def calc_r(row):
-    result = str(row.get('Result', '') or '').strip().lower()
-    if result == 'win':
-        return row['RR_numeric'] if pd.notna(row['RR_numeric']) else None
-    elif result == 'loss':
-        return -1.0
-    elif result == 'breakeven':
-        return 0.0
-    else:
         return None
 
 def calc_stats(df_in):
@@ -179,8 +156,7 @@ with st.spinner("Pulling fresh data from Notion..."):
     df = pd.DataFrame(rows)
     df.columns = df.columns.str.strip()
     df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
-    df['RR_numeric'] = df['RR'].apply(parse_rr)
-    df['R_Result'] = df.apply(calc_r, axis=1)
+    df['R_Result'] = df['R Result'].apply(parse_r_result)
 
     df_main = df.copy()
     df_main = df_main.sort_values('Date').reset_index(drop=True)
