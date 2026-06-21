@@ -269,7 +269,7 @@ stat_data = [
     ('Best Trade', main_stats.get('best_trade','—'), '#4ade80'),
     ('Worst Trade', main_stats.get('worst_trade','—'), '#f87171'),
     ('Max Drawdown', main_stats.get('max_drawdown','—'), '#f87171'),
-    ('Max Consec. Losses', main_stats.get('max_consec_losses','—'), '#f87171'),
+    ('Max Streak', main_stats.get('max_consec_losses','—'), '#f87171'),
     ('Wins', main_stats.get('wins','—'), '#4ade80'),
     ('Losses', main_stats.get('losses','—'), '#f87171'),
     ('Breakevens', main_stats.get('breakevens','—'), '#60a5fa'),
@@ -284,6 +284,7 @@ for i in range(0, len(stat_data), cols_per_row):
             f'<div class="stat-card"><div class="stat-value" style="color:{color}">{value}</div><div class="stat-label">{label}</div></div>',
             unsafe_allow_html=True
         )
+    st.markdown('<div style="height:14px;"></div>', unsafe_allow_html=True)
 
 # ============ CHARTS ============
 st.markdown('<div class="section-label">Charts</div>', unsafe_allow_html=True)
@@ -352,6 +353,8 @@ for i, d in enumerate(['Mo','Tu','We','Th','Fr','Sa','Su']):
 day_header_cols[7].markdown('<div class="cal-header">Week</div>', unsafe_allow_html=True)
 
 for week_num, week in enumerate(month_matrix):
+    if week_num > 0:
+        st.markdown('<div style="height:14px;"></div>', unsafe_allow_html=True)
     week_cols = st.columns(8)
     week_total = 0
     week_trades = 0
