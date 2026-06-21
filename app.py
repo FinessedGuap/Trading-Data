@@ -3,6 +3,7 @@ import requests
 import pandas as pd
 import plotly.graph_objects as go
 from datetime import datetime
+import calendar as cal_module
 
 st.set_page_config(page_title="Trading Data", layout="wide", initial_sidebar_state="collapsed")
 
@@ -133,22 +134,6 @@ def calc_stats(df_in):
     stats['max_consec_losses'] = max_streak
     return stats
 
-def calc_period_summary(df_in, freq='W'):
-    df_temp = df_in.dropna(subset=['Date', 'R_Result']).copy()
-    if len(df_temp) == 0:
-        return []
-    df_temp['period'] = df_temp['Date'].dt.to_period(freq)
-    grouped = df_temp.groupby('period')['R_Result'].agg(['count', 'sum'])
-    grouped = grouped.sort_index(ascending=False)
-    results = []
-    for period, row in grouped.iterrows():
-        if freq == 'W':
-            label = f"{period.start_time.strftime('%b %d')} - {period.end_time.strftime('%b %d')}"
-        else:
-            label = period.strftime('%B %Y')
-        results.append({'label': label, 'trades': int(row['count']), 'total_r': round(row['sum'], 2)})
-    return results
-
 def calc_session_stats(df_in, col='3SL Window'):
     if col not in df_in.columns:
         return []
@@ -170,6 +155,15 @@ def calc_session_stats(df_in, col='3SL Window'):
         exp = round(r.mean(), 3)
         results.append({'session': session, 'exp': exp, 'wr': wr, 'n': n})
     return sorted(results, key=lambda x: x['exp'], reverse=True)
+
+def calc_daily_r(df_in):
+    df_temp = df_in.dropna(subset=['Date', 'R_Result']).copy()
+    df_temp['day'] = df_temp['Date'].dt.date
+    grouped = df_temp.groupby('day')['R_Result'].agg(['count', 'sum'])
+    daily = {}
+    for day, row in grouped.iterrows():
+        daily[day] = {'trades': int(row['count']), 'total_r': round(row['sum'], 2)}
+    return daily
 
 # Load data
 with st.spinner("Pulling fresh data from Notion..."):
@@ -193,8 +187,7 @@ with st.spinner("Pulling fresh data from Notion..."):
 
     main_stats = calc_stats(df_main)
     session_stats = calc_session_stats(df_main)
-    weekly_summary = calc_period_summary(df_main, freq='W')
-    monthly_summary = calc_period_summary(df_main, freq='M')
+    daily_r = calc_daily_r(df_main)
 
 now = datetime.now().strftime("%B %d, %Y %I:%M %p")
 
@@ -219,6 +212,17 @@ css = """
   .divider-line { border:none; border-top:1px solid rgba(255,255,255,0.07); margin:30px 0; }
   .session-bar-track { background:rgba(255,255,255,0.06); border-radius:6px; height:14px; overflow:hidden; }
   .session-bar-fill { height:100%; border-radius:6px; }
+  .cal-header { color:#666; font-size:0.75em; text-align:center; letter-spacing:1px; text-transform:uppercase; padding:8px 0; }
+  .cal-day { border-radius:10px; padding:10px 6px; text-align:center; min-height:80px; }
+  .cal-day-num { color:#555; font-size:0.8em; }
+  .cal-day-r { font-size:1.1em; font-weight:700; margin-top:8px; }
+  .cal-day-trades { color:#666; font-size:0.65em; margin-top:2px; }
+  .cal-day-empty { background:rgba(255,255,255,0.015); }
+  .cal-day-win { background:rgba(74,222,128,0.12); border:1px solid rgba(74,222,128,0.25); }
+  .cal-day-loss { background:rgba(248,113,113,0.12); border:1px solid rgba(248,113,113,0.25); }
+  .cal-week-summary { background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:10px 6px; text-align:center; min-height:80px; }
+  .cal-week-label { color:#888; font-size:0.7em; font-weight:600; }
+  .cal-week-r { font-size:1.2em; font-weight:700; margin-top:8px; }
 </style>
 """
 st.markdown(css, unsafe_allow_html=True)
@@ -307,32 +311,55 @@ for s in session_stats:
     row_cols[3].markdown(f'<span style="color:#aaa;">{s["wr"]}</span>', unsafe_allow_html=True)
     row_cols[4].markdown(f'<span style="color:#666;">{s["n"]}</span>', unsafe_allow_html=True)
 
-# ============ WEEKLY / MONTHLY SUMMARY ============
+# ============ MONTHLY CALENDAR ============
 st.markdown('<hr class="divider-line">', unsafe_allow_html=True)
-st.markdown('<div class="section-label">Monthly Summary</div>', unsafe_allow_html=True)
 
-mh_cols = st.columns([2, 1, 1])
-mh_cols[0].markdown('<span style="color:#666;font-size:0.75em;">Period</span>', unsafe_allow_html=True)
-mh_cols[1].markdown('<span style="color:#666;font-size:0.75em;">Trades</span>', unsafe_allow_html=True)
-mh_cols[2].markdown('<span style="color:#666;font-size:0.75em;">Total R</span>', unsafe_allow_html=True)
+today = datetime.now()
+month_total_r = sum(v['total_r'] for k, v in daily_r.items() if k.month == today.month and k.year == today.year)
+month_color = '#4ade80' if month_total_r >= 0 else '#f87171'
+st.markdown(f'<div class="section-label">Calendar — {today.strftime("%B %Y")} &nbsp;·&nbsp; Total R: <span style="color:{month_color}">{round(month_total_r,2)}</span></div>', unsafe_allow_html=True)
 
-for m in monthly_summary:
-    r_color = '#4ade80' if m['total_r'] >= 0 else '#f87171'
-    row = st.columns([2, 1, 1])
-    row[0].markdown(f'<span style="color:#ddd;">{m["label"]}</span>', unsafe_allow_html=True)
-    row[1].markdown(f'<span style="color:#aaa;">{m["trades"]}</span>', unsafe_allow_html=True)
-    row[2].markdown(f'<span style="color:{r_color};font-weight:600;">{m["total_r"]}</span>', unsafe_allow_html=True)
+cal_module.setfirstweekday(cal_module.MONDAY)
+month_matrix = cal_module.monthcalendar(today.year, today.month)
 
-st.markdown('<div class="section-label">Weekly Summary</div>', unsafe_allow_html=True)
+day_header_cols = st.columns(8)
+for i, d in enumerate(['Mo','Tu','We','Th','Fr','Sa','Su']):
+    day_header_cols[i].markdown(f'<div class="cal-header">{d}</div>', unsafe_allow_html=True)
+day_header_cols[7].markdown('<div class="cal-header">Week</div>', unsafe_allow_html=True)
 
-wh_cols = st.columns([2, 1, 1])
-wh_cols[0].markdown('<span style="color:#666;font-size:0.75em;">Period</span>', unsafe_allow_html=True)
-wh_cols[1].markdown('<span style="color:#666;font-size:0.75em;">Trades</span>', unsafe_allow_html=True)
-wh_cols[2].markdown('<span style="color:#666;font-size:0.75em;">Total R</span>', unsafe_allow_html=True)
-
-for w in weekly_summary:
-    r_color = '#4ade80' if w['total_r'] >= 0 else '#f87171'
-    row = st.columns([2, 1, 1])
-    row[0].markdown(f'<span style="color:#ddd;">{w["label"]}</span>', unsafe_allow_html=True)
-    row[1].markdown(f'<span style="color:#aaa;">{w["trades"]}</span>', unsafe_allow_html=True)
-    row[2].markdown(f'<span style="color:{r_color};font-weight:600;">{w["total_r"]}</span>', unsafe_allow_html=True)
+for week_num, week in enumerate(month_matrix):
+    week_cols = st.columns(8)
+    week_total = 0
+    week_trades = 0
+    for i, day_num in enumerate(week):
+        if day_num == 0:
+            week_cols[i].markdown('<div class="cal-day cal-day-empty"></div>', unsafe_allow_html=True)
+        else:
+            day_date = datetime(today.year, today.month, day_num).date()
+            day_data = daily_r.get(day_date)
+            if day_data:
+                week_total += day_data['total_r']
+                week_trades += day_data['trades']
+                r_val = day_data['total_r']
+                css_class = 'cal-day-win' if r_val >= 0 else 'cal-day-loss'
+                r_color = '#4ade80' if r_val >= 0 else '#f87171'
+                sign = '+' if r_val > 0 else ''
+                week_cols[i].markdown(
+                    f'<div class="cal-day {css_class}"><div class="cal-day-num">{day_num}</div>'
+                    f'<div class="cal-day-r" style="color:{r_color}">{sign}{r_val}R</div>'
+                    f'<div class="cal-day-trades">{day_data["trades"]} trades</div></div>',
+                    unsafe_allow_html=True
+                )
+            else:
+                week_cols[i].markdown(
+                    f'<div class="cal-day cal-day-empty"><div class="cal-day-num">{day_num}</div></div>',
+                    unsafe_allow_html=True
+                )
+    wk_color = '#4ade80' if week_total >= 0 else '#f87171'
+    wk_sign = '+' if week_total > 0 else ''
+    week_cols[7].markdown(
+        f'<div class="cal-week-summary"><div class="cal-week-label">Week {week_num+1}</div>'
+        f'<div class="cal-week-r" style="color:{wk_color}">{wk_sign}{round(week_total,2)}R</div>'
+        f'<div class="cal-day-trades">{week_trades} trades</div></div>',
+        unsafe_allow_html=True
+    )
