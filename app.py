@@ -142,6 +142,19 @@ def calc_daily_r(df_in):
         daily[day] = {'trades': int(row['count']), 'total_r': round(row['sum'], 2)}
     return daily
 
+def get_day_trades(df_in, day_date):
+    df_temp = df_in.dropna(subset=['Date', 'R_Result']).copy()
+    df_temp['day'] = df_temp['Date'].dt.date
+    return df_temp[df_temp['day'] == day_date]
+
+def result_label(r_val):
+    if r_val > 0:
+        return 'Win', '#4ade80'
+    elif r_val < 0:
+        return 'Loss', '#f87171'
+    else:
+        return 'Breakeven', '#60a5fa'
+
 # Load data
 with st.spinner("Pulling fresh data from Notion..."):
     raw_trades = get_all_trades()
@@ -170,6 +183,9 @@ now = datetime.now().strftime("%B %d, %Y %I:%M %p")
 max_abs_exp = max([abs(s['exp']) for s in session_stats]) if session_stats else 1
 if max_abs_exp == 0:
     max_abs_exp = 1
+
+if 'selected_day' not in st.session_state:
+    st.session_state.selected_day = None
 
 # ============ CSS ============
 css = """
@@ -219,25 +235,9 @@ css = """
 
   .cal-header { color:#5a5a6a; font-size:0.72em; text-align:center; letter-spacing:1.5px; font-weight:600; text-transform:uppercase; padding:10px 0; }
 
-  .cal-day {
-    border-radius:14px; padding:12px 6px; text-align:center; min-height:88px;
-    transition: all 0.2s ease;
-  }
-  .cal-day:hover { transform: scale(1.03); }
-  .cal-day-num { color:#4a4a58; font-size:0.78em; font-weight:600; }
-  .cal-day-r { font-size:1.15em; font-weight:700; margin-top:10px; letter-spacing:-0.2px; }
-  .cal-day-trades { color:#5a5a6a; font-size:0.64em; margin-top:3px; font-weight:500; }
-  .cal-day-empty { background:rgba(255,255,255,0.012); }
-  .cal-day-win {
-    background: linear-gradient(150deg, rgba(74,222,128,0.16), rgba(74,222,128,0.04));
-    border:1px solid rgba(74,222,128,0.25);
-    box-shadow: 0 4px 16px rgba(74,222,128,0.08);
-  }
-  .cal-day-loss {
-    background: linear-gradient(150deg, rgba(248,113,113,0.16), rgba(248,113,113,0.04));
-    border:1px solid rgba(248,113,113,0.25);
-    box-shadow: 0 4px 16px rgba(248,113,113,0.08);
-  }
+  .cal-day-num { color:#4a4a58; font-size:0.78em; font-weight:600; text-align:center; }
+  .cal-day-r { font-size:1.15em; font-weight:700; margin-top:10px; letter-spacing:-0.2px; text-align:center; }
+  .cal-day-trades { color:#5a5a6a; font-size:0.64em; margin-top:3px; font-weight:500; text-align:center; }
 
   .cal-week-summary {
     background: linear-gradient(145deg, rgba(255,255,255,0.05), rgba(255,255,255,0.015));
@@ -247,6 +247,18 @@ css = """
   }
   .cal-week-label { color:#8a8a9a; font-size:0.68em; font-weight:700; letter-spacing:0.5px; }
   .cal-week-r { font-size:1.25em; font-weight:700; margin-top:10px; letter-spacing:-0.3px; }
+
+  div[data-testid="stButton"] button {
+    width:100%; min-height:88px; border-radius:14px;
+    font-family:'Inter', sans-serif; white-space:pre-line; line-height:1.4;
+    transition: all 0.2s ease;
+  }
+  div[data-testid="stButton"] button:hover { transform: scale(1.03); }
+
+  .trade-detail-card {
+    background: linear-gradient(145deg, rgba(255,255,255,0.05), rgba(255,255,255,0.015));
+    border:1px solid rgba(255,255,255,0.1); border-radius:14px; padding:16px 20px; margin-bottom:10px;
+  }
 </style>
 """
 st.markdown(css, unsafe_allow_html=True)
@@ -343,6 +355,7 @@ today = datetime.now()
 month_total_r = sum(v['total_r'] for k, v in daily_r.items() if k.month == today.month and k.year == today.year)
 month_color = '#4ade80' if month_total_r >= 0 else '#f87171'
 st.markdown(f'<div class="section-label">Calendar — {today.strftime("%B %Y")} &nbsp;·&nbsp; Total R: <span style="color:{month_color};font-weight:700;">{round(month_total_r,2)}</span></div>', unsafe_allow_html=True)
+st.caption("Click a day with trades to see the breakdown below.")
 
 cal_module.setfirstweekday(cal_module.MONDAY)
 month_matrix = cal_module.monthcalendar(today.year, today.month)
@@ -360,7 +373,7 @@ for week_num, week in enumerate(month_matrix):
     week_trades = 0
     for i, day_num in enumerate(week):
         if day_num == 0:
-            week_cols[i].markdown('<div class="cal-day cal-day-empty"></div>', unsafe_allow_html=True)
+            week_cols[i].markdown('<div style="min-height:88px;"></div>', unsafe_allow_html=True)
         else:
             day_date = datetime(today.year, today.month, day_num).date()
             day_data = daily_r.get(day_date)
@@ -368,18 +381,15 @@ for week_num, week in enumerate(month_matrix):
                 week_total += day_data['total_r']
                 week_trades += day_data['trades']
                 r_val = day_data['total_r']
-                css_class = 'cal-day-win' if r_val >= 0 else 'cal-day-loss'
-                r_color = '#4ade80' if r_val >= 0 else '#f87171'
                 sign = '+' if r_val > 0 else ''
-                week_cols[i].markdown(
-                    f'<div class="cal-day {css_class}"><div class="cal-day-num">{day_num}</div>'
-                    f'<div class="cal-day-r" style="color:{r_color}">{sign}{r_val}R</div>'
-                    f'<div class="cal-day-trades">{day_data["trades"]} trades</div></div>',
-                    unsafe_allow_html=True
-                )
+                button_label = f"{day_num}\n{sign}{r_val}R\n{day_data['trades']} trades"
+                btn_type = "primary" if r_val >= 0 else "secondary"
+                if week_cols[i].button(button_label, key=f"day_{day_date}", use_container_width=True):
+                    st.session_state.selected_day = day_date
             else:
                 week_cols[i].markdown(
-                    f'<div class="cal-day cal-day-empty"><div class="cal-day-num">{day_num}</div></div>',
+                    f'<div style="min-height:88px;display:flex;align-items:center;justify-content:center;">'
+                    f'<div class="cal-day-num">{day_num}</div></div>',
                     unsafe_allow_html=True
                 )
     wk_color = '#4ade80' if week_total >= 0 else '#f87171'
@@ -390,3 +400,29 @@ for week_num, week in enumerate(month_matrix):
         f'<div class="cal-day-trades">{week_trades} trades</div></div>',
         unsafe_allow_html=True
     )
+
+# ============ SELECTED DAY DETAIL ============
+if st.session_state.selected_day:
+    st.markdown('<hr class="divider-line">', unsafe_allow_html=True)
+    sel_day = st.session_state.selected_day
+    day_trades = get_day_trades(df_main, sel_day)
+    st.markdown(f'<div class="section-label">Trades on {sel_day.strftime("%B %d, %Y")}</div>', unsafe_allow_html=True)
+
+    for _, trade in day_trades.iterrows():
+        r_val = trade['R_Result']
+        label, color = result_label(r_val)
+        sign = '+' if r_val > 0 else ''
+        pair = trade.get('Pair', '—')
+        trade_no = trade.get('Trade No.', '—')
+        st.markdown(
+            f'<div class="trade-detail-card">'
+            f'<span style="color:{color};font-weight:700;font-size:1.1em;">{label}</span>'
+            f'<span style="color:#888;"> &nbsp;·&nbsp; Trade #{trade_no} &nbsp;·&nbsp; {pair}</span>'
+            f'<span style="color:{color};font-weight:700;float:right;">{sign}{r_val}R</span>'
+            f'</div>',
+            unsafe_allow_html=True
+        )
+
+    if st.button("Close"):
+        st.session_state.selected_day = None
+        st.rerun()
