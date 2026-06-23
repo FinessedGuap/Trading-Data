@@ -236,8 +236,6 @@ css = """
   .cal-header { color:#5a5a6a; font-size:0.72em; text-align:center; letter-spacing:1.5px; font-weight:600; text-transform:uppercase; padding:10px 0; }
 
   .cal-day-num { color:#4a4a58; font-size:0.78em; font-weight:600; text-align:center; }
-  .cal-day-r { font-size:1.15em; font-weight:700; margin-top:10px; letter-spacing:-0.2px; text-align:center; }
-  .cal-day-trades { color:#5a5a6a; font-size:0.64em; margin-top:3px; font-weight:500; text-align:center; }
 
   .cal-week-summary {
     background: linear-gradient(145deg, rgba(255,255,255,0.05), rgba(255,255,255,0.015));
@@ -247,13 +245,26 @@ css = """
   }
   .cal-week-label { color:#8a8a9a; font-size:0.68em; font-weight:700; letter-spacing:0.5px; }
   .cal-week-r { font-size:1.25em; font-weight:700; margin-top:10px; letter-spacing:-0.3px; }
+  .cal-day-trades { color:#5a5a6a; font-size:0.64em; margin-top:3px; font-weight:500; text-align:center; }
 
   div[data-testid="stButton"] button {
     width:100%; min-height:88px; border-radius:14px;
     font-family:'Inter', sans-serif; white-space:pre-line; line-height:1.4;
     transition: all 0.2s ease;
+    font-weight:600;
   }
   div[data-testid="stButton"] button:hover { transform: scale(1.03); }
+
+  div[data-testid="stButton"] button[kind="primary"] {
+    background: linear-gradient(150deg, rgba(74,222,128,0.18), rgba(74,222,128,0.05)) !important;
+    border:1px solid rgba(74,222,128,0.3) !important;
+    color:#eafff0 !important;
+  }
+  div[data-testid="stButton"] button[kind="secondary"] {
+    background: linear-gradient(150deg, rgba(248,113,113,0.18), rgba(248,113,113,0.05)) !important;
+    border:1px solid rgba(248,113,113,0.3) !important;
+    color:#ffeaea !important;
+  }
 
   .trade-detail-card {
     background: linear-gradient(145deg, rgba(255,255,255,0.05), rgba(255,255,255,0.015));
@@ -384,7 +395,7 @@ for week_num, week in enumerate(month_matrix):
                 sign = '+' if r_val > 0 else ''
                 button_label = f"{day_num}\n{sign}{r_val}R\n{day_data['trades']} trades"
                 btn_type = "primary" if r_val >= 0 else "secondary"
-                if week_cols[i].button(button_label, key=f"day_{day_date}", use_container_width=True):
+                if week_cols[i].button(button_label, key=f"day_{day_date}", use_container_width=True, type=btn_type):
                     st.session_state.selected_day = day_date
             else:
                 week_cols[i].markdown(
