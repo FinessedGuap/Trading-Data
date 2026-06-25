@@ -159,9 +159,13 @@ def safe_parse_date(x):
     if pd.isna(x) or x is None or str(x).strip() == '':
         return pd.NaT
     try:
-        return pd.to_datetime(x, errors='coerce')
+        return pd.Timestamp(x)
     except Exception:
-        return pd.NaT
+        try:
+            from dateutil import parser as _dateutil_parser
+            return pd.Timestamp(_dateutil_parser.parse(str(x)))
+        except Exception:
+            return pd.NaT
 
 # Load data
 with st.spinner("Pulling fresh data from Notion..."):
