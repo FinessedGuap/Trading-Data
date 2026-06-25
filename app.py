@@ -155,6 +155,14 @@ def result_label(r_val):
     else:
         return 'Breakeven', '#60a5fa'
 
+def safe_parse_date(x):
+    if pd.isna(x) or x is None or str(x).strip() == '':
+        return pd.NaT
+    try:
+        return pd.to_datetime(x, errors='coerce')
+    except Exception:
+        return pd.NaT
+
 # Load data
 with st.spinner("Pulling fresh data from Notion..."):
     raw_trades = get_all_trades()
@@ -168,7 +176,7 @@ with st.spinner("Pulling fresh data from Notion..."):
 
     df = pd.DataFrame(rows)
     df.columns = df.columns.str.strip()
-    df['Date'] = pd.to_datetime(df['Date'], errors='coerce', format='mixed')
+    df['Date'] = df['Date'].apply(safe_parse_date)
     df['R_Result'] = df['R Result'].apply(parse_r_result)
 
     df_main = df.copy()
