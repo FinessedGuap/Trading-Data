@@ -200,8 +200,6 @@ with st.spinner("Pulling fresh data from Notion..."):
     session_stats = calc_session_stats(df_main)
     daily_r = calc_daily_r(df_main)
 
-now = datetime.now().strftime("%B %d, %Y %I:%M %p")
-
 max_abs_exp = max([abs(s['exp']) for s in session_stats]) if session_stats else 1
 if max_abs_exp == 0:
     max_abs_exp = 1
@@ -341,12 +339,11 @@ for i in range(0, len(stat_data), cols_per_row):
             f'<div class="stat-card"><div class="stat-value" style="color:{color}">{value}</div><div class="stat-label">{label}</div></div>',
             unsafe_allow_html=True
         )
-    st.markdown('<div style="height:14px;"></div>', unsafe_allow_html=True)
+    st.write("")
 
 # ============ CHARTS ============
 st.markdown('<div class="section-label">Charts</div>', unsafe_allow_html=True)
 
-st.markdown('<div class="glass-panel">', unsafe_allow_html=True)
 eq_points = main_stats['equity_curve']
 eq_max = max(eq_points) if eq_points else 1
 eq_min = min(min(eq_points), 0) if eq_points else 0
@@ -408,21 +405,78 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-labels = ['Win', 'Loss', 'Breakeven']
-values = [main_stats.get('wins',0), main_stats.get('losses',0), main_stats.get('breakevens',0)]
-colors = ['#4ade80', '#f87171', '#60a5fa']
-donut_fig = go.Figure(go.Pie(labels=labels, values=values, hole=0.68,
-    marker=dict(colors=colors, line=dict(color='#08080d', width=2)), textinfo='label+percent', textfont=dict(size=12, color='#ddd', family='Inter')))
-donut_fig.update_layout(template='plotly_dark', paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
-    height=340, margin=dict(l=20, r=20, t=20, b=20), font=dict(color='#8a8a99', size=11, family='Inter'), showlegend=False)
-donut_html = donut_fig.to_html(full_html=False, include_plotlyjs=False)
+# Bubbly glassmorphic donut built in SVG
+wins_n = main_stats.get('wins', 0)
+losses_n = main_stats.get('losses', 0)
+be_n = main_stats.get('breakevens', 0)
+total_n = wins_n + losses_n + be_n if (wins_n + losses_n + be_n) > 0 else 1
+
+segments = [
+    ('Win', wins_n, '#4ade80', 'rgba(74,222,128,0.35)'),
+    ('Loss', losses_n, '#f87171', 'rgba(248,113,113,0.35)'),
+    ('Breakeven', be_n, '#60a5fa', 'rgba(96,165,250,0.35)'),
+]
+
+cx, cy, r_outer, r_inner = 110, 110, 95, 60
+start_angle = -90
+donut_arcs = ""
+legend_html = ""
+import math
+for label, val, color, glow in segments:
+    if val == 0:
+        continue
+    frac = val / total_n
+    sweep = frac * 360
+    end_angle = start_angle + sweep
+    def polar(cx, cy, r, angle_deg):
+        a = math.radians(angle_deg)
+        return cx + r * math.cos(a), cy + r * math.sin(a)
+    x1o, y1o = polar(cx, cy, r_outer, start_angle)
+    x2o, y2o = polar(cx, cy, r_outer, end_angle)
+    x1i, y1i = polar(cx, cy, r_inner, end_angle)
+    x2i, y2i = polar(cx, cy, r_inner, start_angle)
+    large_arc = 1 if sweep > 180 else 0
+    path_d = f"M{x1o:.1f},{y1o:.1f} A{r_outer},{r_outer} 0 {large_arc} 1 {x2o:.1f},{y2o:.1f} L{x1i:.1f},{y1i:.1f} A{r_inner},{r_inner} 0 {large_arc} 0 {x2i:.1f},{y2i:.1f} Z"
+    donut_arcs += f'<path d="{path_d}" fill="{color}" opacity="0.85" style="filter:drop-shadow(0 0 8px {glow});"/>'
+    pct = round(frac * 100)
+    legend_html += (
+        f'<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">'
+        f'<div style="width:12px;height:12px;border-radius:50%;background:{color};box-shadow:0 0 8px {glow};"></div>'
+        f'<span style="color:#ccc;font-size:0.9em;">{label}</span>'
+        f'<span style="color:{color};font-weight:700;margin-left:auto;">{pct}%</span>'
+        f'</div>'
+    )
+    start_angle = end_angle
+
+donut_svg = f"""
+<svg viewBox="0 0 220 220" style="width:200px; height:200px; display:block;">
+  <defs>
+    <filter id="bubbleGlow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="6" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <g filter="url(#bubbleGlow)">
+    {donut_arcs}
+  </g>
+  <circle cx="{cx}" cy="{cy}" r="{r_inner - 4}" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+</svg>
+"""
+
 st.markdown(
     f'<div class="glass-panel">'
-    f'<div style="color:#ddd;font-weight:600;font-size:1.05em;margin-bottom:8px;">Result Distribution</div>'
-    f'{donut_html}'
+    f'<div style="color:#ddd;font-weight:600;font-size:1.05em;margin-bottom:18px;">Result Distribution</div>'
+    f'<div style="display:flex;align-items:center;gap:32px;flex-wrap:wrap;">'
+    f'<div>{donut_svg}</div>'
+    f'<div style="flex:1;min-width:160px;">{legend_html}</div>'
+    f'</div>'
     f'</div>',
     unsafe_allow_html=True
 )
+
 # ============ DIVIDER ============
 st.markdown('<hr class="divider-line">', unsafe_allow_html=True)
 
@@ -468,7 +522,7 @@ day_header_cols[7].markdown('<div class="cal-header">Week</div>', unsafe_allow_h
 
 for week_num, week in enumerate(month_matrix):
     if week_num > 0:
-        st.markdown('<div style="height:14px;"></div>', unsafe_allow_html=True)
+        st.write("")
     week_cols = st.columns(8)
     week_total = 0
     week_trades = 0
