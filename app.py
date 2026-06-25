@@ -181,6 +181,7 @@ with st.spinner("Pulling fresh data from Notion..."):
     df = pd.DataFrame(rows)
     df.columns = df.columns.str.strip()
     df['Date'] = df['Date'].apply(safe_parse_date)
+    df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
     df['R_Result'] = df['R Result'].apply(parse_r_result)
 
     df_main = df.copy()
