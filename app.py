@@ -347,24 +347,67 @@ for i in range(0, len(stat_data), cols_per_row):
 st.markdown('<div class="section-label">Charts</div>', unsafe_allow_html=True)
 
 st.markdown('<div class="glass-panel">', unsafe_allow_html=True)
-eq_fig = go.Figure()
-eq_fig.add_trace(go.Scatter(
-    y=main_stats['equity_curve'], mode='lines+markers',
-    line=dict(color='#4ade80', width=3, shape='spline', smoothing=1.3),
-    marker=dict(size=7, color='#4ade80', line=dict(width=1, color='#0a0a0a')),
-    fill='tozeroy', fillcolor='rgba(74,222,128,0.1)'
-))
-eq_fig.update_traces(line_shape='spline')
-eq_fig.update_layout(
-    template='plotly_dark', paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
-    height=340, margin=dict(l=40, r=20, t=50, b=40),
-    font=dict(color='#8a8a99', size=11, family='Inter'), showlegend=False,
-    xaxis=dict(gridcolor='rgba(255,255,255,0.04)', zeroline=False),
-    yaxis=dict(gridcolor='rgba(255,255,255,0.04)', zeroline=False),
-    title=dict(text='Equity Curve', font=dict(color='#f0f0f0', size=17, family='Inter'))
+eq_points = main_stats['equity_curve']
+eq_max = max(eq_points) if eq_points else 1
+eq_min = min(min(eq_points), 0) if eq_points else 0
+eq_range = (eq_max - eq_min) if (eq_max - eq_min) != 0 else 1
+
+svg_w, svg_h = 800, 200
+n = len(eq_points)
+def x_pos(i):
+    return (i / (n - 1)) * svg_w if n > 1 else 0
+def y_pos(v):
+    return svg_h - ((v - eq_min) / eq_range) * (svg_h - 20) - 10
+
+path_points = [(x_pos(i), y_pos(v)) for i, v in enumerate(eq_points)]
+
+def catmull_rom_path(points):
+    if len(points) < 2:
+        return ""
+    d = f"M{points[0][0]:.1f},{points[0][1]:.1f} "
+    for i in range(len(points) - 1):
+        p0 = points[i - 1] if i > 0 else points[i]
+        p1 = points[i]
+        p2 = points[i + 1]
+        p3 = points[i + 2] if i + 2 < len(points) else p2
+        c1x = p1[0] + (p2[0] - p0[0]) / 6
+        c1y = p1[1] + (p2[1] - p0[1]) / 6
+        c2x = p2[0] - (p3[0] - p1[0]) / 6
+        c2y = p2[1] - (p3[1] - p1[1]) / 6
+        d += f"C{c1x:.1f},{c1y:.1f} {c2x:.1f},{c2y:.1f} {p2[0]:.1f},{p2[1]:.1f} "
+    return d
+
+line_path = catmull_rom_path(path_points)
+fill_path = line_path + f"L{svg_w},{svg_h} L0,{svg_h} Z"
+
+equity_svg = f"""
+<svg viewBox="0 0 {svg_w} {svg_h}" style="width:100%; height:280px; display:block;">
+  <defs>
+    <linearGradient id="eqFill" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="rgba(74,222,128,0.3)"/>
+      <stop offset="100%" stop-color="rgba(74,222,128,0)"/>
+    </linearGradient>
+    <filter id="eqGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <path d="{fill_path}" fill="url(#eqFill)"/>
+  <path d="{line_path}" fill="none" stroke="#4ade80" stroke-width="3" stroke-linecap="round" filter="url(#eqGlow)"/>
+</svg>
+"""
+
+st.markdown(
+    f'<div class="glass-panel">'
+    f'<div style="color:#ddd;font-weight:600;font-size:1.05em;margin-bottom:4px;">Equity Curve</div>'
+    f'<div style="color:#777;font-size:0.8em;margin-bottom:8px;">Cumulative R across {main_stats.get("total_trades","—")} trades</div>'
+    f'{equity_svg}'
+    f'</div>',
+    unsafe_allow_html=True
 )
-st.plotly_chart(eq_fig, use_container_width=True)
-st.markdown('</div>', unsafe_allow_html=True)
 
 st.markdown('<div class="glass-panel">', unsafe_allow_html=True)
 labels = ['Win', 'Loss', 'Breakeven']
