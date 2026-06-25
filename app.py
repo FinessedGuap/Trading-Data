@@ -298,7 +298,7 @@ st.markdown(css, unsafe_allow_html=True)
 
 # ============ HEADER ============
 st.markdown(f'<div class="header-title">Trading Data</div>', unsafe_allow_html=True)
-st.markdown(f'<div class="header-sub">Generated {now} &nbsp;·&nbsp; {main_stats.get("total_trades","—")} Trades</div>', unsafe_allow_html=True)
+
 
 # ============ PERFORMANCE OVERVIEW ============
 st.markdown('<div class="section-label">Performance Overview</div>', unsafe_allow_html=True)
