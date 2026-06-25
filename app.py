@@ -159,7 +159,9 @@ def safe_parse_date(x):
     if pd.isna(x) or x is None or str(x).strip() == '':
         return pd.NaT
     try:
-        return pd.Timestamp(x)
+        from dateutil import parser as _dateutil_parser
+        parsed = _dateutil_parser.isoparse(str(x))
+        return pd.Timestamp(parsed)
     except Exception:
         try:
             from dateutil import parser as _dateutil_parser
