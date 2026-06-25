@@ -4,6 +4,7 @@ import pandas as pd
 import plotly.graph_objects as go
 from datetime import datetime
 import calendar as cal_module
+import math
 
 st.set_page_config(page_title="Trading Data", layout="wide", initial_sidebar_state="collapsed")
 
@@ -210,7 +211,7 @@ if 'selected_day' not in st.session_state:
 # ============ CSS — GLASSMORPHISM ============
 css = """
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
   .stApp {
     background:#08080d;
@@ -258,6 +259,16 @@ css = """
     box-shadow: 0 12px 40px rgba(0,0,0,0.35);
     margin-bottom:16px;
   }
+
+  .monthly-pl-banner {
+    background: rgba(255,255,255,0.05);
+    backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+    border:1px solid rgba(255,255,255,0.1);
+    border-radius:20px; padding:22px;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.35);
+    text-align:center; margin-bottom:16px;
+  }
+  .monthly-pl-label { font-size:1.3em; font-weight:800; color:#fff; letter-spacing:-0.3px; }
 
   .session-bar-track { background:rgba(255,255,255,0.07); border-radius:8px; height:16px; overflow:hidden; }
   .session-bar-fill { height:100%; border-radius:8px; transition: width 0.4s ease; }
@@ -405,7 +416,6 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# Bubbly glassmorphic donut built in SVG
 wins_n = main_stats.get('wins', 0)
 losses_n = main_stats.get('losses', 0)
 be_n = main_stats.get('breakevens', 0)
@@ -421,7 +431,6 @@ cx, cy, r_outer, r_inner = 110, 110, 95, 60
 start_angle = -90
 donut_arcs = ""
 legend_html = ""
-import math
 for label, val, color, glow in segments:
     if val == 0:
         continue
@@ -483,25 +492,33 @@ st.markdown('<hr class="divider-line">', unsafe_allow_html=True)
 # ============ 3SL WINDOW ============
 st.markdown('<div class="section-label">3SL Window</div>', unsafe_allow_html=True)
 
-header_cols = st.columns([1, 3, 0.7, 0.6, 0.4])
-header_cols[0].markdown('<span style="color:#5a5a6a;font-size:0.72em;font-weight:600;letter-spacing:0.5px;">VALUE</span>', unsafe_allow_html=True)
-header_cols[1].markdown('<span style="color:#5a5a6a;font-size:0.72em;font-weight:600;letter-spacing:0.5px;">CHART</span>', unsafe_allow_html=True)
-header_cols[2].markdown('<span style="color:#5a5a6a;font-size:0.72em;font-weight:600;letter-spacing:0.5px;">EXP</span>', unsafe_allow_html=True)
-header_cols[3].markdown('<span style="color:#5a5a6a;font-size:0.72em;font-weight:600;letter-spacing:0.5px;">WR</span>', unsafe_allow_html=True)
-header_cols[4].markdown('<span style="color:#5a5a6a;font-size:0.72em;font-weight:600;letter-spacing:0.5px;">N</span>', unsafe_allow_html=True)
-
+session_rows_html = ""
 for s in session_stats:
     bar_pct = round(abs(s['exp']) / max_abs_exp * 100, 1)
     bar_color = '#4ade80' if s['exp'] >= 0 else '#f87171'
-    row_cols = st.columns([1, 3, 0.7, 0.6, 0.4])
-    row_cols[0].markdown(f'<span style="color:#60a5fa;font-weight:600;">{s["session"]}</span>', unsafe_allow_html=True)
-    row_cols[1].markdown(
-        f'<div class="session-bar-track"><div class="session-bar-fill" style="width:{bar_pct}%;background:linear-gradient(90deg, {bar_color}99, {bar_color});"></div></div>',
-        unsafe_allow_html=True
+    session_rows_html += (
+        f'<div style="display:grid;grid-template-columns:100px 1fr 70px 60px 40px;gap:16px;align-items:center;padding:12px 0;">'
+        f'<span style="color:#60a5fa;font-weight:600;">{s["session"]}</span>'
+        f'<div class="session-bar-track"><div class="session-bar-fill" style="width:{bar_pct}%;background:linear-gradient(90deg, {bar_color}99, {bar_color});"></div></div>'
+        f'<span style="color:{bar_color};font-weight:700;">{s["exp"]}</span>'
+        f'<span style="color:#9a9aaa;font-weight:500;">{s["wr"]}</span>'
+        f'<span style="color:#6b6b7a;font-weight:500;">{s["n"]}</span>'
+        f'</div>'
     )
-    row_cols[2].markdown(f'<span style="color:{bar_color};font-weight:700;">{s["exp"]}</span>', unsafe_allow_html=True)
-    row_cols[3].markdown(f'<span style="color:#9a9aaa;font-weight:500;">{s["wr"]}</span>', unsafe_allow_html=True)
-    row_cols[4].markdown(f'<span style="color:#6b6b7a;font-weight:500;">{s["n"]}</span>', unsafe_allow_html=True)
+
+st.markdown(
+    f'<div class="glass-panel">'
+    f'<div style="display:grid;grid-template-columns:100px 1fr 70px 60px 40px;gap:16px;padding-bottom:14px;margin-bottom:8px;border-bottom:1px solid rgba(255,255,255,0.08);">'
+    f'<span style="color:#5a5a6a;font-size:0.72em;font-weight:600;letter-spacing:0.5px;">VALUE</span>'
+    f'<span style="color:#5a5a6a;font-size:0.72em;font-weight:600;letter-spacing:0.5px;">CHART</span>'
+    f'<span style="color:#5a5a6a;font-size:0.72em;font-weight:600;letter-spacing:0.5px;">EXP</span>'
+    f'<span style="color:#5a5a6a;font-size:0.72em;font-weight:600;letter-spacing:0.5px;">WR</span>'
+    f'<span style="color:#5a5a6a;font-size:0.72em;font-weight:600;letter-spacing:0.5px;">N</span>'
+    f'</div>'
+    f'{session_rows_html}'
+    f'</div>',
+    unsafe_allow_html=True
+)
 
 # ============ MONTHLY CALENDAR ============
 st.markdown('<hr class="divider-line">', unsafe_allow_html=True)
@@ -509,8 +526,14 @@ st.markdown('<hr class="divider-line">', unsafe_allow_html=True)
 today = datetime.now()
 month_total_r = sum(v['total_r'] for k, v in daily_r.items() if k.month == today.month and k.year == today.year)
 month_color = '#4ade80' if month_total_r >= 0 else '#f87171'
-st.markdown(f'<div class="section-label">Calendar — {today.strftime("%B %Y")} &nbsp;·&nbsp; Total R: <span style="color:{month_color};font-weight:700;">{round(month_total_r,2)}</span></div>', unsafe_allow_html=True)
-st.caption("Click a day with trades to see the breakdown below.")
+month_sign = '+' if month_total_r > 0 else ''
+
+st.markdown(
+    f'<div class="monthly-pl-banner">'
+    f'<span class="monthly-pl-label">Monthly Total R: <span style="color:{month_color};">{month_sign}{round(month_total_r,2)}</span></span>'
+    f'</div>',
+    unsafe_allow_html=True
+)
 
 cal_module.setfirstweekday(cal_module.MONDAY)
 month_matrix = cal_module.monthcalendar(today.year, today.month)
