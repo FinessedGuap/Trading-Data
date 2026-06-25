@@ -186,7 +186,7 @@ with st.spinner("Pulling fresh data from Notion..."):
 
     df_main = df.copy()
     df_main = df_main.sort_values('Date').reset_index(drop=True)
-st.write("Debug - Total rows:", len(df_main))
+    st.write("Debug - Total rows:", len(df_main))
     st.write("Debug - Valid dates:", df_main['Date'].notna().sum())
     st.write("Debug - Valid R results:", df_main['R_Result'].notna().sum())
     st.write(df_main[['Date', 'R_Result']])
