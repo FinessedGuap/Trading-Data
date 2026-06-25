@@ -161,11 +161,18 @@ def safe_parse_date(x):
     try:
         from dateutil import parser as _dateutil_parser
         parsed = _dateutil_parser.isoparse(str(x))
-        return pd.Timestamp(parsed)
+        ts = pd.Timestamp(parsed)
+        if ts.tzinfo is not None:
+            ts = ts.tz_localize(None)
+        return ts
     except Exception:
         try:
             from dateutil import parser as _dateutil_parser
-            return pd.Timestamp(_dateutil_parser.parse(str(x)))
+            parsed = _dateutil_parser.parse(str(x))
+            ts = pd.Timestamp(parsed)
+            if ts.tzinfo is not None:
+                ts = ts.tz_localize(None)
+            return ts
         except Exception:
             return pd.NaT
 
@@ -183,6 +190,7 @@ with st.spinner("Pulling fresh data from Notion..."):
     df = pd.DataFrame(rows)
     df.columns = df.columns.str.strip()
     df['Date'] = df['Date'].apply(safe_parse_date)
+    df['Date'] = pd.Series(df['Date'].tolist(), dtype='datetime64[ns]')
     df['R_Result'] = df['R Result'].apply(parse_r_result)
 
     df_main = df.copy()
