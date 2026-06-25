@@ -182,18 +182,12 @@ with st.spinner("Pulling fresh data from Notion..."):
 
     df = pd.DataFrame(rows)
     df.columns = df.columns.str.strip()
-    st.write("Raw dates before parsing:", df['Date'].tolist())
     df['Date'] = df['Date'].apply(safe_parse_date)
-    df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
     df['R_Result'] = df['R Result'].apply(parse_r_result)
 
     df_main = df.copy()
     df_main = df_main.sort_values('Date').reset_index(drop=True)
-    st.write("Debug - Total rows:", len(df_main))
-    st.write("Debug - Valid dates:", df_main['Date'].notna().sum())
-    st.write("Debug - Valid R results:", df_main['R_Result'].notna().sum())
-    st.write(df_main[['Date', 'R_Result']])
-    
+
     main_stats = calc_stats(df_main)
     session_stats = calc_session_stats(df_main)
     daily_r = calc_daily_r(df_main)
