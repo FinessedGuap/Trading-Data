@@ -402,25 +402,27 @@ equity_svg = f"""
 
 st.markdown(
     f'<div class="glass-panel">'
-    f'<div style="color:#ddd;font-weight:600;font-size:1.05em;margin-bottom:4px;">Equity Curve</div>'
-    f'<div style="color:#777;font-size:0.8em;margin-bottom:8px;">Cumulative R across {main_stats.get("total_trades","—")} trades</div>'
+    f'<div style="color:#ddd;font-weight:600;font-size:1.05em;margin-bottom:14px;">Equity Curve</div>'
     f'{equity_svg}'
     f'</div>',
     unsafe_allow_html=True
 )
 
-st.markdown('<div class="glass-panel">', unsafe_allow_html=True)
 labels = ['Win', 'Loss', 'Breakeven']
 values = [main_stats.get('wins',0), main_stats.get('losses',0), main_stats.get('breakevens',0)]
 colors = ['#4ade80', '#f87171', '#60a5fa']
 donut_fig = go.Figure(go.Pie(labels=labels, values=values, hole=0.68,
     marker=dict(colors=colors, line=dict(color='#08080d', width=2)), textinfo='label+percent', textfont=dict(size=12, color='#ddd', family='Inter')))
 donut_fig.update_layout(template='plotly_dark', paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
-    height=340, margin=dict(l=20, r=20, t=50, b=20), font=dict(color='#8a8a99', size=11, family='Inter'), showlegend=False,
-    title=dict(text='Result Distribution', font=dict(color='#f0f0f0', size=17, family='Inter')))
-st.plotly_chart(donut_fig, use_container_width=True)
-st.markdown('</div>', unsafe_allow_html=True)
-
+    height=340, margin=dict(l=20, r=20, t=20, b=20), font=dict(color='#8a8a99', size=11, family='Inter'), showlegend=False)
+donut_html = donut_fig.to_html(full_html=False, include_plotlyjs=False)
+st.markdown(
+    f'<div class="glass-panel">'
+    f'<div style="color:#ddd;font-weight:600;font-size:1.05em;margin-bottom:8px;">Result Distribution</div>'
+    f'{donut_html}'
+    f'</div>',
+    unsafe_allow_html=True
+)
 # ============ DIVIDER ============
 st.markdown('<hr class="divider-line">', unsafe_allow_html=True)
 
