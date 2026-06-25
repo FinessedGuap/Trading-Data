@@ -209,16 +209,16 @@ if max_abs_exp == 0:
 if 'selected_day' not in st.session_state:
     st.session_state.selected_day = None
 
-# ============ CSS ============
+# ============ CSS — GLASSMORPHISM ============
 css = """
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
   .stApp {
     background:#08080d;
-    background-image: radial-gradient(circle at 15% 10%, rgba(74,222,128,0.05), transparent 35%),
-                       radial-gradient(circle at 85% 0%, rgba(96,165,250,0.05), transparent 35%),
-                       radial-gradient(circle at 50% 100%, rgba(248,113,113,0.03), transparent 40%);
+    background-image: radial-gradient(circle at 15% 10%, rgba(74,222,128,0.06), transparent 35%),
+                       radial-gradient(circle at 85% 0%, rgba(96,165,250,0.06), transparent 35%),
+                       radial-gradient(circle at 50% 100%, rgba(248,113,113,0.04), transparent 40%);
     font-family: 'Inter', sans-serif;
   }
 
@@ -227,7 +227,6 @@ css = """
     background: linear-gradient(135deg, #fff 30%, #999 100%);
     -webkit-background-clip: text; -webkit-text-fill-color: transparent;
   }
-  .header-sub { color:#666; margin-top:10px; font-size:0.88em; font-weight:500; }
 
   .section-label {
     font-size:0.72em; font-weight:700; letter-spacing:2.5px; text-transform:uppercase;
@@ -236,61 +235,75 @@ css = """
   .section-label::after { content:''; flex:1; height:1px; background:linear-gradient(90deg, rgba(255,255,255,0.08), transparent); }
 
   .stat-card {
-    background: linear-gradient(145deg, rgba(255,255,255,0.045), rgba(255,255,255,0.015));
-    border:1px solid rgba(255,255,255,0.08);
+    background: rgba(255,255,255,0.06);
+    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    border:1px solid rgba(255,255,255,0.12);
     border-radius:18px; padding:24px 14px; text-align:center;
     transition: all 0.25s ease;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
   }
   .stat-card:hover {
-    border-color: rgba(255,255,255,0.18);
+    border-color: rgba(255,255,255,0.22);
     transform: translateY(-2px);
-    box-shadow: 0 8px 28px rgba(0,0,0,0.35);
+    box-shadow: 0 12px 36px rgba(0,0,0,0.4);
   }
   .stat-value { font-size:1.65em; font-weight:700; letter-spacing:-0.3px; }
-  .stat-label { color:#6b6b7a; font-size:0.66em; margin-top:7px; letter-spacing:0.8px; font-weight:600; text-transform:uppercase; }
+  .stat-label { color:#8a8a9a; font-size:0.66em; margin-top:7px; letter-spacing:0.8px; font-weight:600; text-transform:uppercase; }
 
   .divider-line { border:none; border-top:1px solid rgba(255,255,255,0.06); margin:42px 0; }
 
-  .session-bar-track { background:rgba(255,255,255,0.05); border-radius:8px; height:16px; overflow:hidden; }
+  .glass-panel {
+    background: rgba(255,255,255,0.05);
+    backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+    border:1px solid rgba(255,255,255,0.1);
+    border-radius:20px; padding:24px;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.35);
+    margin-bottom:16px;
+  }
+
+  .session-bar-track { background:rgba(255,255,255,0.07); border-radius:8px; height:16px; overflow:hidden; }
   .session-bar-fill { height:100%; border-radius:8px; transition: width 0.4s ease; }
 
   .cal-header { color:#5a5a6a; font-size:0.72em; text-align:center; letter-spacing:1.5px; font-weight:600; text-transform:uppercase; padding:10px 0; }
-
-  .cal-day-num { color:#4a4a58; font-size:0.78em; font-weight:600; text-align:center; }
+  .cal-day-num { color:#5a5a6a; font-size:0.78em; font-weight:600; text-align:center; }
 
   .cal-week-summary {
-    background: linear-gradient(145deg, rgba(255,255,255,0.05), rgba(255,255,255,0.015));
-    border:1px solid rgba(255,255,255,0.1); border-radius:14px; padding:12px 6px;
+    background: rgba(255,255,255,0.06);
+    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    border:1px solid rgba(255,255,255,0.12); border-radius:16px; padding:12px 6px;
     text-align:center; min-height:88px;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+    box-shadow: 0 8px 28px rgba(0,0,0,0.25);
   }
-  .cal-week-label { color:#8a8a9a; font-size:0.68em; font-weight:700; letter-spacing:0.5px; }
+  .cal-week-label { color:#9a9aaa; font-size:0.68em; font-weight:700; letter-spacing:0.5px; }
   .cal-week-r { font-size:1.25em; font-weight:700; margin-top:10px; letter-spacing:-0.3px; }
-  .cal-day-trades { color:#5a5a6a; font-size:0.64em; margin-top:3px; font-weight:500; text-align:center; }
+  .cal-day-trades { color:#6a6a7a; font-size:0.64em; margin-top:3px; font-weight:500; text-align:center; }
 
   div[data-testid="stButton"] button {
-    width:100%; min-height:88px; border-radius:14px;
+    width:100%; min-height:88px; border-radius:16px;
     font-family:'Inter', sans-serif; white-space:pre-line; line-height:1.4;
-    transition: all 0.2s ease;
+    transition: all 0.25s ease;
     font-weight:600;
+    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
   }
-  div[data-testid="stButton"] button:hover { transform: scale(1.03); }
+  div[data-testid="stButton"] button:hover { transform: translateY(-2px) scale(1.02); }
 
   div[data-testid="stButton"] button[kind="primary"] {
-    background: linear-gradient(150deg, rgba(74,222,128,0.18), rgba(74,222,128,0.05)) !important;
+    background: rgba(74,222,128,0.12) !important;
     border:1px solid rgba(74,222,128,0.3) !important;
     color:#eafff0 !important;
+    box-shadow: 0 8px 24px rgba(74,222,128,0.1) !important;
   }
   div[data-testid="stButton"] button[kind="secondary"] {
-    background: linear-gradient(150deg, rgba(248,113,113,0.18), rgba(248,113,113,0.05)) !important;
+    background: rgba(248,113,113,0.12) !important;
     border:1px solid rgba(248,113,113,0.3) !important;
     color:#ffeaea !important;
+    box-shadow: 0 8px 24px rgba(248,113,113,0.1) !important;
   }
 
   .trade-detail-card {
-    background: linear-gradient(145deg, rgba(255,255,255,0.05), rgba(255,255,255,0.015));
-    border:1px solid rgba(255,255,255,0.1); border-radius:14px; padding:16px 20px; margin-bottom:10px;
+    background: rgba(255,255,255,0.05);
+    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    border:1px solid rgba(255,255,255,0.1); border-radius:16px; padding:16px 20px; margin-bottom:10px;
   }
 </style>
 """
@@ -298,7 +311,6 @@ st.markdown(css, unsafe_allow_html=True)
 
 # ============ HEADER ============
 st.markdown(f'<div class="header-title">Trading Data</div>', unsafe_allow_html=True)
-
 
 # ============ PERFORMANCE OVERVIEW ============
 st.markdown('<div class="section-label">Performance Overview</div>', unsafe_allow_html=True)
@@ -334,26 +346,37 @@ for i in range(0, len(stat_data), cols_per_row):
 # ============ CHARTS ============
 st.markdown('<div class="section-label">Charts</div>', unsafe_allow_html=True)
 
+st.markdown('<div class="glass-panel">', unsafe_allow_html=True)
 eq_fig = go.Figure()
-eq_fig.add_trace(go.Scatter(y=main_stats['equity_curve'], mode='lines+markers',
-    line=dict(color='#4ade80', width=3, shape='spline'), marker=dict(size=6, color='#4ade80', line=dict(width=1, color='#0a0a0a')),
-    fill='tozeroy', fillcolor='rgba(74,222,128,0.1)'))
-eq_fig.update_layout(template='plotly_dark', paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
-    height=360, margin=dict(l=40, r=20, t=50, b=40), font=dict(color='#8a8a99', size=11, family='Inter'), showlegend=False,
+eq_fig.add_trace(go.Scatter(
+    y=main_stats['equity_curve'], mode='lines+markers',
+    line=dict(color='#4ade80', width=3, shape='spline', smoothing=1.3),
+    marker=dict(size=7, color='#4ade80', line=dict(width=1, color='#0a0a0a')),
+    fill='tozeroy', fillcolor='rgba(74,222,128,0.1)'
+))
+eq_fig.update_traces(line_shape='spline')
+eq_fig.update_layout(
+    template='plotly_dark', paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
+    height=340, margin=dict(l=40, r=20, t=50, b=40),
+    font=dict(color='#8a8a99', size=11, family='Inter'), showlegend=False,
     xaxis=dict(gridcolor='rgba(255,255,255,0.04)', zeroline=False),
     yaxis=dict(gridcolor='rgba(255,255,255,0.04)', zeroline=False),
-    title=dict(text='Equity Curve', font=dict(color='#f0f0f0', size=17, family='Inter')))
+    title=dict(text='Equity Curve', font=dict(color='#f0f0f0', size=17, family='Inter'))
+)
 st.plotly_chart(eq_fig, use_container_width=True)
+st.markdown('</div>', unsafe_allow_html=True)
 
+st.markdown('<div class="glass-panel">', unsafe_allow_html=True)
 labels = ['Win', 'Loss', 'Breakeven']
 values = [main_stats.get('wins',0), main_stats.get('losses',0), main_stats.get('breakevens',0)]
 colors = ['#4ade80', '#f87171', '#60a5fa']
 donut_fig = go.Figure(go.Pie(labels=labels, values=values, hole=0.68,
     marker=dict(colors=colors, line=dict(color='#08080d', width=2)), textinfo='label+percent', textfont=dict(size=12, color='#ddd', family='Inter')))
 donut_fig.update_layout(template='plotly_dark', paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
-    height=360, margin=dict(l=20, r=20, t=50, b=20), font=dict(color='#8a8a99', size=11, family='Inter'), showlegend=False,
+    height=340, margin=dict(l=20, r=20, t=50, b=20), font=dict(color='#8a8a99', size=11, family='Inter'), showlegend=False,
     title=dict(text='Result Distribution', font=dict(color='#f0f0f0', size=17, family='Inter')))
 st.plotly_chart(donut_fig, use_container_width=True)
+st.markdown('</div>', unsafe_allow_html=True)
 
 # ============ DIVIDER ============
 st.markdown('<hr class="divider-line">', unsafe_allow_html=True)
