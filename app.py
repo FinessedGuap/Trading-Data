@@ -3,6 +3,7 @@ import requests
 import pandas as pd
 from datetime import datetime
 import calendar as cal_module
+import math
 
 st.set_page_config(page_title="Trading Data", layout="wide", initial_sidebar_state="collapsed")
 
@@ -198,19 +199,19 @@ if max_abs_exp == 0:
 if 'selected_day' not in st.session_state:
     st.session_state.selected_day = None
 
-ACCENT = '#3b82f6'
-ACCENT_LIGHT = '#60a5fa'
-ACCENT_GLOW = 'rgba(59,130,246,0.35)'
+ACCENT = '#60a5fa'
+ACCENT_SOFT = '#7fb2f5'
+ACCENT_GLOW = 'rgba(96,165,250,0.2)'
 
-# ============ CSS — MONOCHROME BLUE ============
+# ============ CSS — BLUE GLASSMORPHISM ============
 css = f"""
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
   .stApp {{
-    background:#0a0e17;
-    background-image: radial-gradient(circle at 15% 10%, rgba(59,130,246,0.07), transparent 35%),
-                       radial-gradient(circle at 85% 0%, rgba(59,130,246,0.05), transparent 35%);
+    background:#070b14;
+    background-image: radial-gradient(circle at 15% 10%, rgba(96,165,250,0.08), transparent 35%),
+                       radial-gradient(circle at 85% 0%, rgba(96,165,250,0.06), transparent 35%);
     font-family: 'Inter', sans-serif;
   }}
 
@@ -222,69 +223,81 @@ css = f"""
 
   .section-label {{
     font-size:0.72em; font-weight:700; letter-spacing:2.5px; text-transform:uppercase;
-    color:{ACCENT_LIGHT}; margin:42px 0 18px; display:flex; align-items:center; gap:10px;
+    color:{ACCENT_SOFT}; margin:42px 0 18px; display:flex; align-items:center; gap:10px;
   }}
   .section-label::after {{ content:''; flex:1; height:1px; background:linear-gradient(90deg, rgba(96,165,250,0.2), transparent); }}
 
   .stat-card {{
-    background: rgba(59,130,246,0.05);
-    border:1px solid rgba(96,165,250,0.18);
-    border-radius:14px; padding:24px 14px; text-align:center;
+    background: rgba(96,165,250,0.08);
+    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    border:1px solid rgba(96,165,250,0.2);
+    border-radius:18px; padding:24px 14px; text-align:center;
     transition: all 0.25s ease;
+    box-shadow: 0 8px 28px rgba(96,165,250,0.08);
   }}
   .stat-card:hover {{
-    border-color: rgba(96,165,250,0.35);
+    border-color: rgba(96,165,250,0.4);
     transform: translateY(-2px);
+    box-shadow: 0 12px 32px rgba(96,165,250,0.15);
   }}
   .stat-value {{ font-size:1.65em; font-weight:700; letter-spacing:-0.3px; color:#fff; }}
-  .stat-label {{ color:{ACCENT_LIGHT}; font-size:0.66em; margin-top:7px; letter-spacing:0.8px; font-weight:600; text-transform:uppercase; }}
+  .stat-label {{ color:{ACCENT_SOFT}; font-size:0.66em; margin-top:7px; letter-spacing:0.8px; font-weight:600; text-transform:uppercase; }}
 
   .divider-line {{ border:none; border-top:1px solid rgba(96,165,250,0.12); margin:42px 0; }}
 
   .glass-panel {{
-    background: rgba(59,130,246,0.04);
-    border:1px solid rgba(96,165,250,0.15);
-    border-radius:16px; padding:24px;
+    background: rgba(96,165,250,0.06);
+    backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+    border:1px solid rgba(96,165,250,0.18);
+    border-radius:20px; padding:24px;
+    box-shadow: 0 12px 36px rgba(96,165,250,0.1);
     margin-bottom:16px;
   }}
 
   .monthly-pl-banner {{
-    background: rgba(59,130,246,0.05);
+    background: rgba(96,165,250,0.06);
+    backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
     border:1px solid rgba(96,165,250,0.18);
-    border-radius:16px; padding:22px;
+    border-radius:20px; padding:22px;
+    box-shadow: 0 12px 36px rgba(96,165,250,0.1);
     text-align:center; margin-bottom:16px;
   }}
   .monthly-pl-label {{ font-size:1.3em; font-weight:800; color:#fff; letter-spacing:-0.3px; }}
 
   .session-bar-track {{ background:rgba(96,165,250,0.1); border-radius:8px; height:16px; overflow:hidden; }}
-  .session-bar-fill {{ height:100%; border-radius:8px; transition: width 0.4s ease; background:linear-gradient(90deg, rgba(59,130,246,0.6), {ACCENT_LIGHT}); }}
+  .session-bar-fill {{ height:100%; border-radius:8px; transition: width 0.4s ease; background:linear-gradient(90deg, rgba(59,130,246,0.6), {ACCENT}); }}
 
-  .cal-header {{ color:{ACCENT_LIGHT}; font-size:0.72em; text-align:center; letter-spacing:1.5px; font-weight:600; text-transform:uppercase; padding:10px 0; }}
-  .cal-day-num {{ color:#4a5a78; font-size:0.78em; font-weight:600; text-align:center; }}
+  .cal-header {{ color:{ACCENT_SOFT}; font-size:0.72em; text-align:center; letter-spacing:1.5px; font-weight:600; text-transform:uppercase; padding:10px 0; }}
+  .cal-day-num {{ color:#3d4a63; font-size:0.78em; font-weight:600; text-align:center; }}
 
   .cal-week-summary {{
-    background: rgba(59,130,246,0.06);
-    border:1px solid rgba(96,165,250,0.18); border-radius:14px; padding:12px 6px;
+    background: rgba(96,165,250,0.08);
+    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    border:1px solid rgba(96,165,250,0.2); border-radius:16px; padding:12px 6px;
     text-align:center; min-height:88px;
+    box-shadow: 0 8px 24px rgba(96,165,250,0.1);
   }}
-  .cal-week-label {{ color:{ACCENT_LIGHT}; font-size:0.68em; font-weight:700; letter-spacing:0.5px; }}
+  .cal-week-label {{ color:{ACCENT_SOFT}; font-size:0.68em; font-weight:700; letter-spacing:0.5px; }}
   .cal-week-r {{ font-size:1.25em; font-weight:700; margin-top:10px; letter-spacing:-0.3px; color:#fff; }}
   .cal-day-trades {{ color:#5a6a88; font-size:0.64em; margin-top:3px; font-weight:500; text-align:center; }}
 
   div[data-testid="stButton"] button {{
-    width:100%; min-height:88px; border-radius:14px;
+    width:100%; min-height:88px; border-radius:16px;
     font-family:'Inter', sans-serif; white-space:pre-line; line-height:1.4;
     transition: all 0.25s ease;
     font-weight:600;
-    background: rgba(59,130,246,0.1) !important;
-    border:1px solid rgba(96,165,250,0.25) !important;
+    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    background: rgba(96,165,250,0.12) !important;
+    border:1px solid rgba(96,165,250,0.3) !important;
     color:#fff !important;
+    box-shadow: 0 8px 24px rgba(96,165,250,0.1) !important;
   }}
-  div[data-testid="stButton"] button:hover {{ transform: translateY(-2px); border-color: rgba(96,165,250,0.5) !important; }}
+  div[data-testid="stButton"] button:hover {{ transform: translateY(-2px) scale(1.02); border-color: rgba(96,165,250,0.5) !important; }}
 
   .trade-detail-card {{
-    background: rgba(59,130,246,0.05);
-    border:1px solid rgba(96,165,250,0.15); border-radius:14px; padding:16px 20px; margin-bottom:10px;
+    background: rgba(96,165,250,0.06);
+    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    border:1px solid rgba(96,165,250,0.18); border-radius:16px; padding:16px 20px; margin-bottom:10px;
   }}
 </style>
 """
@@ -364,8 +377,8 @@ equity_svg = f"""
 <svg viewBox="0 0 {svg_w} {svg_h}" style="width:100%; height:280px; display:block;">
   <defs>
     <linearGradient id="eqFill" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="rgba(59,130,246,0.3)"/>
-      <stop offset="100%" stop-color="rgba(59,130,246,0)"/>
+      <stop offset="0%" stop-color="rgba(96,165,250,0.3)"/>
+      <stop offset="100%" stop-color="rgba(96,165,250,0)"/>
     </linearGradient>
     <filter id="eqGlow" x="-20%" y="-20%" width="140%" height="140%">
       <feGaussianBlur stdDeviation="4" result="blur"/>
@@ -376,13 +389,13 @@ equity_svg = f"""
     </filter>
   </defs>
   <path d="{fill_path}" fill="url(#eqFill)"/>
-  <path d="{line_path}" fill="none" stroke="{ACCENT_LIGHT}" stroke-width="3" stroke-linecap="round" filter="url(#eqGlow)"/>
+  <path d="{line_path}" fill="none" stroke="{ACCENT}" stroke-width="3" stroke-linecap="round" filter="url(#eqGlow)"/>
 </svg>
 """
 
 st.markdown(
     f'<div class="glass-panel">'
-    f'<div style="color:#ddd;font-weight:600;font-size:1.05em;margin-bottom:14px;">Equity Curve</div>'
+    f'<div style="color:#cfe0fb;font-weight:600;font-size:1.05em;margin-bottom:14px;">Equity Curve</div>'
     f'{equity_svg}'
     f'</div>',
     unsafe_allow_html=True
@@ -393,7 +406,6 @@ losses_n = main_stats.get('losses', 0)
 be_n = main_stats.get('breakevens', 0)
 total_n = wins_n + losses_n + be_n if (wins_n + losses_n + be_n) > 0 else 1
 
-import math
 segments = [
     ('Win', wins_n, '#1d4ed8'),
     ('Loss', losses_n, '#3b82f6'),
@@ -444,13 +456,13 @@ donut_svg = f"""
   <g filter="url(#bubbleGlow)">
     {donut_arcs}
   </g>
-  <circle cx="{cx}" cy="{cy}" r="{r_inner - 4}" fill="rgba(59,130,246,0.04)" stroke="rgba(96,165,250,0.15)" stroke-width="1"/>
+  <circle cx="{cx}" cy="{cy}" r="{r_inner - 4}" fill="rgba(96,165,250,0.04)" stroke="rgba(96,165,250,0.15)" stroke-width="1"/>
 </svg>
 """
 
 st.markdown(
     f'<div class="glass-panel">'
-    f'<div style="color:#ddd;font-weight:600;font-size:1.05em;margin-bottom:18px;">Result Distribution</div>'
+    f'<div style="color:#cfe0fb;font-weight:600;font-size:1.05em;margin-bottom:18px;">Result Distribution</div>'
     f'<div style="display:flex;align-items:center;gap:32px;flex-wrap:wrap;">'
     f'<div>{donut_svg}</div>'
     f'<div style="flex:1;min-width:160px;">{legend_html}</div>'
@@ -470,7 +482,7 @@ for s in session_stats:
     bar_pct = round(abs(s['exp']) / max_abs_exp * 100, 1)
     session_rows_html += (
         f'<div style="display:grid;grid-template-columns:100px 1fr 70px 60px 40px;gap:16px;align-items:center;padding:12px 0;">'
-        f'<span style="color:{ACCENT_LIGHT};font-weight:600;">{s["session"]}</span>'
+        f'<span style="color:{ACCENT_SOFT};font-weight:600;">{s["session"]}</span>'
         f'<div class="session-bar-track"><div class="session-bar-fill" style="width:{bar_pct}%;"></div></div>'
         f'<span style="color:#fff;font-weight:700;">{s["exp"]}</span>'
         f'<span style="color:#9ab4dd;font-weight:500;">{s["wr"]}</span>'
@@ -481,11 +493,11 @@ for s in session_stats:
 st.markdown(
     f'<div class="glass-panel">'
     f'<div style="display:grid;grid-template-columns:100px 1fr 70px 60px 40px;gap:16px;padding-bottom:14px;margin-bottom:8px;border-bottom:1px solid rgba(96,165,250,0.12);">'
-    f'<span style="color:{ACCENT_LIGHT};font-size:0.72em;font-weight:600;letter-spacing:0.5px;">VALUE</span>'
-    f'<span style="color:{ACCENT_LIGHT};font-size:0.72em;font-weight:600;letter-spacing:0.5px;">CHART</span>'
-    f'<span style="color:{ACCENT_LIGHT};font-size:0.72em;font-weight:600;letter-spacing:0.5px;">EXP</span>'
-    f'<span style="color:{ACCENT_LIGHT};font-size:0.72em;font-weight:600;letter-spacing:0.5px;">WR</span>'
-    f'<span style="color:{ACCENT_LIGHT};font-size:0.72em;font-weight:600;letter-spacing:0.5px;">N</span>'
+    f'<span style="color:{ACCENT_SOFT};font-size:0.72em;font-weight:600;letter-spacing:0.5px;">VALUE</span>'
+    f'<span style="color:{ACCENT_SOFT};font-size:0.72em;font-weight:600;letter-spacing:0.5px;">CHART</span>'
+    f'<span style="color:{ACCENT_SOFT};font-size:0.72em;font-weight:600;letter-spacing:0.5px;">EXP</span>'
+    f'<span style="color:{ACCENT_SOFT};font-size:0.72em;font-weight:600;letter-spacing:0.5px;">WR</span>'
+    f'<span style="color:{ACCENT_SOFT};font-size:0.72em;font-weight:600;letter-spacing:0.5px;">N</span>'
     f'</div>'
     f'{session_rows_html}'
     f'</div>',
@@ -501,7 +513,7 @@ month_sign = '+' if month_total_r > 0 else ''
 
 st.markdown(
     f'<div class="monthly-pl-banner">'
-    f'<span class="monthly-pl-label">Monthly Total R: <span style="color:{ACCENT_LIGHT};">{month_sign}{round(month_total_r,2)}</span></span>'
+    f'<span class="monthly-pl-label">Monthly Total R: <span style="color:{ACCENT};">{month_sign}{round(month_total_r,2)}</span></span>'
     f'</div>',
     unsafe_allow_html=True
 )
@@ -563,7 +575,7 @@ if st.session_state.selected_day:
         trade_no = trade.get('Trade No.', '—')
         st.markdown(
             f'<div class="trade-detail-card">'
-            f'<span style="color:{ACCENT_LIGHT};font-weight:700;font-size:1.1em;">{label}</span>'
+            f'<span style="color:{ACCENT_SOFT};font-weight:700;font-size:1.1em;">{label}</span>'
             f'<span style="color:#888;"> &nbsp;·&nbsp; Trade #{trade_no} &nbsp;·&nbsp; {pair}</span>'
             f'<span style="color:#fff;font-weight:700;float:right;">{sign}{r_val}R</span>'
             f'</div>',
