@@ -261,9 +261,25 @@ css = f"""
     border:1px solid rgba(96,165,250,0.18);
     border-radius:20px; padding:18px 24px;
     box-shadow: 0 12px 36px rgba(96,165,250,0.1);
-    text-align:center;
+    text-align:center; height:100%;
+    display:flex; align-items:center; justify-content:center;
   }}
   .monthly-pl-label {{ font-size:1.3em; font-weight:800; color:#fff; letter-spacing:-0.3px; }}
+
+  .nav-btn {{
+    background: rgba(96,165,250,0.08) !important;
+    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    border:1px solid rgba(96,165,250,0.2) !important;
+    border-radius:20px !important;
+    color:#fff !important;
+    font-size:1.2em !important;
+    height:100% !important;
+    width:100% !important;
+    min-height:62px !important;
+    box-shadow: 0 8px 24px rgba(96,165,250,0.08) !important;
+    transition: all 0.2s ease !important;
+  }}
+  .nav-btn:hover {{ border-color: rgba(96,165,250,0.4) !important; box-shadow: 0 12px 28px rgba(96,165,250,0.15) !important; }}
 
   .session-bar-track {{ background:rgba(96,165,250,0.1); border-radius:8px; height:16px; overflow:hidden; }}
   .session-bar-fill {{ height:100%; border-radius:8px; background:linear-gradient(90deg, rgba(59,130,246,0.6), {ACCENT}); }}
@@ -287,12 +303,12 @@ css = f"""
     font-family:'Inter', sans-serif; white-space:pre-line; line-height:1.4;
     transition: all 0.25s ease; font-weight:600;
     backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-    background: rgba(96,165,250,0.12) !important;
-    border:1px solid rgba(96,165,250,0.3) !important;
+    background: rgba(96,165,250,0.08) !important;
+    border:1px solid rgba(96,165,250,0.2) !important;
     color:#fff !important;
-    box-shadow: 0 8px 24px rgba(96,165,250,0.1) !important;
+    box-shadow: 0 8px 24px rgba(96,165,250,0.08) !important;
   }}
-  div[data-testid="stButton"] button:hover {{ transform: translateY(-2px) scale(1.02); border-color: rgba(96,165,250,0.5) !important; }}
+  div[data-testid="stButton"] button:hover {{ transform: translateY(-2px); border-color: rgba(96,165,250,0.4) !important; }}
 
   .trade-detail-card {{
     background: rgba(96,165,250,0.06);
@@ -502,8 +518,10 @@ month_total_r = sum(v['total_r'] for k, v in daily_r.items() if k.month == cal_m
 month_sign = '+' if month_total_r > 0 else ''
 month_name = datetime(cal_year, cal_month, 1).strftime("%B %Y")
 
-nav_cols = st.columns([1, 6, 1])
-if nav_cols[0].button("←", key="prev_month"):
+# Nav row built entirely in HTML to keep perfect symmetry
+nav_col_left, nav_col_mid, nav_col_right = st.columns([1, 8, 1])
+
+if nav_col_left.button("←", key="prev_month", use_container_width=True):
     if st.session_state.cal_month == 1:
         st.session_state.cal_month = 12
         st.session_state.cal_year -= 1
@@ -511,14 +529,14 @@ if nav_cols[0].button("←", key="prev_month"):
         st.session_state.cal_month -= 1
     st.rerun()
 
-nav_cols[1].markdown(
+nav_col_mid.markdown(
     f'<div class="monthly-pl-banner">'
     f'<span class="monthly-pl-label">{month_name} &nbsp;·&nbsp; Total R: <span style="color:{ACCENT};">{month_sign}{round(month_total_r,2)}</span></span>'
     f'</div>',
     unsafe_allow_html=True
 )
 
-if nav_cols[2].button("→", key="next_month"):
+if nav_col_right.button("→", key="next_month", use_container_width=True):
     if st.session_state.cal_month == 12:
         st.session_state.cal_month = 1
         st.session_state.cal_year += 1
