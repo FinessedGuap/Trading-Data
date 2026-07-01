@@ -196,14 +196,19 @@ max_abs_exp = max([abs(s['exp']) for s in session_stats]) if session_stats else 
 if max_abs_exp == 0:
     max_abs_exp = 1
 
+today = datetime.now()
+
 if 'selected_day' not in st.session_state:
     st.session_state.selected_day = None
+if 'cal_month' not in st.session_state:
+    st.session_state.cal_month = today.month
+if 'cal_year' not in st.session_state:
+    st.session_state.cal_year = today.year
 
 ACCENT = '#60a5fa'
 ACCENT_SOFT = '#7fb2f5'
 ACCENT_GLOW = 'rgba(96,165,250,0.2)'
 
-# ============ CSS — BLUE GLASSMORPHISM ============
 css = f"""
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
@@ -216,7 +221,7 @@ css = f"""
   }}
 
   .header-title {{
-    font-size:2.1em; font-weight:700; color:#fff; letter-spacing:-0.5px;
+    font-size:2.1em; font-weight:700;
     background: linear-gradient(135deg, #fff 30%, #999 100%);
     -webkit-background-clip: text; -webkit-text-fill-color: transparent;
   }}
@@ -235,11 +240,7 @@ css = f"""
     transition: all 0.25s ease;
     box-shadow: 0 8px 28px rgba(96,165,250,0.08);
   }}
-  .stat-card:hover {{
-    border-color: rgba(96,165,250,0.4);
-    transform: translateY(-2px);
-    box-shadow: 0 12px 32px rgba(96,165,250,0.15);
-  }}
+  .stat-card:hover {{ border-color: rgba(96,165,250,0.4); transform: translateY(-2px); box-shadow: 0 12px 32px rgba(96,165,250,0.15); }}
   .stat-value {{ font-size:1.65em; font-weight:700; letter-spacing:-0.3px; color:#fff; }}
   .stat-label {{ color:{ACCENT_SOFT}; font-size:0.66em; margin-top:7px; letter-spacing:0.8px; font-weight:600; text-transform:uppercase; }}
 
@@ -258,14 +259,14 @@ css = f"""
     background: rgba(96,165,250,0.06);
     backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
     border:1px solid rgba(96,165,250,0.18);
-    border-radius:20px; padding:22px;
+    border-radius:20px; padding:18px 24px;
     box-shadow: 0 12px 36px rgba(96,165,250,0.1);
-    text-align:center; margin-bottom:16px;
+    text-align:center;
   }}
   .monthly-pl-label {{ font-size:1.3em; font-weight:800; color:#fff; letter-spacing:-0.3px; }}
 
   .session-bar-track {{ background:rgba(96,165,250,0.1); border-radius:8px; height:16px; overflow:hidden; }}
-  .session-bar-fill {{ height:100%; border-radius:8px; transition: width 0.4s ease; background:linear-gradient(90deg, rgba(59,130,246,0.6), {ACCENT}); }}
+  .session-bar-fill {{ height:100%; border-radius:8px; background:linear-gradient(90deg, rgba(59,130,246,0.6), {ACCENT}); }}
 
   .cal-header {{ color:{ACCENT_SOFT}; font-size:0.72em; text-align:center; letter-spacing:1.5px; font-weight:600; text-transform:uppercase; padding:10px 0; }}
   .cal-day-num {{ color:#3d4a63; font-size:0.78em; font-weight:600; text-align:center; }}
@@ -284,8 +285,7 @@ css = f"""
   div[data-testid="stButton"] button {{
     width:100%; min-height:88px; border-radius:16px;
     font-family:'Inter', sans-serif; white-space:pre-line; line-height:1.4;
-    transition: all 0.25s ease;
-    font-weight:600;
+    transition: all 0.25s ease; font-weight:600;
     backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
     background: rgba(96,165,250,0.12) !important;
     border:1px solid rgba(96,165,250,0.3) !important;
@@ -304,7 +304,7 @@ css = f"""
 st.markdown(css, unsafe_allow_html=True)
 
 # ============ HEADER ============
-st.markdown(f'<div class="header-title">Trading Data</div>', unsafe_allow_html=True)
+st.markdown('<div class="header-title">Trading Data</div>', unsafe_allow_html=True)
 
 # ============ PERFORMANCE OVERVIEW ============
 st.markdown('<div class="section-label">Performance Overview</div>', unsafe_allow_html=True)
@@ -382,10 +382,7 @@ equity_svg = f"""
     </linearGradient>
     <filter id="eqGlow" x="-20%" y="-20%" width="140%" height="140%">
       <feGaussianBlur stdDeviation="4" result="blur"/>
-      <feMerge>
-        <feMergeNode in="blur"/>
-        <feMergeNode in="SourceGraphic"/>
-      </feMerge>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
     </filter>
   </defs>
   <path d="{fill_path}" fill="url(#eqFill)"/>
@@ -396,8 +393,7 @@ equity_svg = f"""
 st.markdown(
     f'<div class="glass-panel">'
     f'<div style="color:#cfe0fb;font-weight:600;font-size:1.05em;margin-bottom:14px;">Equity Curve</div>'
-    f'{equity_svg}'
-    f'</div>',
+    f'{equity_svg}</div>',
     unsafe_allow_html=True
 )
 
@@ -447,15 +443,10 @@ donut_svg = f"""
   <defs>
     <filter id="bubbleGlow" x="-30%" y="-30%" width="160%" height="160%">
       <feGaussianBlur stdDeviation="6" result="blur"/>
-      <feMerge>
-        <feMergeNode in="blur"/>
-        <feMergeNode in="SourceGraphic"/>
-      </feMerge>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
     </filter>
   </defs>
-  <g filter="url(#bubbleGlow)">
-    {donut_arcs}
-  </g>
+  <g filter="url(#bubbleGlow)">{donut_arcs}</g>
   <circle cx="{cx}" cy="{cy}" r="{r_inner - 4}" fill="rgba(96,165,250,0.04)" stroke="rgba(96,165,250,0.15)" stroke-width="1"/>
 </svg>
 """
@@ -466,8 +457,7 @@ st.markdown(
     f'<div style="display:flex;align-items:center;gap:32px;flex-wrap:wrap;">'
     f'<div>{donut_svg}</div>'
     f'<div style="flex:1;min-width:160px;">{legend_html}</div>'
-    f'</div>'
-    f'</div>',
+    f'</div></div>',
     unsafe_allow_html=True
 )
 
@@ -499,27 +489,47 @@ st.markdown(
     f'<span style="color:{ACCENT_SOFT};font-size:0.72em;font-weight:600;letter-spacing:0.5px;">WR</span>'
     f'<span style="color:{ACCENT_SOFT};font-size:0.72em;font-weight:600;letter-spacing:0.5px;">N</span>'
     f'</div>'
-    f'{session_rows_html}'
-    f'</div>',
+    f'{session_rows_html}</div>',
     unsafe_allow_html=True
 )
 
 # ============ MONTHLY CALENDAR ============
 st.markdown('<hr class="divider-line">', unsafe_allow_html=True)
 
-today = datetime.now()
-month_total_r = sum(v['total_r'] for k, v in daily_r.items() if k.month == today.month and k.year == today.year)
+cal_month = st.session_state.cal_month
+cal_year = st.session_state.cal_year
+month_total_r = sum(v['total_r'] for k, v in daily_r.items() if k.month == cal_month and k.year == cal_year)
 month_sign = '+' if month_total_r > 0 else ''
+month_name = datetime(cal_year, cal_month, 1).strftime("%B %Y")
 
-st.markdown(
+nav_cols = st.columns([1, 6, 1])
+if nav_cols[0].button("←", key="prev_month"):
+    if st.session_state.cal_month == 1:
+        st.session_state.cal_month = 12
+        st.session_state.cal_year -= 1
+    else:
+        st.session_state.cal_month -= 1
+    st.rerun()
+
+nav_cols[1].markdown(
     f'<div class="monthly-pl-banner">'
-    f'<span class="monthly-pl-label">Monthly Total R: <span style="color:{ACCENT};">{month_sign}{round(month_total_r,2)}</span></span>'
+    f'<span class="monthly-pl-label">{month_name} &nbsp;·&nbsp; Total R: <span style="color:{ACCENT};">{month_sign}{round(month_total_r,2)}</span></span>'
     f'</div>',
     unsafe_allow_html=True
 )
 
+if nav_cols[2].button("→", key="next_month"):
+    if st.session_state.cal_month == 12:
+        st.session_state.cal_month = 1
+        st.session_state.cal_year += 1
+    else:
+        st.session_state.cal_month += 1
+    st.rerun()
+
+st.write("")
+
 cal_module.setfirstweekday(cal_module.MONDAY)
-month_matrix = cal_module.monthcalendar(today.year, today.month)
+month_matrix = cal_module.monthcalendar(cal_year, cal_month)
 
 day_header_cols = st.columns(8)
 for i, d in enumerate(['Mo','Tu','We','Th','Fr','Sa','Su']):
@@ -536,7 +546,7 @@ for week_num, week in enumerate(month_matrix):
         if day_num == 0:
             week_cols[i].markdown('<div style="min-height:88px;"></div>', unsafe_allow_html=True)
         else:
-            day_date = datetime(today.year, today.month, day_num).date()
+            day_date = datetime(cal_year, cal_month, day_num).date()
             day_data = daily_r.get(day_date)
             if day_data:
                 week_total += day_data['total_r']
