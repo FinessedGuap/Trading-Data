@@ -86,11 +86,12 @@ def calc_stats(df_in):
     non_breakeven = stats['wins'] + stats['losses']
     stats['win_rate'] = round(stats['wins'] / non_breakeven * 100, 1) if non_breakeven > 0 else 0
     stats['total_r'] = round(r.sum(), 2)
-    stats['expectancy'] = round(r.sum() / len(r), 2)
+    stats['avg_r'] = round(r.mean(), 2)
     stats['avg_win'] = round(r[r > 0].mean(), 2) if stats['wins'] > 0 else 0
     stats['avg_loss'] = round(r[r < 0].mean(), 2) if stats['losses'] > 0 else 0
     stats['best_trade'] = round(r.max(), 2)
     stats['worst_trade'] = round(r.min(), 2)
+    stats['expectancy'] = round(r.sum() / len(r), 2)
     equity = r.cumsum()
     peak = equity.cummax()
     drawdown = equity - peak
@@ -180,6 +181,20 @@ def catmull(points):
         d += f"C{c1x:.1f},{c1y:.1f} {c2x:.1f},{c2y:.1f} {p2[0]:.1f},{p2[1]:.1f} "
     return d
 
+def make_curve(eq, svg_w, svg_h):
+    if not eq:
+        return "", ""
+    mn = min(min(eq), 0)
+    mx = max(eq)
+    rng = (mx - mn) if (mx - mn) != 0 else 1
+    n = len(eq)
+    pts = [((i / (n-1)) * svg_w if n > 1 else 0,
+             svg_h - ((v - mn) / rng) * (svg_h - 20) - 10)
+            for i, v in enumerate(eq)]
+    line = catmull(pts)
+    fill = line + f"L{svg_w},{svg_h} L0,{svg_h} Z"
+    return line, fill
+
 def build_donut(wins, losses, breakevens, colors, glow_color):
     total = wins + losses + breakevens if (wins + losses + breakevens) > 0 else 1
     segments = [('Win', wins, colors[0]), ('Loss', losses, colors[1]), ('Breakeven', breakevens, colors[2])]
@@ -187,7 +202,6 @@ def build_donut(wins, losses, breakevens, colors, glow_color):
     start_angle = -90
     arcs = ""
     legend = ""
-    filter_id = f"dg_{colors[0].replace('#','')}"
     for label, val, color in segments:
         if val == 0:
             continue
@@ -213,16 +227,17 @@ def build_donut(wins, losses, breakevens, colors, glow_color):
             f'</div>'
         )
         start_angle = end_angle
+    filter_id = f"dg{colors[0].replace('#','')}"
     svg = f"""<svg viewBox="0 0 220 220" style="width:180px;height:180px;display:block;">
-  <defs>
-    <filter id="{filter_id}" x="-30%" y="-30%" width="160%" height="160%">
-      <feGaussianBlur stdDeviation="6" result="blur"/>
-      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
-    </filter>
-  </defs>
-  <g filter="url(#{filter_id})">{arcs}</g>
-  <circle cx="{cx}" cy="{cy}" r="{r_inner-4}" fill="rgba(0,0,0,0.2)" stroke="{colors[0]}33" stroke-width="1"/>
-</svg>"""
+      <defs>
+        <filter id="{filter_id}" x="-30%" y="-30%" width="160%" height="160%">
+          <feGaussianBlur stdDeviation="6" result="blur"/>
+          <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+      </defs>
+      <g filter="url(#{filter_id})">{arcs}</g>
+      <circle cx="{cx}" cy="{cy}" r="{r_inner-4}" fill="rgba(0,0,0,0.2)" stroke="{colors[0]}33" stroke-width="1"/>
+    </svg>"""
     return svg, legend
 
 def render_stats_panel(stats, label_color):
@@ -230,6 +245,7 @@ def render_stats_panel(stats, label_color):
         ('Total Trades', stats.get('total_trades','—')),
         ('Win Rate', f"{stats.get('win_rate','—')}%"),
         ('Total R', stats.get('total_r','—')),
+        ('Avg R / Trade', stats.get('avg_r','—')),
         ('Expectancy', stats.get('expectancy','—')),
         ('Avg Win', stats.get('avg_win','—')),
         ('Avg Loss', stats.get('avg_loss','—')),
@@ -247,7 +263,7 @@ def render_stats_panel(stats, label_color):
         cols = st.columns(len(row_data))
         for col, (label, value) in zip(cols, row_data):
             col.markdown(
-                f'<div class="stat-card" style="border-color:{label_color}33;">'
+                f'<div class="stat-card" style="border-color:{label_color}44;">'
                 f'<div class="stat-value">{value}</div>'
                 f'<div class="stat-label" style="color:{label_color};">{label}</div>'
                 f'</div>',
@@ -255,7 +271,7 @@ def render_stats_panel(stats, label_color):
             )
         st.write("")
 
-# Load data
+# ============ LOAD DATA ============
 with st.spinner("Pulling fresh data from Notion..."):
     raw_trades = get_all_trades()
     rows = []
@@ -274,6 +290,7 @@ with st.spinner("Pulling fresh data from Notion..."):
 
     df_main = df.copy()
     df_main = df_main.sort_values('Date').reset_index(drop=True)
+
     df_xau = df_main[df_main['Pair'] == 'XAUUSD'].copy()
     df_nas = df_main[df_main['Pair'] == 'NASDAQ'].copy()
 
@@ -304,12 +321,12 @@ GOLD = '#f59e0b'
 GOLD_SOFT = '#fcd34d'
 PURPLE = '#a78bfa'
 PURPLE_SOFT = '#c4b5fd'
-
-BANNER_STYLE = "background:rgba(96,165,250,0.06);backdrop-filter:blur(24px);border:1px solid rgba(96,165,250,0.18);border-radius:12px;padding:0 24px;height:44px;display:flex;align-items:center;justify-content:center;"
+NAV_H = '62px'
 
 css = f"""
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
   .stApp {{
     background:#070b14;
     background-image: radial-gradient(circle at 15% 10%, rgba(96,165,250,0.08), transparent 35%),
@@ -329,30 +346,40 @@ css = f"""
   .stat-card {{
     background: rgba(96,165,250,0.06);
     backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-    border:1px solid rgba(96,165,250,0.15);
-    border-radius:14px; padding:16px 10px; text-align:center;
+    border:1px solid rgba(96,165,250,0.2);
+    border-radius:18px; padding:24px 14px; text-align:center;
     transition: all 0.25s ease;
+    box-shadow: 0 8px 28px rgba(96,165,250,0.06);
   }}
-  .stat-card:hover {{ border-color: rgba(96,165,250,0.4); transform: translateY(-2px); }}
-  .stat-value {{ font-size:1.3em; font-weight:700; letter-spacing:-0.3px; color:#fff; }}
-  .stat-label {{ font-size:0.6em; margin-top:6px; letter-spacing:0.8px; font-weight:600; text-transform:uppercase; }}
+  .stat-card:hover {{ transform: translateY(-2px); }}
+  .stat-value {{ font-size:1.65em; font-weight:700; letter-spacing:-0.3px; color:#fff; }}
+  .stat-label {{ font-size:0.66em; margin-top:7px; letter-spacing:0.8px; font-weight:600; text-transform:uppercase; }}
   .divider-line {{ border:none; border-top:1px solid rgba(96,165,250,0.12); margin:42px 0; }}
   .glass-panel {{
-    background: rgba(96,165,250,0.06);
+    background: rgba(96,165,250,0.05);
     backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
-    border:1px solid rgba(96,165,250,0.18);
+    border:1px solid rgba(96,165,250,0.15);
     border-radius:20px; padding:24px;
-    box-shadow: 0 12px 36px rgba(96,165,250,0.1);
+    box-shadow: 0 12px 36px rgba(96,165,250,0.08);
     margin-bottom:16px;
   }}
+  .nav-banner {{
+    background: rgba(96,165,250,0.05);
+    backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+    border:1px solid rgba(96,165,250,0.15);
+    border-radius:20px; padding:0 24px;
+    text-align:center; display:flex; align-items:center; justify-content:center;
+    min-height:{NAV_H}; box-sizing:border-box;
+  }}
+  .nav-label {{ font-size:1.3em; font-weight:800; color:#fff; letter-spacing:-0.3px; }}
   .session-bar-track {{ background:rgba(96,165,250,0.1); border-radius:8px; height:16px; overflow:hidden; }}
   .session-bar-fill {{ height:100%; border-radius:8px; background:linear-gradient(90deg, rgba(59,130,246,0.6), {ACCENT}); }}
   .cal-header {{ color:{ACCENT_SOFT}; font-size:0.72em; text-align:center; letter-spacing:1.5px; font-weight:600; text-transform:uppercase; padding:10px 0; }}
   .cal-day-num {{ color:#3d4a63; font-size:0.78em; font-weight:600; text-align:center; }}
   .cal-week-summary {{
-    background: rgba(96,165,250,0.08);
+    background: rgba(96,165,250,0.06);
     backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-    border:1px solid rgba(96,165,250,0.2); border-radius:16px; padding:12px 6px;
+    border:1px solid rgba(96,165,250,0.18); border-radius:16px; padding:12px 6px;
     text-align:center; min-height:88px;
   }}
   .cal-week-label {{ color:{ACCENT_SOFT}; font-size:0.68em; font-weight:700; letter-spacing:0.5px; }}
@@ -362,19 +389,26 @@ css = f"""
     width:100%; min-height:88px; border-radius:16px;
     font-family:'Inter', sans-serif; white-space:pre-line; line-height:1.4;
     transition: all 0.25s ease; font-weight:600;
-    background: rgba(96,165,250,0.08) !important;
-    border:1px solid rgba(96,165,250,0.2) !important;
+    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    background: rgba(96,165,250,0.06) !important;
+    border:1px solid rgba(96,165,250,0.18) !important;
     color:#fff !important;
   }}
   div[data-testid="stButton"] button:hover {{ transform: translateY(-2px); border-color: rgba(96,165,250,0.4) !important; }}
-  .trade-detail-card {{
-    background: rgba(96,165,250,0.06);
-    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-    border:1px solid rgba(96,165,250,0.18); border-radius:16px; padding:16px 20px; margin-bottom:10px;
+  div[data-testid="column"]:first-child div[data-testid="stButton"] button,
+  div[data-testid="column"]:last-child div[data-testid="stButton"] button {{
+    min-height:{NAV_H} !important;
+    border-radius:20px !important;
+    font-size:1.2em !important;
   }}
-  .eq-legend {{ display:flex; gap:24px; margin-bottom:12px; }}
+  .trade-detail-card {{
+    background: rgba(96,165,250,0.05);
+    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    border:1px solid rgba(96,165,250,0.15); border-radius:16px; padding:16px 20px; margin-bottom:10px;
+  }}
+  .eq-legend {{ display:flex; gap:24px; margin-bottom:12px; flex-wrap:wrap; }}
   .eq-legend-item {{ display:flex; align-items:center; gap:8px; font-size:0.82em; font-weight:600; }}
-  .eq-legend-dot {{ width:24px; height:3px; border-radius:2px; }}
+  .eq-legend-dot {{ width:28px; height:3px; border-radius:2px; }}
 </style>
 """
 st.markdown(css, unsafe_allow_html=True)
@@ -394,18 +428,17 @@ overviews = [
 idx = st.session_state.overview_idx
 current = overviews[idx]
 
-# Nav row — use HTML for banner, Streamlit buttons for arrows in narrow cols
-c_prev, c_banner, c_next = st.columns([1, 14, 1])
-if c_prev.button("←", key="prev_overview", use_container_width=True):
+nav_l, nav_mid, nav_r = st.columns([1, 8, 1])
+if nav_l.button("←", key="prev_overview", use_container_width=True):
     st.session_state.overview_idx = (idx - 1) % len(overviews)
     st.rerun()
-c_banner.markdown(
-    f'<div style="{BANNER_STYLE}">'
-    f'<span style="font-size:1.05em;font-weight:700;color:{current["color"]};">{current["label"]} Performance</span>'
+nav_mid.markdown(
+    f'<div class="nav-banner">'
+    f'<span class="nav-label" style="color:{current["color"]};">{current["label"]} Performance</span>'
     f'</div>',
     unsafe_allow_html=True
 )
-if c_next.button("→", key="next_overview", use_container_width=True):
+if nav_r.button("→", key="next_overview", use_container_width=True):
     st.session_state.overview_idx = (idx + 1) % len(overviews)
     st.rerun()
 
@@ -417,36 +450,26 @@ st.markdown('<div class="section-label">Charts</div>', unsafe_allow_html=True)
 
 xau_eq = xau_stats.get('equity_curve', [])
 nas_eq = nas_stats.get('equity_curve', [])
+svg_w, svg_h = 800, 200
 
-if xau_eq or nas_eq:
-    svg_w, svg_h = 800, 200
+xau_line, xau_fill = make_curve(xau_eq, svg_w, svg_h)
+nas_line, nas_fill = make_curve(nas_eq, svg_w, svg_h)
 
-    xau_max = max(xau_eq) if xau_eq else 1
-    xau_min = min(min(xau_eq), 0) if xau_eq else 0
-    xau_range = (xau_max - xau_min) if (xau_max - xau_min) != 0 else 1
+xau_fill_path = f'<path d="{xau_fill}" fill="url(#xauFill)" opacity="0.5"/>' if xau_fill else ''
+nas_fill_path = f'<path d="{nas_fill}" fill="url(#nasFill)" opacity="0.4"/>' if nas_fill else ''
+xau_line_path = f'<path d="{xau_line}" fill="none" stroke="{GOLD}" stroke-width="3" stroke-linecap="round" filter="url(#xauGlow)"/>' if xau_line else ''
+nas_line_path = f'<path d="{nas_line}" fill="none" stroke="{ACCENT}" stroke-width="3" stroke-linecap="round" filter="url(#nasGlow)"/>' if nas_line else ''
 
-    nas_max = max(nas_eq) if nas_eq else 1
-    nas_min = min(min(nas_eq), 0) if nas_eq else 0
-    nas_range = (nas_max - nas_min) if (nas_max - nas_min) != 0 else 1
-
-    def xp(i, total):
-        return (i / (total - 1)) * svg_w if total > 1 else 0
-    def yp_xau(v):
-        return svg_h - ((v - xau_min) / xau_range) * (svg_h - 20) - 10
-    def yp_nas(v):
-        return svg_h - ((v - nas_min) / nas_range) * (svg_h - 20) - 10
-
-    xau_pts = [(xp(i, len(xau_eq)), yp_xau(v)) for i, v in enumerate(xau_eq)] if xau_eq else []
-    nas_pts = [(xp(i, len(nas_eq)), yp_nas(v)) for i, v in enumerate(nas_eq)] if nas_eq else []
-
-    xau_line = catmull(xau_pts)
-    nas_line = catmull(nas_pts)
-
-    xau_line_path = f'<path d="{xau_line}" fill="none" stroke="{GOLD}" stroke-width="3" stroke-linecap="round" filter="url(#xauGlow)"/>' if xau_line else ''
-    nas_line_path = f'<path d="{nas_line}" fill="none" stroke="{PURPLE}" stroke-width="3" stroke-linecap="round" filter="url(#nasGlow)"/>' if nas_line else ''
-
-    combined_svg = f"""<svg viewBox="0 0 {svg_w} {svg_h}" style="width:100%; height:280px; display:block;">
+combined_svg = f"""<svg viewBox="0 0 {svg_w} {svg_h}" style="width:100%; height:280px; display:block;">
   <defs>
+    <linearGradient id="xauFill" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="rgba(245,158,11,0.3)"/>
+      <stop offset="100%" stop-color="rgba(245,158,11,0)"/>
+    </linearGradient>
+    <linearGradient id="nasFill" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="rgba(96,165,250,0.3)"/>
+      <stop offset="100%" stop-color="rgba(96,165,250,0)"/>
+    </linearGradient>
     <filter id="xauGlow" x="-20%" y="-20%" width="140%" height="140%">
       <feGaussianBlur stdDeviation="4" result="blur"/>
       <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
@@ -456,29 +479,29 @@ if xau_eq or nas_eq:
       <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
     </filter>
   </defs>
+  {xau_fill_path}
+  {nas_fill_path}
   {xau_line_path}
   {nas_line_path}
 </svg>"""
 
-    xau_n = len(xau_eq)
-    nas_n = len(nas_eq)
-    legend_html = f"""<div class="eq-legend">
+legend_html = f"""<div class="eq-legend">
   <div class="eq-legend-item">
     <div class="eq-legend-dot" style="background:{GOLD};box-shadow:0 0 6px {GOLD};"></div>
-    <span style="color:{GOLD_SOFT};">XAUUSD ({xau_n} trades)</span>
+    <span style="color:{GOLD_SOFT};">XAUUSD ({len(xau_eq)} trades)</span>
   </div>
   <div class="eq-legend-item">
-    <div class="eq-legend-dot" style="background:{PURPLE};box-shadow:0 0 6px {PURPLE};"></div>
-    <span style="color:{PURPLE_SOFT};">NASDAQ ({nas_n} trades)</span>
+    <div class="eq-legend-dot" style="background:{ACCENT};box-shadow:0 0 6px {ACCENT};"></div>
+    <span style="color:{ACCENT_SOFT};">NASDAQ ({len(nas_eq)} trades)</span>
   </div>
 </div>"""
 
-    st.markdown(
-        f'<div class="glass-panel">'
-        f'<div style="color:#cfe0fb;font-weight:600;font-size:1.05em;margin-bottom:8px;">Equity Curve</div>'
-        f'{legend_html}{combined_svg}</div>',
-        unsafe_allow_html=True
-    )
+st.markdown(
+    f'<div class="glass-panel">'
+    f'<div style="color:#cfe0fb;font-weight:600;font-size:1.05em;margin-bottom:8px;">Equity Curve</div>'
+    f'{legend_html}{combined_svg}</div>',
+    unsafe_allow_html=True
+)
 
 # Three donuts
 donut_configs = [
@@ -494,7 +517,7 @@ donut_cols = st.columns(3)
 for col, (label, w, l, b, colors, glow, title_color) in zip(donut_cols, donut_configs):
     svg, legend = build_donut(w, l, b, colors, glow)
     col.markdown(
-        f'<div class="glass-panel" style="border-color:{colors[1]}33;">'
+        f'<div class="glass-panel" style="border-color:{colors[1]}44;">'
         f'<div style="color:{title_color};font-weight:600;font-size:1em;margin-bottom:14px;">{label}</div>'
         f'<div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">'
         f'<div>{svg}</div>'
@@ -544,21 +567,24 @@ month_total_r = sum(v['total_r'] for k, v in daily_r.items() if k.month == cal_m
 month_sign = '+' if month_total_r > 0 else ''
 month_name = datetime(cal_year, cal_month, 1).strftime("%B %Y")
 
-c_cal_prev, c_cal_mid, c_cal_next = st.columns([1, 14, 1])
-if c_cal_prev.button("←", key="prev_month", use_container_width=True):
+nav_col_left, nav_col_mid, nav_col_right = st.columns([1, 8, 1])
+
+if nav_col_left.button("←", key="prev_month", use_container_width=True):
     if st.session_state.cal_month == 1:
         st.session_state.cal_month = 12
         st.session_state.cal_year -= 1
     else:
         st.session_state.cal_month -= 1
     st.rerun()
-c_cal_mid.markdown(
-    f'<div style="{BANNER_STYLE}">'
-    f'<span style="font-size:1.05em;font-weight:700;color:#fff;">{month_name} &nbsp;·&nbsp; Total R: <span style="color:{ACCENT};">{month_sign}{round(month_total_r,2)}</span></span>'
+
+nav_col_mid.markdown(
+    f'<div class="nav-banner">'
+    f'<span class="nav-label">{month_name} &nbsp;·&nbsp; Total R: <span style="color:{ACCENT};">{month_sign}{round(month_total_r,2)}</span></span>'
     f'</div>',
     unsafe_allow_html=True
 )
-if c_cal_next.button("→", key="next_month", use_container_width=True):
+
+if nav_col_right.button("→", key="next_month", use_container_width=True):
     if st.session_state.cal_month == 12:
         st.session_state.cal_month = 1
         st.session_state.cal_year += 1
