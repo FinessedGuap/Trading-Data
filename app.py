@@ -458,7 +458,7 @@ nas_line, nas_fill = make_curve(nas_eq, svg_w, svg_h)
 xau_fill_path = f'<path d="{xau_fill}" fill="url(#xauFill)" opacity="0.5"/>' if xau_fill else ''
 nas_fill_path = f'<path d="{nas_fill}" fill="url(#nasFill)" opacity="0.4"/>' if nas_fill else ''
 xau_line_path = f'<path d="{xau_line}" fill="none" stroke="{GOLD}" stroke-width="3" stroke-linecap="round" filter="url(#xauGlow)"/>' if xau_line else ''
-nas_line_path = f'<path d="{nas_line}" fill="none" stroke="{ACCENT}" stroke-width="3" stroke-linecap="round" filter="url(#nasGlow)"/>' if nas_line else ''
+nas_line_path = f'<path d="{nas_line}" fill="none" stroke="{PURPLE}" stroke-width="3" stroke-linecap="round" filter="url(#nasGlow)"/>' if nas_line else ''
 
 combined_svg = f"""<svg viewBox="0 0 {svg_w} {svg_h}" style="width:100%; height:280px; display:block;">
   <defs>
@@ -467,8 +467,8 @@ combined_svg = f"""<svg viewBox="0 0 {svg_w} {svg_h}" style="width:100%; height:
       <stop offset="100%" stop-color="rgba(245,158,11,0)"/>
     </linearGradient>
     <linearGradient id="nasFill" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="rgba(96,165,250,0.3)"/>
-      <stop offset="100%" stop-color="rgba(96,165,250,0)"/>
+      <stop offset="0%" stop-color="rgba(167,139,250,0.3)"/>
+      <stop offset="100%" stop-color="rgba(167,139,250,0)"/>
     </linearGradient>
     <filter id="xauGlow" x="-20%" y="-20%" width="140%" height="140%">
       <feGaussianBlur stdDeviation="4" result="blur"/>
@@ -491,8 +491,8 @@ legend_html = f"""<div class="eq-legend">
     <span style="color:{GOLD_SOFT};">XAUUSD ({len(xau_eq)} trades)</span>
   </div>
   <div class="eq-legend-item">
-    <div class="eq-legend-dot" style="background:{ACCENT};box-shadow:0 0 6px {ACCENT};"></div>
-    <span style="color:{ACCENT_SOFT};">NASDAQ ({len(nas_eq)} trades)</span>
+    <div class="eq-legend-dot" style="background:{PURPLE};box-shadow:0 0 6px {PURPLE};"></div>
+    <span style="color:{PURPLE_SOFT};">NASDAQ ({len(nas_eq)} trades)</span>
   </div>
 </div>"""
 
