@@ -522,8 +522,12 @@ if all_vals:
     xau_n = len(xau_eq)
     nas_n = len(nas_eq)
 
-    combined_svg = f"""
-    <svg viewBox="0 0 {svg_w} {svg_h}" style="width:100%; height:280px; display:block;">
+    xau_fill_path = f'<path d="{xau_fill}" fill="url(#xauFill)" opacity="0.5"/>' if xau_fill else ''
+    nas_fill_path = f'<path d="{nas_fill}" fill="url(#nasFill)" opacity="0.5"/>' if nas_fill else ''
+    xau_line_path = f'<path d="{xau_line}" fill="none" stroke="{GOLD}" stroke-width="3" stroke-linecap="round" filter="url(#xauGlow)"/>' if xau_line else ''
+    nas_line_path = f'<path d="{nas_line}" fill="none" stroke="{ACCENT}" stroke-width="3" stroke-linecap="round" filter="url(#nasGlow)"/>' if nas_line else ''
+
+    combined_svg = f"""<svg viewBox="0 0 {svg_w} {svg_h}" style="width:100%; height:280px; display:block;">
       <defs>
         <linearGradient id="xauFill" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stop-color="rgba(245,158,11,0.3)"/>
@@ -542,12 +546,11 @@ if all_vals:
           <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
         </filter>
       </defs>
-      {'<path d="' + xau_fill + '" fill="url(#xauFill)" opacity="0.5"/>' if xau_fill else ''}
-      {'<path d="' + nas_fill + '" fill="url(#nasFill)" opacity="0.5"/>' if nas_fill else ''}
-      {'<path d="' + xau_line + '" fill="none" stroke="' + GOLD + '" stroke-width="3" stroke-linecap="round" filter="url(#xauGlow)"/>' if xau_line else ''}
-      {'<path d="' + nas_line + '" fill="none" stroke="' + ACCENT + '" stroke-width="3" stroke-linecap="round" filter="url(#nasGlow)"/>' if nas_line else ''}
-    </svg>
-    """
+      {xau_fill_path}
+      {nas_fill_path}
+      {xau_line_path}
+      {nas_line_path}
+    </svg>"""
 
     legend_html = f"""
     <div class="eq-legend">
