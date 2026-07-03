@@ -305,6 +305,8 @@ GOLD_SOFT = '#fcd34d'
 PURPLE = '#a78bfa'
 PURPLE_SOFT = '#c4b5fd'
 
+BANNER_STYLE = "background:rgba(96,165,250,0.06);backdrop-filter:blur(24px);border:1px solid rgba(96,165,250,0.18);border-radius:12px;padding:0 24px;height:44px;display:flex;align-items:center;justify-content:center;"
+
 css = f"""
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
@@ -343,35 +345,6 @@ css = f"""
     box-shadow: 0 12px 36px rgba(96,165,250,0.1);
     margin-bottom:16px;
   }}
-  .nav-banner {{
-    background: rgba(96,165,250,0.06);
-    backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
-    border:1px solid rgba(96,165,250,0.18);
-    border-radius:12px; padding:0 24px;
-    box-shadow: 0 8px 24px rgba(96,165,250,0.08);
-    text-align:center; display:flex; align-items:center; justify-content:center;
-    height:48px;
-  }}
-  .nav-banner-label {{ font-size:1.05em; font-weight:700; color:#fff; letter-spacing:-0.2px; }}
-  div[data-testid="stButton"] button {{
-    width:100%; min-height:88px; border-radius:16px;
-    font-family:'Inter', sans-serif; white-space:pre-line; line-height:1.4;
-    transition: all 0.25s ease; font-weight:600;
-    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-    background: rgba(96,165,250,0.08) !important;
-    border:1px solid rgba(96,165,250,0.2) !important;
-    color:#fff !important;
-    box-shadow: 0 8px 24px rgba(96,165,250,0.08) !important;
-  }}
-  div[data-testid="stButton"] button:hover {{ transform: translateY(-2px); border-color: rgba(96,165,250,0.4) !important; }}
-  .nav-arrow-col div[data-testid="stButton"] button {{
-    min-height:48px !important;
-    max-height:48px !important;
-    height:48px !important;
-    border-radius:12px !important;
-    font-size:1.1em !important;
-    padding:0 !important;
-  }}
   .session-bar-track {{ background:rgba(96,165,250,0.1); border-radius:8px; height:16px; overflow:hidden; }}
   .session-bar-fill {{ height:100%; border-radius:8px; background:linear-gradient(90deg, rgba(59,130,246,0.6), {ACCENT}); }}
   .cal-header {{ color:{ACCENT_SOFT}; font-size:0.72em; text-align:center; letter-spacing:1.5px; font-weight:600; text-transform:uppercase; padding:10px 0; }}
@@ -385,6 +358,15 @@ css = f"""
   .cal-week-label {{ color:{ACCENT_SOFT}; font-size:0.68em; font-weight:700; letter-spacing:0.5px; }}
   .cal-week-r {{ font-size:1.25em; font-weight:700; margin-top:10px; color:#fff; }}
   .cal-day-trades {{ color:#5a6a88; font-size:0.64em; margin-top:3px; font-weight:500; text-align:center; }}
+  div[data-testid="stButton"] button {{
+    width:100%; min-height:88px; border-radius:16px;
+    font-family:'Inter', sans-serif; white-space:pre-line; line-height:1.4;
+    transition: all 0.25s ease; font-weight:600;
+    background: rgba(96,165,250,0.08) !important;
+    border:1px solid rgba(96,165,250,0.2) !important;
+    color:#fff !important;
+  }}
+  div[data-testid="stButton"] button:hover {{ transform: translateY(-2px); border-color: rgba(96,165,250,0.4) !important; }}
   .trade-detail-card {{
     background: rgba(96,165,250,0.06);
     backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
@@ -412,25 +394,20 @@ overviews = [
 idx = st.session_state.overview_idx
 current = overviews[idx]
 
-nav_l, nav_mid, nav_r = st.columns([1, 12, 1])
-with nav_l:
-    st.markdown('<div class="nav-arrow-col">', unsafe_allow_html=True)
-    if st.button("←", key="prev_overview", use_container_width=True):
-        st.session_state.overview_idx = (idx - 1) % len(overviews)
-        st.rerun()
-    st.markdown('</div>', unsafe_allow_html=True)
-nav_mid.markdown(
-    f'<div class="nav-banner" style="margin-bottom:0;">'
-    f'<span class="nav-banner-label" style="color:{current["color"]};">{current["label"]} Performance</span>'
+# Nav row — use HTML for banner, Streamlit buttons for arrows in narrow cols
+c_prev, c_banner, c_next = st.columns([1, 14, 1])
+if c_prev.button("←", key="prev_overview", use_container_width=True):
+    st.session_state.overview_idx = (idx - 1) % len(overviews)
+    st.rerun()
+c_banner.markdown(
+    f'<div style="{BANNER_STYLE}">'
+    f'<span style="font-size:1.05em;font-weight:700;color:{current["color"]};">{current["label"]} Performance</span>'
     f'</div>',
     unsafe_allow_html=True
 )
-with nav_r:
-    st.markdown('<div class="nav-arrow-col">', unsafe_allow_html=True)
-    if st.button("→", key="next_overview", use_container_width=True):
-        st.session_state.overview_idx = (idx + 1) % len(overviews)
-        st.rerun()
-    st.markdown('</div>', unsafe_allow_html=True)
+if c_next.button("→", key="next_overview", use_container_width=True):
+    st.session_state.overview_idx = (idx + 1) % len(overviews)
+    st.rerun()
 
 st.write("")
 render_stats_panel(current['stats'], current['color'])
@@ -464,24 +441,12 @@ if xau_eq or nas_eq:
 
     xau_line = catmull(xau_pts)
     nas_line = catmull(nas_pts)
-    xau_fill = xau_line + f"L{svg_w},{svg_h} L0,{svg_h} Z" if xau_line else ""
-    nas_fill = nas_line + f"L{svg_w},{svg_h} L0,{svg_h} Z" if nas_line else ""
 
-    xau_fill_path = f'<path d="{xau_fill}" fill="url(#xauFill)" opacity="0.4"/>' if xau_fill else ''
-    nas_fill_path = f'<path d="{nas_fill}" fill="url(#nasFill)" opacity="0.4"/>' if nas_fill else ''
     xau_line_path = f'<path d="{xau_line}" fill="none" stroke="{GOLD}" stroke-width="3" stroke-linecap="round" filter="url(#xauGlow)"/>' if xau_line else ''
     nas_line_path = f'<path d="{nas_line}" fill="none" stroke="{PURPLE}" stroke-width="3" stroke-linecap="round" filter="url(#nasGlow)"/>' if nas_line else ''
 
     combined_svg = f"""<svg viewBox="0 0 {svg_w} {svg_h}" style="width:100%; height:280px; display:block;">
   <defs>
-    <linearGradient id="xauFill" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="rgba(245,158,11,0.3)"/>
-      <stop offset="100%" stop-color="rgba(245,158,11,0)"/>
-    </linearGradient>
-    <linearGradient id="nasFill" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="rgba(167,139,250,0.3)"/>
-      <stop offset="100%" stop-color="rgba(167,139,250,0)"/>
-    </linearGradient>
     <filter id="xauGlow" x="-20%" y="-20%" width="140%" height="140%">
       <feGaussianBlur stdDeviation="4" result="blur"/>
       <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
@@ -491,8 +456,6 @@ if xau_eq or nas_eq:
       <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
     </filter>
   </defs>
-  {xau_fill_path}
-  {nas_fill_path}
   {xau_line_path}
   {nas_line_path}
 </svg>"""
@@ -581,35 +544,27 @@ month_total_r = sum(v['total_r'] for k, v in daily_r.items() if k.month == cal_m
 month_sign = '+' if month_total_r > 0 else ''
 month_name = datetime(cal_year, cal_month, 1).strftime("%B %Y")
 
-cal_l, cal_mid, cal_r = st.columns([1, 12, 1])
-with cal_l:
-    st.markdown('<div class="nav-arrow-col">', unsafe_allow_html=True)
-    if st.button("←", key="prev_month", use_container_width=True):
-        if st.session_state.cal_month == 1:
-            st.session_state.cal_month = 12
-            st.session_state.cal_year -= 1
-        else:
-            st.session_state.cal_month -= 1
-        st.rerun()
-    st.markdown('</div>', unsafe_allow_html=True)
-
-cal_mid.markdown(
-    f'<div class="nav-banner">'
-    f'<span class="nav-banner-label">{month_name} &nbsp;·&nbsp; Total R: <span style="color:{ACCENT};">{month_sign}{round(month_total_r,2)}</span></span>'
+c_cal_prev, c_cal_mid, c_cal_next = st.columns([1, 14, 1])
+if c_cal_prev.button("←", key="prev_month", use_container_width=True):
+    if st.session_state.cal_month == 1:
+        st.session_state.cal_month = 12
+        st.session_state.cal_year -= 1
+    else:
+        st.session_state.cal_month -= 1
+    st.rerun()
+c_cal_mid.markdown(
+    f'<div style="{BANNER_STYLE}">'
+    f'<span style="font-size:1.05em;font-weight:700;color:#fff;">{month_name} &nbsp;·&nbsp; Total R: <span style="color:{ACCENT};">{month_sign}{round(month_total_r,2)}</span></span>'
     f'</div>',
     unsafe_allow_html=True
 )
-
-with cal_r:
-    st.markdown('<div class="nav-arrow-col">', unsafe_allow_html=True)
-    if st.button("→", key="next_month", use_container_width=True):
-        if st.session_state.cal_month == 12:
-            st.session_state.cal_month = 1
-            st.session_state.cal_year += 1
-        else:
-            st.session_state.cal_month += 1
-        st.rerun()
-    st.markdown('</div>', unsafe_allow_html=True)
+if c_cal_next.button("→", key="next_month", use_container_width=True):
+    if st.session_state.cal_month == 12:
+        st.session_state.cal_month = 1
+        st.session_state.cal_year += 1
+    else:
+        st.session_state.cal_month += 1
+    st.rerun()
 
 st.write("")
 
