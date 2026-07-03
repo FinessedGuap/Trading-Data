@@ -86,12 +86,11 @@ def calc_stats(df_in):
     non_breakeven = stats['wins'] + stats['losses']
     stats['win_rate'] = round(stats['wins'] / non_breakeven * 100, 1) if non_breakeven > 0 else 0
     stats['total_r'] = round(r.sum(), 2)
-    stats['avg_r'] = round(r.mean(), 2)
+    stats['expectancy'] = round(r.sum() / len(r), 2)
     stats['avg_win'] = round(r[r > 0].mean(), 2) if stats['wins'] > 0 else 0
     stats['avg_loss'] = round(r[r < 0].mean(), 2) if stats['losses'] > 0 else 0
     stats['best_trade'] = round(r.max(), 2)
     stats['worst_trade'] = round(r.min(), 2)
-    stats['expectancy'] = round(r.sum() / len(r), 2)
     equity = r.cumsum()
     peak = equity.cummax()
     drawdown = equity - peak
@@ -165,6 +164,22 @@ def safe_parse_date(x):
         except Exception:
             return pd.NaT
 
+def catmull(points):
+    if len(points) < 2:
+        return ""
+    d = f"M{points[0][0]:.1f},{points[0][1]:.1f} "
+    for i in range(len(points) - 1):
+        p0 = points[i-1] if i > 0 else points[i]
+        p1 = points[i]
+        p2 = points[i+1]
+        p3 = points[i+2] if i+2 < len(points) else p2
+        c1x = p1[0] + (p2[0] - p0[0]) / 6
+        c1y = p1[1] + (p2[1] - p0[1]) / 6
+        c2x = p2[0] - (p3[0] - p1[0]) / 6
+        c2y = p2[1] - (p3[1] - p1[1]) / 6
+        d += f"C{c1x:.1f},{c1y:.1f} {c2x:.1f},{c2y:.1f} {p2[0]:.1f},{p2[1]:.1f} "
+    return d
+
 def build_donut(wins, losses, breakevens, colors, glow_color):
     total = wins + losses + breakevens if (wins + losses + breakevens) > 0 else 1
     segments = [('Win', wins, colors[0]), ('Loss', losses, colors[1]), ('Breakeven', breakevens, colors[2])]
@@ -215,7 +230,6 @@ def render_stats_panel(stats, label_color):
         ('Total Trades', stats.get('total_trades','—')),
         ('Win Rate', f"{stats.get('win_rate','—')}%"),
         ('Total R', stats.get('total_r','—')),
-        ('Avg R / Trade', stats.get('avg_r','—')),
         ('Expectancy', stats.get('expectancy','—')),
         ('Avg Win', stats.get('avg_win','—')),
         ('Avg Loss', stats.get('avg_loss','—')),
@@ -240,22 +254,6 @@ def render_stats_panel(stats, label_color):
                 unsafe_allow_html=True
             )
         st.write("")
-
-def catmull(points):
-    if len(points) < 2:
-        return ""
-    d = f"M{points[0][0]:.1f},{points[0][1]:.1f} "
-    for i in range(len(points) - 1):
-        p0 = points[i-1] if i > 0 else points[i]
-        p1 = points[i]
-        p2 = points[i+1]
-        p3 = points[i+2] if i+2 < len(points) else p2
-        c1x = p1[0] + (p2[0] - p0[0]) / 6
-        c1y = p1[1] + (p2[1] - p0[1]) / 6
-        c2x = p2[0] - (p3[0] - p1[0]) / 6
-        c2y = p2[1] - (p3[1] - p1[1]) / 6
-        d += f"C{c1x:.1f},{c1y:.1f} {c2x:.1f},{c2y:.1f} {p2[0]:.1f},{p2[1]:.1f} "
-    return d
 
 # Load data
 with st.spinner("Pulling fresh data from Notion..."):
@@ -349,12 +347,31 @@ css = f"""
     background: rgba(96,165,250,0.06);
     backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
     border:1px solid rgba(96,165,250,0.18);
-    border-radius:16px; padding:14px 24px;
-    box-shadow: 0 12px 36px rgba(96,165,250,0.1);
+    border-radius:12px; padding:0 24px;
+    box-shadow: 0 8px 24px rgba(96,165,250,0.08);
     text-align:center; display:flex; align-items:center; justify-content:center;
-    min-height:52px;
+    height:48px;
   }}
-  .nav-banner-label {{ font-size:1.1em; font-weight:800; color:#fff; letter-spacing:-0.3px; }}
+  .nav-banner-label {{ font-size:1.05em; font-weight:700; color:#fff; letter-spacing:-0.2px; }}
+  div[data-testid="stButton"] button {{
+    width:100%; min-height:88px; border-radius:16px;
+    font-family:'Inter', sans-serif; white-space:pre-line; line-height:1.4;
+    transition: all 0.25s ease; font-weight:600;
+    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    background: rgba(96,165,250,0.08) !important;
+    border:1px solid rgba(96,165,250,0.2) !important;
+    color:#fff !important;
+    box-shadow: 0 8px 24px rgba(96,165,250,0.08) !important;
+  }}
+  div[data-testid="stButton"] button:hover {{ transform: translateY(-2px); border-color: rgba(96,165,250,0.4) !important; }}
+  .nav-arrow-col div[data-testid="stButton"] button {{
+    min-height:48px !important;
+    max-height:48px !important;
+    height:48px !important;
+    border-radius:12px !important;
+    font-size:1.1em !important;
+    padding:0 !important;
+  }}
   .session-bar-track {{ background:rgba(96,165,250,0.1); border-radius:8px; height:16px; overflow:hidden; }}
   .session-bar-fill {{ height:100%; border-radius:8px; background:linear-gradient(90deg, rgba(59,130,246,0.6), {ACCENT}); }}
   .cal-header {{ color:{ACCENT_SOFT}; font-size:0.72em; text-align:center; letter-spacing:1.5px; font-weight:600; text-transform:uppercase; padding:10px 0; }}
@@ -368,17 +385,6 @@ css = f"""
   .cal-week-label {{ color:{ACCENT_SOFT}; font-size:0.68em; font-weight:700; letter-spacing:0.5px; }}
   .cal-week-r {{ font-size:1.25em; font-weight:700; margin-top:10px; color:#fff; }}
   .cal-day-trades {{ color:#5a6a88; font-size:0.64em; margin-top:3px; font-weight:500; text-align:center; }}
-  div[data-testid="stButton"] button {{
-    width:100%; min-height:88px; border-radius:16px;
-    font-family:'Inter', sans-serif; white-space:pre-line; line-height:1.4;
-    transition: all 0.25s ease; font-weight:600;
-    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-    background: rgba(96,165,250,0.08) !important;
-    border:1px solid rgba(96,165,250,0.2) !important;
-    color:#fff !important;
-    box-shadow: 0 8px 24px rgba(96,165,250,0.08) !important;
-  }}
-  div[data-testid="stButton"] button:hover {{ transform: translateY(-2px); border-color: rgba(96,165,250,0.4) !important; }}
   .trade-detail-card {{
     background: rgba(96,165,250,0.06);
     backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
@@ -406,19 +412,25 @@ overviews = [
 idx = st.session_state.overview_idx
 current = overviews[idx]
 
-nav_l, nav_mid, nav_r = st.columns([1, 10, 1])
-if nav_l.button("←", key="prev_overview", use_container_width=True):
-    st.session_state.overview_idx = (idx - 1) % len(overviews)
-    st.rerun()
+nav_l, nav_mid, nav_r = st.columns([1, 12, 1])
+with nav_l:
+    st.markdown('<div class="nav-arrow-col">', unsafe_allow_html=True)
+    if st.button("←", key="prev_overview", use_container_width=True):
+        st.session_state.overview_idx = (idx - 1) % len(overviews)
+        st.rerun()
+    st.markdown('</div>', unsafe_allow_html=True)
 nav_mid.markdown(
-    f'<div class="nav-banner" style="margin-bottom:16px;">'
+    f'<div class="nav-banner" style="margin-bottom:0;">'
     f'<span class="nav-banner-label" style="color:{current["color"]};">{current["label"]} Performance</span>'
     f'</div>',
     unsafe_allow_html=True
 )
-if nav_r.button("→", key="next_overview", use_container_width=True):
-    st.session_state.overview_idx = (idx + 1) % len(overviews)
-    st.rerun()
+with nav_r:
+    st.markdown('<div class="nav-arrow-col">', unsafe_allow_html=True)
+    if st.button("→", key="next_overview", use_container_width=True):
+        st.session_state.overview_idx = (idx + 1) % len(overviews)
+        st.rerun()
+    st.markdown('</div>', unsafe_allow_html=True)
 
 st.write("")
 render_stats_panel(current['stats'], current['color'])
@@ -430,76 +442,45 @@ xau_eq = xau_stats.get('equity_curve', [])
 nas_eq = nas_stats.get('equity_curve', [])
 
 if xau_eq or nas_eq:
-    svg_w = 800
-    svg_h = 200
-    pad_left = 48
-    pad_bottom = 28
-    chart_w = svg_w - pad_left
-    chart_h = svg_h - pad_bottom
+    svg_w, svg_h = 800, 200
 
-    # XAU uses its own scale
     xau_max = max(xau_eq) if xau_eq else 1
     xau_min = min(min(xau_eq), 0) if xau_eq else 0
     xau_range = (xau_max - xau_min) if (xau_max - xau_min) != 0 else 1
 
-    # NAS uses its own scale
     nas_max = max(nas_eq) if nas_eq else 1
     nas_min = min(min(nas_eq), 0) if nas_eq else 0
     nas_range = (nas_max - nas_min) if (nas_max - nas_min) != 0 else 1
 
     def xp(i, total):
-        return pad_left + (i / (total - 1)) * chart_w if total > 1 else pad_left
-
+        return (i / (total - 1)) * svg_w if total > 1 else 0
     def yp_xau(v):
-        return chart_h - ((v - xau_min) / xau_range) * (chart_h - 10) - 5
-
+        return svg_h - ((v - xau_min) / xau_range) * (svg_h - 20) - 10
     def yp_nas(v):
-        return chart_h - ((v - nas_min) / nas_range) * (chart_h - 10) - 5
+        return svg_h - ((v - nas_min) / nas_range) * (svg_h - 20) - 10
 
     xau_pts = [(xp(i, len(xau_eq)), yp_xau(v)) for i, v in enumerate(xau_eq)] if xau_eq else []
     nas_pts = [(xp(i, len(nas_eq)), yp_nas(v)) for i, v in enumerate(nas_eq)] if nas_eq else []
 
     xau_line = catmull(xau_pts)
     nas_line = catmull(nas_pts)
-    xau_fill = xau_line + f"L{svg_w},{chart_h} L{pad_left},{chart_h} Z" if xau_line else ""
-    nas_fill = nas_line + f"L{svg_w},{chart_h} L{pad_left},{chart_h} Z" if nas_line else ""
-
-    # Y axis labels for XAU (left side)
-    y_labels = ""
-    y_steps = 5
-    for k in range(y_steps + 1):
-        val = xau_min + (xau_max - xau_min) * k / y_steps
-        y = yp_xau(val)
-        y_labels += f'<text x="{pad_left - 6}" y="{y + 4}" text-anchor="end" fill="#4a5a78" font-size="10" font-family="Inter">{val:.1f}</text>'
-
-    # X axis labels (trade numbers)
-    x_labels = ""
-    total_trades = max(len(xau_eq), len(nas_eq))
-    step = max(1, total_trades // 8)
-    for k in range(0, total_trades, step):
-        x = pad_left + (k / (total_trades - 1)) * chart_w if total_trades > 1 else pad_left
-        x_labels += f'<text x="{x}" y="{svg_h - 6}" text-anchor="middle" fill="#4a5a78" font-size="10" font-family="Inter">{k + 1}</text>'
-
-    # Grid lines
-    grid = ""
-    for k in range(y_steps + 1):
-        y = yp_xau(xau_min + (xau_max - xau_min) * k / y_steps)
-        grid += f'<line x1="{pad_left}" y1="{y}" x2="{svg_w}" y2="{y}" stroke="rgba(96,165,250,0.07)" stroke-width="1"/>'
+    xau_fill = xau_line + f"L{svg_w},{svg_h} L0,{svg_h} Z" if xau_line else ""
+    nas_fill = nas_line + f"L{svg_w},{svg_h} L0,{svg_h} Z" if nas_line else ""
 
     xau_fill_path = f'<path d="{xau_fill}" fill="url(#xauFill)" opacity="0.4"/>' if xau_fill else ''
     nas_fill_path = f'<path d="{nas_fill}" fill="url(#nasFill)" opacity="0.4"/>' if nas_fill else ''
-    xau_line_path = f'<path d="{xau_line}" fill="none" stroke="{GOLD}" stroke-width="2.5" stroke-linecap="round" filter="url(#xauGlow)"/>' if xau_line else ''
-    nas_line_path = f'<path d="{nas_line}" fill="none" stroke="{ACCENT}" stroke-width="2.5" stroke-linecap="round" filter="url(#nasGlow)"/>' if nas_line else ''
+    xau_line_path = f'<path d="{xau_line}" fill="none" stroke="{GOLD}" stroke-width="3" stroke-linecap="round" filter="url(#xauGlow)"/>' if xau_line else ''
+    nas_line_path = f'<path d="{nas_line}" fill="none" stroke="{PURPLE}" stroke-width="3" stroke-linecap="round" filter="url(#nasGlow)"/>' if nas_line else ''
 
-    combined_svg = f"""<svg viewBox="0 0 {svg_w} {svg_h}" style="width:100%; height:300px; display:block;">
+    combined_svg = f"""<svg viewBox="0 0 {svg_w} {svg_h}" style="width:100%; height:280px; display:block;">
   <defs>
     <linearGradient id="xauFill" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="rgba(245,158,11,0.35)"/>
+      <stop offset="0%" stop-color="rgba(245,158,11,0.3)"/>
       <stop offset="100%" stop-color="rgba(245,158,11,0)"/>
     </linearGradient>
     <linearGradient id="nasFill" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="rgba(96,165,250,0.35)"/>
-      <stop offset="100%" stop-color="rgba(96,165,250,0)"/>
+      <stop offset="0%" stop-color="rgba(167,139,250,0.3)"/>
+      <stop offset="100%" stop-color="rgba(167,139,250,0)"/>
     </linearGradient>
     <filter id="xauGlow" x="-20%" y="-20%" width="140%" height="140%">
       <feGaussianBlur stdDeviation="4" result="blur"/>
@@ -510,11 +491,6 @@ if xau_eq or nas_eq:
       <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
     </filter>
   </defs>
-  {grid}
-  <line x1="{pad_left}" y1="0" x2="{pad_left}" y2="{chart_h}" stroke="rgba(96,165,250,0.15)" stroke-width="1"/>
-  <line x1="{pad_left}" y1="{chart_h}" x2="{svg_w}" y2="{chart_h}" stroke="rgba(96,165,250,0.15)" stroke-width="1"/>
-  {y_labels}
-  {x_labels}
   {xau_fill_path}
   {nas_fill_path}
   {xau_line_path}
@@ -529,21 +505,19 @@ if xau_eq or nas_eq:
     <span style="color:{GOLD_SOFT};">XAUUSD ({xau_n} trades)</span>
   </div>
   <div class="eq-legend-item">
-    <div class="eq-legend-dot" style="background:{ACCENT};box-shadow:0 0 6px {ACCENT};"></div>
-    <span style="color:{ACCENT_SOFT};">NASDAQ ({nas_n} trades)</span>
+    <div class="eq-legend-dot" style="background:{PURPLE};box-shadow:0 0 6px {PURPLE};"></div>
+    <span style="color:{PURPLE_SOFT};">NASDAQ ({nas_n} trades)</span>
   </div>
 </div>"""
 
     st.markdown(
         f'<div class="glass-panel">'
         f'<div style="color:#cfe0fb;font-weight:600;font-size:1.05em;margin-bottom:8px;">Equity Curve</div>'
-        f'{legend_html}'
-        f'{combined_svg}'
-        f'</div>',
+        f'{legend_html}{combined_svg}</div>',
         unsafe_allow_html=True
     )
 
-# Three donut charts
+# Three donuts
 donut_configs = [
     ('Overall', main_stats.get('wins',0), main_stats.get('losses',0), main_stats.get('breakevens',0),
      ['#1d4ed8','#3b82f6','#93c5fd'], 'rgba(96,165,250,0.4)', ACCENT_SOFT),
@@ -607,30 +581,35 @@ month_total_r = sum(v['total_r'] for k, v in daily_r.items() if k.month == cal_m
 month_sign = '+' if month_total_r > 0 else ''
 month_name = datetime(cal_year, cal_month, 1).strftime("%B %Y")
 
-nav_col_left, nav_col_mid, nav_col_right = st.columns([1, 10, 1])
+cal_l, cal_mid, cal_r = st.columns([1, 12, 1])
+with cal_l:
+    st.markdown('<div class="nav-arrow-col">', unsafe_allow_html=True)
+    if st.button("←", key="prev_month", use_container_width=True):
+        if st.session_state.cal_month == 1:
+            st.session_state.cal_month = 12
+            st.session_state.cal_year -= 1
+        else:
+            st.session_state.cal_month -= 1
+        st.rerun()
+    st.markdown('</div>', unsafe_allow_html=True)
 
-if nav_col_left.button("←", key="prev_month", use_container_width=True):
-    if st.session_state.cal_month == 1:
-        st.session_state.cal_month = 12
-        st.session_state.cal_year -= 1
-    else:
-        st.session_state.cal_month -= 1
-    st.rerun()
-
-nav_col_mid.markdown(
+cal_mid.markdown(
     f'<div class="nav-banner">'
     f'<span class="nav-banner-label">{month_name} &nbsp;·&nbsp; Total R: <span style="color:{ACCENT};">{month_sign}{round(month_total_r,2)}</span></span>'
     f'</div>',
     unsafe_allow_html=True
 )
 
-if nav_col_right.button("→", key="next_month", use_container_width=True):
-    if st.session_state.cal_month == 12:
-        st.session_state.cal_month = 1
-        st.session_state.cal_year += 1
-    else:
-        st.session_state.cal_month += 1
-    st.rerun()
+with cal_r:
+    st.markdown('<div class="nav-arrow-col">', unsafe_allow_html=True)
+    if st.button("→", key="next_month", use_container_width=True):
+        if st.session_state.cal_month == 12:
+            st.session_state.cal_month = 1
+            st.session_state.cal_year += 1
+        else:
+            st.session_state.cal_month += 1
+        st.rerun()
+    st.markdown('</div>', unsafe_allow_html=True)
 
 st.write("")
 
