@@ -511,8 +511,14 @@ if all_vals:
             d += f"C{c1x:.1f},{c1y:.1f} {c2x:.1f},{c2y:.1f} {p2[0]:.1f},{p2[1]:.1f} "
         return d
 
-    xau_pts = [(xp(i, len(xau_eq)), yp(v)) for i, v in enumerate(xau_eq)] if xau_eq else []
-    nas_pts = [(xp(i, len(nas_eq)), yp(v)) for i, v in enumerate(nas_eq)] if nas_eq else []
+   xau_pts = [(xp(i, len(xau_eq)), yp(v)) for i, v in enumerate(xau_eq)] if xau_eq else []
+
+    # Scale NASDAQ independently so it's always visible
+    nas_max = max(nas_eq) if nas_eq else 1
+    nas_min = min(min(nas_eq), 0) if nas_eq else 0
+    nas_range = (nas_max - nas_min) if (nas_max - nas_min) != 0 else 1
+    def yp_nas(v): return svg_h - ((v - nas_min) / nas_range) * (svg_h - 20) - 10
+    nas_pts = [(xp(i, len(nas_eq)), yp_nas(v)) for i, v in enumerate(nas_eq)] if nas_eq else []
 
     xau_line = catmull(xau_pts)
     nas_line = catmull(nas_pts)
