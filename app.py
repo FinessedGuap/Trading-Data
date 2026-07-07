@@ -533,14 +533,17 @@ st.markdown('<div class="section-label">3SL Window</div>', unsafe_allow_html=Tru
 session_rows_html = ""
 for s in session_stats:
     bar_pct = round(abs(s['exp']) / max_abs_exp * 100, 1)
-    is_good = s['wr'] >= 0.5
-    if is_good:
-        bar_color = 'linear-gradient(90deg, rgba(96,165,250,0.5), rgba(96,165,250,0.95))'
-        bar_track = 'rgba(96,165,250,0.1)'
+    wr = s['wr']
+    distance = abs(wr - 0.5) * 2  # 0 at 50%, 1 at 0% or 100%
+    intensity_high = round(0.3 + distance * 0.65, 2)
+    intensity_low = round(0.1 + distance * 0.2, 2)
+    if wr >= 0.5:
+        bar_color = f'linear-gradient(90deg, rgba(96,165,250,{intensity_low}), rgba(96,165,250,{intensity_high}))'
+        bar_track = f'rgba(96,165,250,0.06)'
         val_color = '#60a5fa'
     else:
-        bar_color = 'linear-gradient(90deg, rgba(248,113,113,0.5), rgba(248,113,113,0.95))'
-        bar_track = 'rgba(248,113,113,0.12)'
+        bar_color = f'linear-gradient(90deg, rgba(248,113,113,{intensity_high}), rgba(248,113,113,{intensity_low}))'
+        bar_track = f'rgba(248,113,113,0.06)'
         val_color = '#f87171'
     session_rows_html += (
         f'<div style="display:grid;grid-template-columns:100px 1fr 70px 60px 40px;gap:16px;align-items:center;padding:12px 0;">'
