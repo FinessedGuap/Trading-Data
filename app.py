@@ -535,12 +535,12 @@ for s in session_stats:
     bar_pct = round(abs(s['exp']) / max_abs_exp * 100, 1)
     is_good = s['wr'] >= 0.5
     if is_good:
-        bar_color = f'linear-gradient(90deg, rgba(96,165,250,0.4), rgba(96,165,250,0.8))'
-        bar_track = 'rgba(96,165,250,0.08)'
+        bar_color = 'linear-gradient(90deg, rgba(96,165,250,0.5), rgba(96,165,250,0.95))'
+        bar_track = 'rgba(96,165,250,0.1)'
         val_color = '#60a5fa'
     else:
-        bar_color = f'linear-gradient(90deg, rgba(248,113,113,0.3), rgba(248,113,113,0.6))'
-        bar_track = 'rgba(248,113,113,0.08)'
+        bar_color = 'linear-gradient(90deg, rgba(248,113,113,0.5), rgba(248,113,113,0.95))'
+        bar_track = 'rgba(248,113,113,0.12)'
         val_color = '#f87171'
     session_rows_html += (
         f'<div style="display:grid;grid-template-columns:100px 1fr 70px 60px 40px;gap:16px;align-items:center;padding:12px 0;">'
