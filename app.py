@@ -288,9 +288,6 @@ with st.spinner("Pulling fresh data from Notion..."):
     df['Date'] = pd.Series(df['Date'].tolist(), dtype='datetime64[ns]')
     df['R_Result'] = df['R Result'].apply(parse_r_result)
 
-    # Debug — remove once confirmed working
-    st.write("Parsed dates:", sorted(df['Date'].dropna().dt.date.unique().tolist()))
-
     df_main = df.copy()
     df_main = df_main.sort_values('Date').reset_index(drop=True)
 
@@ -506,7 +503,6 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# Three donuts
 donut_configs = [
     ('Overall', main_stats.get('wins',0), main_stats.get('losses',0), main_stats.get('breakevens',0),
      ['#1d4ed8','#3b82f6','#93c5fd'], 'rgba(96,165,250,0.4)', ACCENT_SOFT),
