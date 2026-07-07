@@ -152,7 +152,7 @@ def safe_parse_date(x):
         parsed = _dateutil_parser.isoparse(str(x))
         ts = pd.Timestamp(parsed)
         if ts.tzinfo is not None:
-            ts = ts.tz_localize(None)
+            ts = ts.tz_convert('Australia/Sydney').tz_localize(None)
         return ts
     except Exception:
         try:
@@ -160,7 +160,7 @@ def safe_parse_date(x):
             parsed = _dateutil_parser.parse(str(x))
             ts = pd.Timestamp(parsed)
             if ts.tzinfo is not None:
-                ts = ts.tz_localize(None)
+                ts = ts.tz_convert('Australia/Sydney').tz_localize(None)
             return ts
         except Exception:
             return pd.NaT
