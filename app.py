@@ -532,14 +532,13 @@ st.markdown('<div class="section-label">3SL Window</div>', unsafe_allow_html=Tru
 session_rows_html = ""
 for s in session_stats:
     bar_pct = round(abs(s['exp']) / max_abs_exp * 100, 1)
-    bar_color = '#4ade80' if s['exp'] >= 0 else '#f87171'
     session_rows_html += (
         f'<div style="display:grid;grid-template-columns:100px 1fr 70px 60px 40px;gap:16px;align-items:center;padding:12px 0;">'
         f'<span style="color:{ACCENT_SOFT};font-weight:600;">{s["session"]}</span>'
         f'<div style="background:rgba(96,165,250,0.1);border-radius:8px;height:16px;overflow:hidden;">'
-        f'<div style="width:{bar_pct}%;height:100%;background:linear-gradient(90deg,{bar_color}99,{bar_color});border-radius:8px;"></div>'
+        f'<div style="width:{bar_pct}%;height:100%;background:linear-gradient(90deg,rgba(59,130,246,0.6),{ACCENT});border-radius:8px;"></div>'
         f'</div>'
-        f'<span style="color:{bar_color};font-weight:700;">{s["exp"]}</span>'
+        f'<span style="color:#fff;font-weight:700;">{s["exp"]}</span>'
         f'<span style="color:#9ab4dd;font-weight:500;">{s["wr"]}</span>'
         f'<span style="color:#5a6a88;font-weight:500;">{s["n"]}</span>'
         f'</div>'
