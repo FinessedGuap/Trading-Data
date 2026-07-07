@@ -271,6 +271,149 @@ def render_stats_panel(stats, label_color):
             )
         st.write("")
 
+def generate_data_prompts(stats, session_stats):
+    prompts = []
+    if not stats:
+        return prompts
+
+    # Best session
+    if session_stats:
+        best = max(session_stats, key=lambda x: x['exp'])
+        if best['n'] > 0:
+            prompts.append({
+                'icon': '↑',
+                'question': 'Where is your edge strongest?',
+                'answer': f"{best['session']} session — {best['exp']}R avg, {round(best['wr']*100)}% win rate across {best['n']} trades. This is where you make your money.",
+                'color': '#4ade80'
+            })
+
+    # Most costly session
+    if session_stats:
+        worst = min(session_stats, key=lambda x: x['exp'])
+        if worst['exp'] < 0:
+            prompts.append({
+                'icon': '⚠',
+                'question': 'What is costing you the most R?',
+                'answer': f"{worst['session']} trades — negative expectancy of {worst['exp']}R and only {round(worst['wr']*100)}% win rate across {worst['n']} trades.",
+                'color': '#f87171'
+            })
+        elif worst['n'] > 0:
+            prompts.append({
+                'icon': '⚠',
+                'question': 'What is your weakest session?',
+                'answer': f"{worst['session']} — only {worst['exp']}R avg and {round(worst['wr']*100)}% win rate across {worst['n']} trades. Consider reducing size here.",
+                'color': '#f59e0b'
+            })
+
+    # Is system working
+    wr = stats.get('win_rate', 0)
+    exp = stats.get('expectancy', 0)
+    total = stats.get('total_trades', 0)
+    if total >= 10:
+        if exp > 0 and wr > 50:
+            prompts.append({
+                'icon': '✓',
+                'question': 'Is your system working?',
+                'answer': f"Yes — {wr}% win rate and +{exp}R expectancy across {total} trades confirms a real edge.",
+                'color': '#4ade80'
+            })
+        else:
+            prompts.append({
+                'icon': '✗',
+                'question': 'Is your system working?',
+                'answer': f"Not yet clearly — {wr}% win rate and {exp}R expectancy across {total} trades. Keep building the sample size.",
+                'color': '#f87171'
+            })
+
+    # Focus for next trades
+    if session_stats:
+        best = max(session_stats, key=lambda x: x['exp'])
+        worst = min(session_stats, key=lambda x: x['exp'])
+        prompts.append({
+            'icon': '→',
+            'question': 'What should you focus on next?',
+            'answer': f"Maximise {best['session']} trades and reduce {worst['session']} exposure. Your data shows a clear quality gap between them.",
+            'color': '#60a5fa'
+        })
+
+    return prompts
+
+def generate_case_study(df_in, stats, session_stats, n_trades=20):
+    r = df_in['R_Result'].dropna()
+    if len(r) == 0:
+        return None
+    last_n = df_in.dropna(subset=['R_Result']).tail(n_trades)
+    last_r = last_n['R_Result']
+    n = len(last_r)
+    wins = int((last_r > 0).sum())
+    losses = int((last_r < 0).sum())
+    non_be = wins + losses
+    wr = round(wins / non_be * 100, 1) if non_be > 0 else 0
+    total_r = round(last_r.sum(), 2)
+    exp = round(last_r.sum() / n, 2)
+    streak = 0
+    max_streak = 0
+    for val in last_r:
+        if val < 0:
+            streak += 1
+            max_streak = max(max_streak, streak)
+        else:
+            streak = 0
+
+    date_range = ""
+    if 'Date' in last_n.columns:
+        valid_dates = last_n['Date'].dropna()
+        if len(valid_dates) > 0:
+            start = valid_dates.min().strftime("%b %d")
+            end = valid_dates.max().strftime("%b %d, %Y")
+            date_range = f"{start} – {end}"
+
+    patterns = []
+    if session_stats:
+        best_s = max(session_stats, key=lambda x: x['exp'])
+        if best_s['n'] > 0:
+            patterns.append({
+                'type': 'positive',
+                'text': f"{best_s['session']} session returned the best expectancy at {best_s['exp']}R avg — your strongest window."
+            })
+        worst_s = min(session_stats, key=lambda x: x['exp'])
+        if worst_s['exp'] < 0:
+            patterns.append({
+                'type': 'negative',
+                'text': f"{worst_s['n']} trades in {worst_s['session']} had negative expectancy — costing you R that could have been avoided."
+            })
+        elif worst_s['wr'] < 0.4 and worst_s['n'] > 0:
+            patterns.append({
+                'type': 'warning',
+                'text': f"{worst_s['session']} win rate is only {round(worst_s['wr']*100)}% — your weakest window by a clear margin."
+            })
+
+    if max_streak >= 2:
+        patterns.append({
+            'type': 'warning',
+            'text': f"Max losing streak of {max_streak} consecutive losses — watch for overtrading after back-to-back losses."
+        })
+
+    actions = []
+    if session_stats:
+        best_s = max(session_stats, key=lambda x: x['exp'])
+        worst_s = min(session_stats, key=lambda x: x['exp'])
+        actions.append(f"Focus entries on {best_s['session']} — your data shows this is your best window.")
+        if worst_s['exp'] < 0:
+            actions.append(f"Eliminate {worst_s['session']} trades — negative expectancy means it's hurting your edge.")
+    actions.append("Track rules followed for every entry — build the habit before the next review.")
+
+    return {
+        'n': n,
+        'date_range': date_range,
+        'total_r': total_r,
+        'win_rate': wr,
+        'expectancy': exp,
+        'max_streak': max_streak,
+        'patterns': patterns,
+        'actions': actions
+    }
+
 # ============ LOAD DATA ============
 with st.spinner("Pulling fresh data from Notion..."):
     raw_trades = get_all_trades()
@@ -315,6 +458,10 @@ if 'cal_year' not in st.session_state:
     st.session_state.cal_year = today.year
 if 'overview_idx' not in st.session_state:
     st.session_state.overview_idx = 0
+if 'show_data_prompts' not in st.session_state:
+    st.session_state.show_data_prompts = False
+if 'show_case_study' not in st.session_state:
+    st.session_state.show_case_study = False
 
 ACCENT = '#60a5fa'
 ACCENT_SOFT = '#7fb2f5'
@@ -372,6 +519,13 @@ css = f"""
     min-height:{NAV_H}; box-sizing:border-box;
   }}
   .nav-label {{ font-size:1.3em; font-weight:800; color:#fff; letter-spacing:-0.3px; }}
+  .insight-row {{
+    background:rgba(96,165,250,0.04);
+    border-left:3px solid;
+    border-radius:0 10px 10px 0;
+    padding:12px 14px;
+    margin-bottom:8px;
+  }}
   .cal-header {{ color:{ACCENT_SOFT}; font-size:0.72em; text-align:center; letter-spacing:1.5px; font-weight:600; text-transform:uppercase; padding:10px 0; }}
   .cal-day-num {{ color:#3d4a63; font-size:0.78em; font-weight:600; text-align:center; }}
   .cal-week-summary {{
@@ -413,6 +567,81 @@ st.markdown(css, unsafe_allow_html=True)
 
 # ============ HEADER ============
 st.markdown('<div class="header-title">Overall Data</div>', unsafe_allow_html=True)
+
+# ============ DATA PROMPTS (collapsible) ============
+dp_col1, dp_col2 = st.columns([9, 1])
+dp_col1.markdown(
+    f'<div style="background:rgba(96,165,250,0.06);border:1px solid rgba(96,165,250,0.2);border-radius:14px;padding:14px 18px;display:flex;align-items:center;gap:12px;">'
+    f'<span style="font-size:0.8em;font-weight:700;letter-spacing:1px;color:{ACCENT_SOFT};text-transform:uppercase;">Data Prompts</span>'
+    f'<span style="color:#5a6a88;font-size:0.8em;">— your edge speaking</span>'
+    f'</div>',
+    unsafe_allow_html=True
+)
+if dp_col2.button("▼" if not st.session_state.show_data_prompts else "▲", key="toggle_dp", use_container_width=True):
+    st.session_state.show_data_prompts = not st.session_state.show_data_prompts
+    st.rerun()
+
+if st.session_state.show_data_prompts:
+    prompts = generate_data_prompts(main_stats, session_stats)
+    for p in prompts:
+        st.markdown(
+            f'<div class="insight-row" style="border-left-color:{p["color"]};">'
+            f'<div style="font-size:0.72em;color:#5a6a88;margin-bottom:3px;">{p["question"]}</div>'
+            f'<div style="font-size:0.9em;color:#ddd;">{p["answer"]}</div>'
+            f'</div>',
+            unsafe_allow_html=True
+        )
+
+st.write("")
+
+# ============ CASE STUDY (collapsible) ============
+cs_col1, cs_col2 = st.columns([9, 1])
+cs_col1.markdown(
+    f'<div style="background:rgba(96,165,250,0.06);border:1px solid rgba(96,165,250,0.2);border-radius:14px;padding:14px 18px;display:flex;align-items:center;gap:12px;">'
+    f'<span style="font-size:0.8em;font-weight:700;letter-spacing:1px;color:{ACCENT_SOFT};text-transform:uppercase;">Case Study</span>'
+    f'<span style="color:#5a6a88;font-size:0.8em;">— last 20 trades</span>'
+    f'</div>',
+    unsafe_allow_html=True
+)
+if cs_col2.button("▼" if not st.session_state.show_case_study else "▲", key="toggle_cs", use_container_width=True):
+    st.session_state.show_case_study = not st.session_state.show_case_study
+    st.rerun()
+
+if st.session_state.show_case_study:
+    cs = generate_case_study(df_main, main_stats, session_stats, n_trades=20)
+    if cs:
+        mini_cols = st.columns(4)
+        sign = '+' if cs['total_r'] > 0 else ''
+        mini_cols[0].markdown(f'<div class="stat-card"><div class="stat-value">{sign}{cs["total_r"]}</div><div class="stat-label">Total R</div></div>', unsafe_allow_html=True)
+        mini_cols[1].markdown(f'<div class="stat-card"><div class="stat-value">{cs["win_rate"]}%</div><div class="stat-label">Win Rate</div></div>', unsafe_allow_html=True)
+        mini_cols[2].markdown(f'<div class="stat-card"><div class="stat-value">{cs["expectancy"]}</div><div class="stat-label">Expectancy</div></div>', unsafe_allow_html=True)
+        mini_cols[3].markdown(f'<div class="stat-card"><div class="stat-value">{cs["max_streak"]}</div><div class="stat-label">Max Streak</div></div>', unsafe_allow_html=True)
+        st.write("")
+
+        if cs['date_range']:
+            st.markdown(f'<div style="color:#5a6a88;font-size:0.8em;margin-bottom:12px;">{cs["date_range"]} &nbsp;·&nbsp; {cs["n"]} trades</div>', unsafe_allow_html=True)
+
+        if cs['patterns']:
+            st.markdown(f'<div style="color:{ACCENT_SOFT};font-size:0.72em;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;">Patterns found</div>', unsafe_allow_html=True)
+            for p in cs['patterns']:
+                color = '#4ade80' if p['type'] == 'positive' else ('#f87171' if p['type'] == 'negative' else '#f59e0b')
+                st.markdown(
+                    f'<div class="insight-row" style="border-left-color:{color};">'
+                    f'<div style="font-size:0.9em;color:#ddd;">{p["text"]}</div>'
+                    f'</div>',
+                    unsafe_allow_html=True
+                )
+
+        st.write("")
+        st.markdown(f'<div style="color:{ACCENT_SOFT};font-size:0.72em;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;">Action plan — next 10 trades</div>', unsafe_allow_html=True)
+        for i, action in enumerate(cs['actions'], 1):
+            st.markdown(
+                f'<div style="display:flex;gap:10px;padding:8px 0;border-bottom:1px solid rgba(96,165,250,0.08);">'
+                f'<span style="color:{ACCENT};font-weight:700;min-width:20px;">{i}.</span>'
+                f'<span style="color:#ddd;font-size:0.9em;">{action}</span>'
+                f'</div>',
+                unsafe_allow_html=True
+            )
 
 # ============ PERFORMANCE OVERVIEW ============
 st.markdown('<div class="section-label">Performance Overview</div>', unsafe_allow_html=True)
