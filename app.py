@@ -327,7 +327,6 @@ NAV_H = '62px'
 css = f"""
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-
   .stApp {{
     background:#070b14;
     background-image: radial-gradient(circle at 15% 10%, rgba(96,165,250,0.08), transparent 35%),
@@ -532,23 +531,21 @@ st.markdown('<div class="section-label">3SL Window</div>', unsafe_allow_html=Tru
 
 session_rows_html = ""
 for s in session_stats:
-    bar_pct = round(abs(s['exp']) / max_abs_exp * 100, 1)
     wr = s['wr']
-    distance = abs(wr - 0.5) * 2  # 0 at 50%, 1 at 0% or 100%
-    intensity_high = round(0.3 + distance * 0.65, 2)
-    intensity_low = round(0.1 + distance * 0.2, 2)
+    bar_pct = round(wr * 100, 1)
+    distance = abs(wr - 0.5) * 2
+    intensity = round(0.15 + distance * 0.75, 2)
     if wr >= 0.5:
-        bar_color = f'linear-gradient(90deg, rgba(96,165,250,{intensity_low}), rgba(96,165,250,{intensity_high}))'
-        bar_track = f'rgba(96,165,250,0.06)'
-        val_color = '#60a5fa'
+        bar_color = f'rgba(96,165,250,{intensity})'
+        val_color = f'rgba(96,165,250,{min(intensity + 0.1, 1.0)})'
     else:
-        bar_color = f'linear-gradient(90deg, rgba(248,113,113,{intensity_high}), rgba(248,113,113,{intensity_low}))'
-        bar_track = f'rgba(248,113,113,0.06)'
-        val_color = '#f87171'
+        bar_color = f'rgba(248,113,113,{intensity})'
+        val_color = f'rgba(248,113,113,{min(intensity + 0.1, 1.0)})'
     session_rows_html += (
         f'<div style="display:grid;grid-template-columns:100px 1fr 70px 60px 40px;gap:16px;align-items:center;padding:12px 0;">'
         f'<span style="color:{ACCENT_SOFT};font-weight:600;">{s["session"]}</span>'
-        f'<div style="background:{bar_track};border-radius:8px;height:16px;overflow:hidden;">'
+        f'<div style="background:rgba(255,255,255,0.04);border-radius:8px;height:16px;overflow:hidden;position:relative;">'
+        f'<div style="position:absolute;left:50%;top:0;width:1px;height:100%;background:rgba(255,255,255,0.2);"></div>'
         f'<div style="width:{bar_pct}%;height:100%;background:{bar_color};border-radius:8px;"></div>'
         f'</div>'
         f'<span style="color:{val_color};font-weight:700;">{s["exp"]}</span>'
