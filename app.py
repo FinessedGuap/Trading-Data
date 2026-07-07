@@ -74,6 +74,27 @@ def parse_r_result(value):
     except:
         return None
 
+def safe_parse_date(x):
+    if pd.isna(x) or x is None or str(x).strip() == '':
+        return pd.NaT
+    try:
+        from dateutil import parser as _dateutil_parser
+        parsed = _dateutil_parser.isoparse(str(x))
+        ts = pd.Timestamp(parsed)
+        if ts.tzinfo is not None:
+            ts = ts.tz_convert('Australia/Sydney').tz_localize(None)
+        return ts
+    except Exception:
+        try:
+            from dateutil import parser as _dateutil_parser
+            parsed = _dateutil_parser.parse(str(x))
+            ts = pd.Timestamp(parsed)
+            if ts.tzinfo is not None:
+                ts = ts.tz_convert('Australia/Sydney').tz_localize(None)
+            return ts
+        except Exception:
+            return pd.NaT
+
 def calc_stats(df_in):
     stats = {}
     r = df_in['R_Result'].dropna()
@@ -143,27 +164,6 @@ def get_day_trades(df_in, day_date):
     df_temp = df_in.dropna(subset=['Date', 'R_Result']).copy()
     df_temp['day'] = df_temp['Date'].dt.date
     return df_temp[df_temp['day'] == day_date]
-
-def safe_parse_date(x):
-    if pd.isna(x) or x is None or str(x).strip() == '':
-        return pd.NaT
-    try:
-        from dateutil import parser as _dateutil_parser
-        parsed = _dateutil_parser.isoparse(str(x))
-        ts = pd.Timestamp(parsed)
-        if ts.tzinfo is not None:
-            ts = ts.tz_convert('Australia/Sydney').tz_localize(None)
-        return ts
-    except Exception:
-        try:
-            from dateutil import parser as _dateutil_parser
-            parsed = _dateutil_parser.parse(str(x))
-            ts = pd.Timestamp(parsed)
-            if ts.tzinfo is not None:
-                ts = ts.tz_convert('Australia/Sydney').tz_localize(None)
-            return ts
-        except Exception:
-            return pd.NaT
 
 def catmull(points):
     if len(points) < 2:
@@ -287,6 +287,9 @@ with st.spinner("Pulling fresh data from Notion..."):
     df['Date'] = df['Date'].apply(safe_parse_date)
     df['Date'] = pd.Series(df['Date'].tolist(), dtype='datetime64[ns]')
     df['R_Result'] = df['R Result'].apply(parse_r_result)
+
+    # Debug — remove once confirmed working
+    st.write("Parsed dates:", sorted(df['Date'].dropna().dt.date.unique().tolist()))
 
     df_main = df.copy()
     df_main = df_main.sort_values('Date').reset_index(drop=True)
