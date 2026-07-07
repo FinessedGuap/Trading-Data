@@ -291,8 +291,6 @@ with st.spinner("Pulling fresh data from Notion..."):
     df_main = df.copy()
     df_main = df_main.sort_values('Date').reset_index(drop=True)
     df_main['Pair'] = df_main['Pair'].str.strip()
-    
-    
 
     df_xau = df_main[df_main['Pair'] == 'XAUUSD'].copy()
     df_nas = df_main[df_main['Pair'] == 'NASDAQ'].copy()
@@ -375,8 +373,6 @@ css = f"""
     min-height:{NAV_H}; box-sizing:border-box;
   }}
   .nav-label {{ font-size:1.3em; font-weight:800; color:#fff; letter-spacing:-0.3px; }}
-  .session-bar-track {{ background:rgba(96,165,250,0.1); border-radius:8px; height:16px; overflow:hidden; }}
-  .session-bar-fill {{ height:100%; border-radius:8px; background:linear-gradient(90deg, rgba(59,130,246,0.6), {ACCENT}); }}
   .cal-header {{ color:{ACCENT_SOFT}; font-size:0.72em; text-align:center; letter-spacing:1.5px; font-weight:600; text-transform:uppercase; padding:10px 0; }}
   .cal-day-num {{ color:#3d4a63; font-size:0.78em; font-weight:600; text-align:center; }}
   .cal-week-summary {{
@@ -528,6 +524,7 @@ for col, (label, w, l, b, colors, glow, title_color) in zip(donut_cols, donut_co
         unsafe_allow_html=True
     )
 
+# ============ DIVIDER ============
 st.markdown('<hr class="divider-line">', unsafe_allow_html=True)
 
 # ============ 3SL WINDOW ============
@@ -536,11 +533,22 @@ st.markdown('<div class="section-label">3SL Window</div>', unsafe_allow_html=Tru
 session_rows_html = ""
 for s in session_stats:
     bar_pct = round(abs(s['exp']) / max_abs_exp * 100, 1)
+    is_good = s['wr'] >= 0.5
+    if is_good:
+        bar_color = f'linear-gradient(90deg, rgba(96,165,250,0.4), rgba(96,165,250,0.8))'
+        bar_track = 'rgba(96,165,250,0.08)'
+        val_color = '#60a5fa'
+    else:
+        bar_color = f'linear-gradient(90deg, rgba(248,113,113,0.3), rgba(248,113,113,0.6))'
+        bar_track = 'rgba(248,113,113,0.08)'
+        val_color = '#f87171'
     session_rows_html += (
         f'<div style="display:grid;grid-template-columns:100px 1fr 70px 60px 40px;gap:16px;align-items:center;padding:12px 0;">'
         f'<span style="color:{ACCENT_SOFT};font-weight:600;">{s["session"]}</span>'
-        f'<div class="session-bar-track"><div class="session-bar-fill" style="width:{bar_pct}%;"></div></div>'
-        f'<span style="color:#fff;font-weight:700;">{s["exp"]}</span>'
+        f'<div style="background:{bar_track};border-radius:8px;height:16px;overflow:hidden;">'
+        f'<div style="width:{bar_pct}%;height:100%;background:{bar_color};border-radius:8px;"></div>'
+        f'</div>'
+        f'<span style="color:{val_color};font-weight:700;">{s["exp"]}</span>'
         f'<span style="color:#9ab4dd;font-weight:500;">{s["wr"]}</span>'
         f'<span style="color:#5a6a88;font-weight:500;">{s["n"]}</span>'
         f'</div>'
