@@ -290,9 +290,9 @@ with st.spinner("Pulling fresh data from Notion..."):
 
     df_main = df.copy()
     df_main = df_main.sort_values('Date').reset_index(drop=True)
-
-    # DEBUG — shows all unique Pair values
-    st.write("Pair values:", df_main['Pair'].value_counts().to_dict())
+    df_main['Pair'] = df_main['Pair'].str.strip()
+    
+    
 
     df_xau = df_main[df_main['Pair'] == 'XAUUSD'].copy()
     df_nas = df_main[df_main['Pair'] == 'NASDAQ'].copy()
