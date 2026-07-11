@@ -5,7 +5,7 @@ from datetime import datetime
 import calendar as cal_module
 import math
 
-st.set_page_config(page_title="Overall Data", layout="wide", initial_sidebar_state="collapsed")
+st.set_page_config(page_title="Trading Data", layout="wide", initial_sidebar_state="collapsed")
 
 # ============ PASSWORD GATE ============
 PASSWORD = st.secrets.get("DASHBOARD_PASSWORD", "trading123")
@@ -16,11 +16,17 @@ if not st.session_state.authenticated:
     st.markdown("""
     <style>
     .stApp { background:#070b14; font-family:'Inter',sans-serif; }
+    div[data-testid="stButton"] button {
+        background:rgba(96,165,250,0.1) !important;
+        border:1px solid rgba(96,165,250,0.3) !important;
+        color:#fff !important; border-radius:10px !important;
+        min-height:44px !important;
+    }
     </style>
     """, unsafe_allow_html=True)
     col1, col2, col3 = st.columns([2,2,2])
     with col2:
-        st.markdown('<div style="text-align:center;padding:60px 0 20px;font-size:1.8em;font-weight:700;color:#fff;">Overall Data</div>', unsafe_allow_html=True)
+        st.markdown('<div style="text-align:center;padding:60px 0 20px;font-size:1.8em;font-weight:700;color:#fff;">Trading Data</div>', unsafe_allow_html=True)
         st.markdown('<div style="text-align:center;color:#5a6a88;font-size:0.85em;margin-bottom:32px;">Enter password to access your dashboard</div>', unsafe_allow_html=True)
         pw = st.text_input("", placeholder="Password", type="password", label_visibility="collapsed")
         if st.button("Enter", use_container_width=True):
@@ -155,7 +161,6 @@ def calc_stats(df_in):
         streak = streak + 1 if val < 0 else 0
         max_streak = max(max_streak, streak)
     stats['max_consec_losses'] = max_streak
-    # Current streak
     cur_streak = 0
     cur_type = None
     for val in reversed(r.tolist()):
@@ -168,7 +173,6 @@ def calc_stats(df_in):
             break
     stats['cur_streak'] = cur_streak
     stats['cur_streak_type'] = cur_type
-    # Rolling win rate (last 10)
     rolling = []
     vals = r.tolist()
     for i in range(len(vals)):
@@ -178,7 +182,6 @@ def calc_stats(df_in):
         nb = w + l
         rolling.append(round(w / nb * 100, 1) if nb > 0 else 0)
     stats['rolling_wr'] = rolling
-    # Trade results list for streak display
     stats['trade_results'] = ['W' if v > 0 else ('L' if v < 0 else 'B') for v in vals]
     return stats
 
@@ -220,11 +223,7 @@ def calc_monthly_r(df_in):
     grouped.columns = ['trades', 'total_r', 'win_rate']
     monthly = {}
     for period, row in grouped.iterrows():
-        monthly[str(period)] = {
-            'trades': int(row['trades']),
-            'total_r': round(row['total_r'], 2),
-            'win_rate': round(row['win_rate'], 1)
-        }
+        monthly[str(period)] = {'trades': int(row['trades']), 'total_r': round(row['total_r'], 2), 'win_rate': round(row['win_rate'], 1)}
     return monthly
 
 def get_day_trades(df_in, day_date):
@@ -299,7 +298,9 @@ def find_best_setup(df_in):
     return {'combos': best_combos, 'overall_wr': overall_wr, 'overall_exp': overall_exp}
 
 def generate_checklist(df_in, session_stats):
-    items = []
+    green = []
+    red = []
+
     col_map = {
         'Entry Model': 'entry model', 'Entry Model Timeframe': 'timeframe',
         'Double Confirmation': 'double confirmation', 'Target': 'target',
@@ -307,28 +308,67 @@ def generate_checklist(df_in, session_stats):
         'Trade Quality Rating': 'trade quality',
     }
     for col, label in col_map.items():
-        best = get_best(df_in, col)
-        if best and best['exp'] > 0:
-            items.append({'label': f"Use {best['label']} for {label}", 'detail': f"{best['exp']}R avg · {best['wr']}% WR · {best['n']} trades", 'type': 'green'})
+        data = breakdown_by_col(df_in, col, min_trades=2)
+        if data:
+            best = data[0]
+            worst = data[-1]
+            if best['exp'] > 0:
+                green.append({'label': f"Use {best['label']} for {label}", 'detail': f"{best['exp']}R avg · {best['wr']}% WR · {best['n']} trades"})
+            if worst['exp'] < 0:
+                lbl = worst['label'][:28] + '…' if len(worst['label']) > 28 else worst['label']
+                red.append({'label': f"Avoid {lbl} for {label}", 'detail': f"{worst['exp']}R avg · {worst['wr']}% WR · {worst['n']} trades"})
+
     if session_stats:
         best_s = max(session_stats, key=lambda x: x['exp'])
         worst_s = min(session_stats, key=lambda x: x['exp'])
         if best_s['exp'] > 0:
-            items.append({'label': f"Trade {best_s['session']} session", 'detail': f"{best_s['exp']}R avg · {round(best_s['wr']*100)}% WR · {best_s['n']} trades", 'type': 'green'})
+            green.append({'label': f"Trade {best_s['session']} session", 'detail': f"{best_s['exp']}R avg · {round(best_s['wr']*100)}% WR · {best_s['n']} trades"})
         if worst_s['exp'] < 0 or worst_s['wr'] < 0.35:
-            items.append({'label': f"Avoid {worst_s['session']} session", 'detail': f"{worst_s['exp']}R avg · {round(worst_s['wr']*100)}% WR · {worst_s['n']} trades", 'type': 'red'})
+            red.append({'label': f"Avoid {worst_s['session']} session", 'detail': f"{worst_s['exp']}R avg · {round(worst_s['wr']*100)}% WR · {worst_s['n']} trades"})
+
     if 'Hour' in df_in.columns:
-        best_h = get_best(df_in, 'Hour')
-        if best_h and best_h['exp'] > 0:
-            items.append({'label': f"Best time: {best_h['label']}", 'detail': f"{best_h['exp']}R avg · {best_h['wr']}% WR · {best_h['n']} trades", 'type': 'green'})
-    for col in ['Entry Model', 'Stop Loss Logic', 'Target']:
-        data = breakdown_by_col(df_in, col, min_trades=2)
+        data = breakdown_by_col(df_in, 'Hour')
         if data:
-            worst = data[-1]
-            if worst['exp'] < 0:
-                lbl = worst['label'][:25] + '…' if len(worst['label']) > 25 else worst['label']
-                items.append({'label': f"Avoid: {lbl}", 'detail': f"{worst['exp']}R avg · {worst['wr']}% WR · {worst['n']} trades", 'type': 'red'})
-    return items
+            best_h = data[0]
+            worst_h = data[-1]
+            if best_h['exp'] > 0:
+                green.append({'label': f"Best time to trade: {best_h['label']}", 'detail': f"{best_h['exp']}R avg · {best_h['wr']}% WR · {best_h['n']} trades"})
+            if worst_h['exp'] < 0:
+                red.append({'label': f"Avoid trading at {worst_h['label']}", 'detail': f"{worst_h['exp']}R avg · {worst_h['wr']}% WR · {worst_h['n']} trades"})
+
+    # Emotional state
+    if 'Emotional State Before...' in df_in.columns:
+        data = breakdown_by_col(df_in, 'Emotional State Before...', min_trades=2)
+        for d in data:
+            state = d['label'].lower()
+            if any(x in state for x in ['fomo', 'unsettled', 'annoyed', 'anxious']):
+                if d['exp'] < 0 or d['wr'] < 50:
+                    red.append({'label': f"Avoid trading when {d['label']}", 'detail': f"{d['exp']}R avg · {d['wr']}% WR · {d['n']} trades"})
+            elif 'confident' in state or 'relaxed' in state:
+                if d['exp'] > 0:
+                    green.append({'label': f"Trade when feeling {d['label']}", 'detail': f"{d['exp']}R avg · {d['wr']}% WR · {d['n']} trades"})
+
+    # Trade quality
+    if 'Trade Quality Rating' in df_in.columns:
+        data = breakdown_by_col(df_in, 'Trade Quality Rating', min_trades=2)
+        for d in data:
+            q = d['label'].lower()
+            if d['exp'] < 0 or ('c ' in q or q.startswith('c=')):
+                red.append({'label': f"Avoid C-grade trades: {d['label'][:30]}", 'detail': f"{d['exp']}R avg · {d['wr']}% WR · {d['n']} trades"})
+            elif 'a+' in q and d['exp'] > 0:
+                green.append({'label': f"Only take A+ setups: {d['label'][:30]}", 'detail': f"{d['exp']}R avg · {d['wr']}% WR · {d['n']} trades"})
+
+    # News proximity
+    if 'News Proximity' in df_in.columns:
+        data = breakdown_by_col(df_in, 'News Proximity', min_trades=2)
+        for d in data:
+            news = d['label'].lower()
+            if ('during' in news or 'pre-news' in news or 'within' in news) and (d['exp'] < 0 or d['wr'] < 50):
+                red.append({'label': f"Avoid trading near news: {d['label']}", 'detail': f"{d['exp']}R avg · {d['wr']}% WR · {d['n']} trades"})
+            elif 'no news' in news and d['exp'] > 0:
+                green.append({'label': "Trade when no news nearby", 'detail': f"{d['exp']}R avg · {d['wr']}% WR · {d['n']} trades"})
+
+    return green, red
 
 def catmull(points):
     if len(points) < 2:
@@ -451,16 +491,16 @@ with st.spinner("Pulling fresh data from Notion..."):
     monthly_r = calc_monthly_r(df_main)
     consistency_score, consistency_breakdown = calc_consistency_score(df_main, session_stats)
     best_setup = find_best_setup(df_main)
+    green_checklist, red_checklist = generate_checklist(df_main, session_stats)
 
 max_abs_exp = max([abs(s['exp']) for s in session_stats]) if session_stats else 1
 if max_abs_exp == 0: max_abs_exp = 1
 
 today = datetime.now()
 
-# Session state
 for key, val in [
     ('selected_day', None), ('cal_month', today.month), ('cal_year', today.year),
-    ('overview_idx', 0), ('show_edge_analysis', False), ('active_page', 'Overview')
+    ('overview_idx', 0), ('active_page', 'Overview')
 ]:
     if key not in st.session_state:
         st.session_state[key] = val
@@ -479,12 +519,6 @@ css = f"""
     border-right:1px solid rgba(96,165,250,0.12) !important;
   }}
   section[data-testid="stSidebar"] > div {{ padding-top:0 !important; }}
-  .sidebar-title {{ font-size:1.1em; font-weight:700; color:#fff; padding:20px 16px 4px; }}
-  .sidebar-sub {{ font-size:0.7em; color:#5a6a88; padding:0 16px 16px; border-bottom:1px solid rgba(96,165,250,0.1); margin-bottom:8px; }}
-  .nav-item {{ padding:10px 16px; display:flex; align-items:center; gap:10px; cursor:pointer; border-right:2px solid transparent; }}
-  .nav-item.active {{ background:rgba(96,165,250,0.1); border-right-color:#60a5fa; }}
-  .nav-item span {{ font-size:0.82em; font-weight:600; color:#5a6a88; }}
-  .nav-item.active span {{ color:#60a5fa; }}
   .section-label {{
     font-size:0.72em; font-weight:700; letter-spacing:2.5px; text-transform:uppercase;
     color:{ACCENT_SOFT}; margin:32px 0 16px; display:flex; align-items:center; gap:10px;
@@ -507,17 +541,24 @@ css = f"""
     background:rgba(96,165,250,0.05); backdrop-filter:blur(24px);
     border:1px solid rgba(96,165,250,0.15); border-radius:20px; padding:0 24px;
     text-align:center; display:flex; align-items:center; justify-content:center;
-    min-height:{NAV_H}; box-sizing:border-box;
+    min-height:{NAV_H}; box-sizing:border-box; margin-bottom:16px;
   }}
   .nav-label {{ font-size:1.2em; font-weight:800; color:#fff; }}
   .divider-line {{ border:none; border-top:1px solid rgba(96,165,250,0.1); margin:32px 0; }}
-  .collapse-bar {{ background:rgba(96,165,250,0.06); border:1px solid rgba(96,165,250,0.2); border-radius:14px; padding:14px 18px; display:flex; align-items:center; gap:12px; }}
   .cal-header {{ color:{ACCENT_SOFT}; font-size:0.72em; text-align:center; letter-spacing:1.5px; font-weight:600; text-transform:uppercase; padding:10px 0; }}
   .cal-day-num {{ color:#3d4a63; font-size:0.78em; font-weight:600; text-align:center; }}
   .cal-week-summary {{ background:rgba(96,165,250,0.06); border:1px solid rgba(96,165,250,0.18); border-radius:16px; padding:12px 6px; text-align:center; min-height:88px; }}
   .cal-week-label {{ color:{ACCENT_SOFT}; font-size:0.68em; font-weight:700; }}
   .cal-week-r {{ font-size:1.2em; font-weight:700; margin-top:10px; color:#fff; }}
   .cal-day-trades {{ color:#5a6a88; font-size:0.64em; margin-top:3px; text-align:center; }}
+  div[data-testid="stButton"] button {{
+    width:100%; min-height:88px; border-radius:16px;
+    font-family:'Inter',sans-serif; white-space:pre-line; line-height:1.4;
+    transition:all 0.25s ease; font-weight:600;
+    background:rgba(96,165,250,0.06) !important;
+    border:1px solid rgba(96,165,250,0.18) !important; color:#fff !important;
+  }}
+  div[data-testid="stButton"] button:hover {{ transform:translateY(-2px); border-color:rgba(96,165,250,0.4) !important; }}
   div[data-testid="stButton"] button[kind="primary"] {{
     background:rgba(74,222,128,0.12) !important;
     border:1px solid rgba(74,222,128,0.3) !important;
@@ -530,10 +571,9 @@ css = f"""
     color:#ffeaea !important;
     box-shadow:0 8px 24px rgba(248,113,113,0.1) !important;
   }}
-  div[data-testid="stButton"] button:hover {{ transform:translateY(-2px); border-color:rgba(96,165,250,0.4) !important; }}
   div[data-testid="column"]:first-child div[data-testid="stButton"] button,
   div[data-testid="column"]:last-child div[data-testid="stButton"] button {{
-    min-height:{NAV_H} !important; border-radius:20px !important; font-size:1.2em !important;
+    min-height:{NAV_H} !important; border-radius:20px !important; font-size:1.1em !important;
   }}
   .trade-detail-card {{ background:rgba(96,165,250,0.05); border:1px solid rgba(96,165,250,0.15); border-radius:16px; padding:16px 20px; margin-bottom:10px; }}
   .eq-legend {{ display:flex; gap:24px; margin-bottom:12px; flex-wrap:wrap; }}
@@ -548,31 +588,20 @@ st.markdown(css, unsafe_allow_html=True)
 
 # ============ SIDEBAR ============
 with st.sidebar:
-    st.markdown('<div class="sidebar-title">Overall Data</div>', unsafe_allow_html=True)
-    st.markdown('<div class="sidebar-sub">Trading Journal</div>', unsafe_allow_html=True)
+    st.markdown('<div style="font-size:1.1em;font-weight:700;color:#fff;padding:20px 16px 4px;">Trading Data</div>', unsafe_allow_html=True)
+    st.markdown('<div style="font-size:0.7em;color:#5a6a88;padding:0 16px 16px;border-bottom:1px solid rgba(96,165,250,0.1);margin-bottom:8px;">Trading Journal</div>', unsafe_allow_html=True)
 
-    pages = [
-        ('📊', 'Overview'),
-        ('📈', 'Charts'),
-        ('🗓️', 'Calendar'),
-        ('🔍', 'Edge Analysis'),
-        ('🏆', 'Best Setups'),
-    ]
-
-    for icon, page in pages:
-        active = 'active' if st.session_state.active_page == page else ''
-        if st.button(f"{icon}  {page}", key=f"nav_{page}", use_container_width=True):
-            st.session_state.active_page = page
+    pages = [('📊', 'Overview'), ('📈', 'Charts'), ('🗓️', 'Calendar'), ('🔍', 'Edge Analysis'), ('🏆', 'Best Setups')]
+    for icon, page_name in pages:
+        if st.button(f"{icon}  {page_name}", key=f"nav_{page_name}", use_container_width=True):
+            st.session_state.active_page = page_name
             st.rerun()
 
-    st.markdown('<div style="margin-top:auto;padding:16px 0 0;border-top:1px solid rgba(96,165,250,0.1);margin-top:24px;">', unsafe_allow_html=True)
-    st.markdown(f'<div style="font-size:0.7em;color:#3d4a63;">Last updated</div><div style="font-size:0.72em;color:#5a6a88;">{today.strftime("%b %d · %I:%M %p")}</div>', unsafe_allow_html=True)
+    st.markdown(f'<div style="font-size:0.7em;color:#3d4a63;margin-top:24px;padding-top:16px;border-top:1px solid rgba(96,165,250,0.1);">Last updated</div><div style="font-size:0.72em;color:#5a6a88;">{today.strftime("%b %d · %I:%M %p")}</div>', unsafe_allow_html=True)
     if st.button("↻ Refresh", key="refresh_btn", use_container_width=True):
-        st.cache_data.clear()
         st.rerun()
-    if st.button("⬇ Export CSV", key="export_btn", use_container_width=True):
-        csv = df_main.to_csv(index=False)
-        st.download_button("Download", csv, "trades.csv", "text/csv", key="dl_csv")
+    csv = df_main.to_csv(index=False)
+    st.download_button("⬇ Export CSV", csv, "trades.csv", "text/csv", key="dl_csv", use_container_width=True)
     if st.button("🔒 Logout", key="logout_btn", use_container_width=True):
         st.session_state.authenticated = False
         st.rerun()
@@ -584,11 +613,10 @@ if page == 'Overview':
     st.markdown('<div style="font-size:1.6em;font-weight:700;color:#fff;margin-bottom:4px;">Overview</div>', unsafe_allow_html=True)
     st.markdown(f'<div style="font-size:0.75em;color:#5a6a88;margin-bottom:24px;">{main_stats.get("total_trades","—")} trades total</div>', unsafe_allow_html=True)
 
-    # Streak / consistency / month banner
     cur = main_stats.get('cur_streak', 0)
     cur_type = main_stats.get('cur_streak_type', '—')
     cur_color = '#4ade80' if cur_type == 'W' else ('#f87171' if cur_type == 'L' else '#60a5fa')
-    cur_label = 'Win Streak' if cur_type == 'W' else ('Loss Streak' if cur_type == 'L' else 'Breakeven Streak')
+    cur_label = 'Win Streak' if cur_type == 'W' else ('Loss Streak' if cur_type == 'L' else 'Streak')
     this_month_key = today.strftime('%Y-%m')
     this_month_r = monthly_r.get(this_month_key, {}).get('total_r', 0)
     last_month_key = (today.replace(day=1) - pd.Timedelta(days=1)).strftime('%Y-%m')
@@ -598,7 +626,7 @@ if page == 'Overview':
     diff_sign = '+' if diff >= 0 else ''
 
     st.markdown(
-        f'<div class="glass-panel" style="display:flex;align-items:center;gap:0;padding:18px 24px;">'
+        f'<div class="glass-panel" style="display:flex;align-items:center;padding:18px 24px;">'
         f'<div style="text-align:center;flex:1;"><div style="font-size:1.6em;font-weight:700;color:{cur_color};">{cur}</div><div style="font-size:0.62em;color:#5a6a88;margin-top:3px;text-transform:uppercase;letter-spacing:0.5px;">{cur_label}</div></div>'
         f'<div style="width:1px;height:40px;background:rgba(96,165,250,0.15);"></div>'
         f'<div style="text-align:center;flex:1;"><div style="font-size:1.6em;font-weight:700;color:{ACCENT};">{consistency_score}%</div><div style="font-size:0.62em;color:#5a6a88;margin-top:3px;text-transform:uppercase;letter-spacing:0.5px;">Consistency</div></div>'
@@ -610,7 +638,6 @@ if page == 'Overview':
         unsafe_allow_html=True
     )
 
-    # Performance overview nav
     st.markdown('<div class="section-label">Performance</div>', unsafe_allow_html=True)
     overviews = [
         {'label': 'Overall', 'stats': main_stats, 'color': ACCENT_SOFT},
@@ -619,6 +646,7 @@ if page == 'Overview':
     ]
     idx = st.session_state.overview_idx
     current = overviews[idx]
+
     prev_col, next_col = st.columns(2)
     with prev_col:
         if st.button(f"← {overviews[(idx-1) % len(overviews)]['label']}", key="prev_ov", use_container_width=True):
@@ -629,13 +657,7 @@ if page == 'Overview':
             st.session_state.overview_idx = (idx + 1) % len(overviews)
             st.rerun()
 
-    st.markdown(
-        f'<div class="nav-banner" style="margin-bottom:16px;">'
-        f'<span class="nav-label" style="color:{current["color"]};">{current["label"]} Performance</span>'
-        f'</div>',
-        unsafe_allow_html=True
-    )
-    st.write("")
+    st.markdown(f'<div class="nav-banner"><span class="nav-label" style="color:{current["color"]};">{current["label"]} Performance</span></div>', unsafe_allow_html=True)
 
     stat_data = [
         ('Total Trades', current['stats'].get('total_trades','—')),
@@ -660,7 +682,6 @@ if page == 'Overview':
             col.markdown(f'<div class="stat-card" style="border-color:{current["color"]}44;"><div class="stat-value">{value}</div><div class="stat-label" style="color:{current["color"]};">{label}</div></div>', unsafe_allow_html=True)
         st.write("")
 
-    # Streak tracker
     st.markdown('<div class="section-label">Recent Trades</div>', unsafe_allow_html=True)
     trade_results = main_stats.get('trade_results', [])[-20:]
     streak_html = '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:12px;">'
@@ -668,30 +689,25 @@ if page == 'Overview':
         color = 'rgba(74,222,128,0.8)' if r == 'W' else ('rgba(248,113,113,0.7)' if r == 'L' else 'rgba(96,165,250,0.5)')
         text_color = '#000' if r == 'W' else '#fff'
         streak_html += f'<div class="streak-box" style="background:{color};color:{text_color};">{r}</div>'
-    streak_html += '<div class="streak-box" style="border:1px dashed rgba(96,165,250,0.3);color:#3d4a63;">?</div></div>'
+    streak_html += f'<div class="streak-box" style="border:1px dashed rgba(96,165,250,0.3);color:#3d4a63;">?</div></div>'
     streak_html += f'<div style="font-size:0.72em;color:#5a6a88;">Last 20 trades &nbsp;·&nbsp; <span style="color:{cur_color};">Current streak: {cur} {cur_type}</span></div>'
     st.markdown(f'<div class="glass-panel">{streak_html}</div>', unsafe_allow_html=True)
 
-    # Month comparison
     st.markdown('<div class="section-label">Month vs Month</div>', unsafe_allow_html=True)
     months = sorted(monthly_r.keys())[-4:]
-    month_cols = st.columns(len(months))
+    month_cols = st.columns(max(len(months), 1))
     for i, (col, m) in enumerate(zip(month_cols, months)):
         data = monthly_r[m]
         sign = '+' if data['total_r'] > 0 else ''
         is_current = m == this_month_key
-        border = 'rgba(96,165,250,0.35)' if is_current else 'rgba(96,165,250,0.1)'
         col.markdown(
-            f'<div style="background:rgba(96,165,250,{"0.1" if is_current else "0.04"});border:1px solid {border};border-radius:14px;padding:14px;text-align:center;">'
+            f'<div style="background:rgba(96,165,250,{"0.1" if is_current else "0.04"});border:1px solid rgba(96,165,250,{"0.35" if is_current else "0.1"});border-radius:14px;padding:14px;text-align:center;">'
             f'<div style="color:{"#7fb2f5" if is_current else "#5a6a88"};font-size:0.65em;margin-bottom:6px;text-transform:uppercase;">{m}</div>'
             f'<div style="color:#fff;font-size:1.2em;font-weight:700;">{sign}{data["total_r"]}R</div>'
             f'<div style="color:#5a6a88;font-size:0.65em;margin-top:4px;">{data["win_rate"]}% WR · {data["trades"]} trades</div>'
-            f'{"<div style=\"color:#7fb2f5;font-size:0.65em;margin-top:4px;\">Current</div>" if is_current else ""}'
-            f'</div>',
-            unsafe_allow_html=True
-        )
+            f'{"<div style=\'color:#7fb2f5;font-size:0.65em;margin-top:4px;\'>Current</div>" if is_current else ""}'
+            f'</div>', unsafe_allow_html=True)
 
-    # 3SL Window
     st.markdown('<div class="section-label">3SL Window</div>', unsafe_allow_html=True)
     session_rows_html = ""
     for s in session_stats:
@@ -714,8 +730,7 @@ if page == 'Overview':
         f'<span style="color:{ACCENT_SOFT};font-size:0.7em;font-weight:600;">WR</span>'
         f'<span style="color:{ACCENT_SOFT};font-size:0.7em;font-weight:600;">N</span>'
         f'</div>{session_rows_html}</div>',
-        unsafe_allow_html=True
-    )
+        unsafe_allow_html=True)
 
 # ============ PAGE: CHARTS ============
 elif page == 'Charts':
@@ -724,7 +739,6 @@ elif page == 'Charts':
     xau_eq = xau_stats.get('equity_curve', [])
     nas_eq = nas_stats.get('equity_curve', [])
     svg_w, svg_h = 800, 200
-
     xau_line, xau_fill = make_curve(xau_eq, svg_w, svg_h)
     nas_line, nas_fill = make_curve(nas_eq, svg_w, svg_h)
     xau_fill_path = f'<path d="{xau_fill}" fill="url(#xauFill)" opacity="0.5"/>' if xau_fill else ''
@@ -743,26 +757,24 @@ elif page == 'Charts':
     </svg>"""
 
     st.markdown(
-        f'<div class="glass-panel">'
-        f'<div style="color:#cfe0fb;font-weight:600;font-size:1.05em;margin-bottom:8px;">Equity Curve</div>'
-        f'<div class="eq-legend"><div class="eq-legend-item"><div class="eq-legend-dot" style="background:{GOLD};box-shadow:0 0 6px {GOLD};"></div><span style="color:{GOLD_SOFT};">XAUUSD ({len(xau_eq)} trades)</span></div>'
-        f'<div class="eq-legend-item"><div class="eq-legend-dot" style="background:{PURPLE};box-shadow:0 0 6px {PURPLE};"></div><span style="color:{PURPLE_SOFT};">NASDAQ ({len(nas_eq)} trades)</span></div></div>'
-        f'{combined_svg}</div>',
-        unsafe_allow_html=True
-    )
+        f'<div class="glass-panel"><div style="color:#cfe0fb;font-weight:600;font-size:1.05em;margin-bottom:8px;">Equity Curve</div>'
+        f'<div class="eq-legend">'
+        f'<div class="eq-legend-item"><div class="eq-legend-dot" style="background:{GOLD};box-shadow:0 0 6px {GOLD};"></div><span style="color:{GOLD_SOFT};">XAUUSD ({len(xau_eq)} trades)</span></div>'
+        f'<div class="eq-legend-item"><div class="eq-legend-dot" style="background:{PURPLE};box-shadow:0 0 6px {PURPLE};"></div><span style="color:{PURPLE_SOFT};">NASDAQ ({len(nas_eq)} trades)</span></div>'
+        f'</div>{combined_svg}</div>',
+        unsafe_allow_html=True)
 
-    # Rolling win rate
     rolling = main_stats.get('rolling_wr', [])
     if rolling:
         rsvg_w, rsvg_h = 800, 120
         n = len(rolling)
-        mn = 0; mx = 100; rng = 100
-        pts = [((i / (n-1)) * rsvg_w if n > 1 else 0, rsvg_h - ((v - mn) / rng) * (rsvg_h - 20) - 10) for i, v in enumerate(rolling)]
+        pts = [((i / (n-1)) * rsvg_w if n > 1 else 0, rsvg_h - ((v / 100) * (rsvg_h - 20)) - 10) for i, v in enumerate(rolling)]
         rline = catmull(pts)
         rfill = rline + f"L{rsvg_w},{rsvg_h} L0,{rsvg_h} Z" if rline else ""
-        baseline_y = rsvg_h - ((50 - mn) / rng) * (rsvg_h - 20) - 10
+        baseline_y = rsvg_h - (0.5 * (rsvg_h - 20)) - 10
         trending = rolling[-1] > rolling[0] if len(rolling) > 1 else False
-        trend_badge = f'<div style="background:rgba(74,222,128,0.1);border:1px solid rgba(74,222,128,0.2);border-radius:8px;padding:4px 10px;font-size:0.72em;color:#4ade80;">{"Trending up ↑" if trending else "Trending down ↓"}</div>'
+        trend_color = '#4ade80' if trending else '#f87171'
+        trend_text = 'Trending up ↑' if trending else 'Trending down ↓'
         rsvg = f"""<svg viewBox="0 0 {rsvg_w} {rsvg_h}" style="width:100%;height:120px;display:block;">
           <defs>
             <linearGradient id="rFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="rgba(96,165,250,0.25)"/><stop offset="100%" stop-color="rgba(96,165,250,0)"/></linearGradient>
@@ -776,11 +788,10 @@ elif page == 'Charts':
             f'<div class="glass-panel">'
             f'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">'
             f'<div><div style="color:#cfe0fb;font-weight:600;font-size:1.05em;">Rolling Win Rate</div><div style="color:#5a6a88;font-size:0.72em;margin-top:2px;">Last 10 trades window</div></div>'
-            f'{trend_badge}</div>{rsvg}</div>',
-            unsafe_allow_html=True
-        )
+            f'<div style="background:rgba({",".join(["74,222,128" if trending else "248,113,113"])},0.1);border:1px solid rgba({",".join(["74,222,128" if trending else "248,113,113"])},0.2);border-radius:8px;padding:4px 10px;font-size:0.72em;color:{trend_color};">{trend_text}</div>'
+            f'</div>{rsvg}</div>',
+            unsafe_allow_html=True)
 
-    # Donuts
     donut_configs = [
         ('Overall', main_stats.get('wins',0), main_stats.get('losses',0), main_stats.get('breakevens',0), ['#1d4ed8','#3b82f6','#93c5fd'], 'rgba(96,165,250,0.4)', ACCENT_SOFT),
         ('XAUUSD', xau_stats.get('wins',0), xau_stats.get('losses',0), xau_stats.get('breakevens',0), ['#b45309','#f59e0b','#fde68a'], 'rgba(245,158,11,0.4)', GOLD_SOFT),
@@ -834,7 +845,7 @@ elif page == 'Calendar':
             else:
                 day_date = datetime(cal_year, cal_month, day_num).date()
                 day_data = daily_r.get(day_date)
-               if day_data:
+                if day_data:
                     week_total += day_data['total_r']; week_trades += day_data['trades']
                     r_val = day_data['total_r']; sign = '+' if r_val > 0 else ''
                     btn_type = "primary" if r_val >= 0 else "secondary"
@@ -848,9 +859,9 @@ elif page == 'Calendar':
     if st.session_state.selected_day:
         st.markdown('<hr class="divider-line">', unsafe_allow_html=True)
         sel_day = st.session_state.selected_day
-        day_trades = get_day_trades(df_main, sel_day)
+        day_trades_df = get_day_trades(df_main, sel_day)
         st.markdown(f'<div class="section-label">Trades on {sel_day.strftime("%B %d, %Y")}</div>', unsafe_allow_html=True)
-        for _, trade in day_trades.iterrows():
+        for _, trade in day_trades_df.iterrows():
             r_val = trade['R_Result']
             label = 'Win' if r_val > 0 else ('Loss' if r_val < 0 else 'Breakeven')
             sign = '+' if r_val > 0 else ''
@@ -872,31 +883,31 @@ elif page == 'Edge Analysis':
         render_breakdown(df_main, 'Double Confirmation', 'Double Confirmation')
         render_breakdown(df_main, 'Target', 'Target Used')
         render_breakdown(df_main, 'Entry + Confirmation', 'Rejection Candle')
+        render_breakdown(df_main, 'News Proximity', 'News Proximity')
     with ea_cols[1]:
         render_breakdown(df_main, 'Entry Confluences', 'Entry Confluences')
         render_breakdown(df_main, 'Stop Loss Logic', 'Stop Loss Logic')
         render_breakdown(df_main, 'Hour', 'Time of Day')
         render_breakdown(df_main, 'Trade Quality Rating', 'Trade Quality')
         render_breakdown(df_main, 'Emotional State Before...', 'Emotional State')
+        render_breakdown(df_main, 'Conditions MTF/HTF', 'Market Conditions')
 
     st.markdown('<hr class="divider-line">', unsafe_allow_html=True)
     st.markdown(f'<div style="color:{ACCENT_SOFT};font-size:0.72em;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:14px;">Next Trade Checklist</div>', unsafe_allow_html=True)
-    checklist = generate_checklist(df_main, session_stats)
-    if checklist:
+
+    if green_checklist or red_checklist:
         cl_cols = st.columns(2)
         with cl_cols[0]:
-            st.markdown(f'<div style="color:#4ade80;font-size:0.7em;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">✓ What\'s working</div>', unsafe_allow_html=True)
-            for item in [c for c in checklist if c['type'] == 'green']:
-                st.markdown(f'<div class="checklist-item"><div class="checklist-dot" style="background:#4ade80;"></div><div><div style="color:#ddd;font-size:0.88em;font-weight:600;">{item["label"]}</div><div style="color:#5a6a88;font-size:0.76em;margin-top:2px;">{item["detail"]}</div></div></div>', unsafe_allow_html=True)
+            st.markdown(f'<div style="color:#4ade80;font-size:0.7em;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">✓ What\'s working — do more of this</div>', unsafe_allow_html=True)
+            for item in green_checklist:
+                st.markdown(f'<div class="checklist-item"><div class="checklist-dot" style="background:#4ade80;box-shadow:0 0 6px rgba(74,222,128,0.4);"></div><div><div style="color:#ddd;font-size:0.88em;font-weight:600;">{item["label"]}</div><div style="color:#5a6a88;font-size:0.76em;margin-top:2px;">{item["detail"]}</div></div></div>', unsafe_allow_html=True)
         with cl_cols[1]:
             st.markdown(f'<div style="color:#f87171;font-size:0.7em;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">✗ What to avoid</div>', unsafe_allow_html=True)
-            for item in [c for c in checklist if c['type'] == 'red']:
-                st.markdown(f'<div class="checklist-item"><div class="checklist-dot" style="background:#f87171;"></div><div><div style="color:#ddd;font-size:0.88em;font-weight:600;">{item["label"]}</div><div style="color:#5a6a88;font-size:0.76em;margin-top:2px;">{item["detail"]}</div></div></div>', unsafe_allow_html=True)
+            for item in red_checklist:
+                st.markdown(f'<div class="checklist-item"><div class="checklist-dot" style="background:#f87171;box-shadow:0 0 6px rgba(248,113,113,0.4);"></div><div><div style="color:#ddd;font-size:0.88em;font-weight:600;">{item["label"]}</div><div style="color:#5a6a88;font-size:0.76em;margin-top:2px;">{item["detail"]}</div></div></div>', unsafe_allow_html=True)
 
-    # Consistency score
     st.markdown('<hr class="divider-line">', unsafe_allow_html=True)
     st.markdown(f'<div style="color:{ACCENT_SOFT};font-size:0.72em;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:14px;">Consistency Score</div>', unsafe_allow_html=True)
-    fill_len = round((consistency_score / 100) * 201)
     cs_cols = st.columns([1, 2])
     with cs_cols[0]:
         st.markdown(
@@ -909,8 +920,7 @@ elif page == 'Edge Analysis':
             f'<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;">'
             f'<div style="font-size:1.3em;font-weight:700;color:#fff;">{consistency_score}%</div>'
             f'</div></div></div>',
-            unsafe_allow_html=True
-        )
+            unsafe_allow_html=True)
     with cs_cols[1]:
         for label, score in consistency_breakdown:
             color = '#4ade80' if score >= 70 else ('#f59e0b' if score >= 50 else '#f87171')
@@ -918,9 +928,7 @@ elif page == 'Edge Analysis':
                 f'<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(96,165,250,0.08);">'
                 f'<span style="color:#9ab4dd;font-size:0.82em;">{label}</span>'
                 f'<span style="color:{color};font-weight:700;font-size:0.82em;">{score}%</span>'
-                f'</div>',
-                unsafe_allow_html=True
-            )
+                f'</div>', unsafe_allow_html=True)
 
 # ============ PAGE: BEST SETUPS ============
 elif page == 'Best Setups':
@@ -939,24 +947,19 @@ elif page == 'Best Setups':
             f'<div style="text-align:center;"><div style="font-size:1.4em;font-weight:700;color:#fff;">+{best_setup["overall_exp"]}R</div><div style="font-size:0.65em;color:#5a6a88;margin-top:3px;">AVG EXPECTANCY</div></div>'
             f'<div style="text-align:center;"><div style="font-size:1.4em;font-weight:700;color:{ACCENT_SOFT};">{len(best_setup["combos"])}</div><div style="font-size:0.65em;color:#5a6a88;margin-top:3px;">VARIABLES</div></div>'
             f'</div></div>',
-            unsafe_allow_html=True
-        )
+            unsafe_allow_html=True)
 
     st.markdown(f'<div style="color:{ACCENT_SOFT};font-size:0.72em;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin:24px 0 14px;">Best of each variable</div>', unsafe_allow_html=True)
-    setup_cols = [
-        ('Entry Model', 'Entry Model'),
-        ('Entry Model Timeframe', 'Timeframe'),
-        ('3SL Window', '3SL Window'),
-        ('Target', 'Target'),
-        ('Stop Loss Logic', 'Stop Loss'),
-        ('Entry + Confirmation', 'Rejection Candle'),
-        ('Double Confirmation', 'Double Confirmation'),
-        ('Hour', 'Time of Day'),
-        ('Trade Quality Rating', 'Trade Quality'),
-        ('Emotional State Before...', 'Emotional State'),
+    setup_cols_list = [
+        ('Entry Model', 'Entry Model'), ('Entry Model Timeframe', 'Timeframe'),
+        ('3SL Window', '3SL Window'), ('Target', 'Target'),
+        ('Stop Loss Logic', 'Stop Loss'), ('Entry + Confirmation', 'Rejection Candle'),
+        ('Double Confirmation', 'Double Confirmation'), ('Hour', 'Time of Day'),
+        ('Trade Quality Rating', 'Trade Quality'), ('Emotional State Before...', 'Emotional State'),
+        ('News Proximity', 'News Proximity'), ('Conditions MTF/HTF', 'Market Conditions'),
     ]
     col1, col2 = st.columns(2)
-    for i, (col_name, label) in enumerate(setup_cols):
+    for i, (col_name, label) in enumerate(setup_cols_list):
         best = get_best(df_main, col_name)
         if not best:
             continue
