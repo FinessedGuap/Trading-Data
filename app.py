@@ -37,7 +37,7 @@ if not st.session_state.authenticated:
                 st.error("Incorrect password")
     st.stop()
 
-st.markdown('<meta http-equiv="refresh" content="300">', unsafe_allow_html=True)
+
 
 NOTION_TOKEN = st.secrets["NOTION_TOKEN"]
 DATABASE_ID = st.secrets["DATABASE_ID"]
