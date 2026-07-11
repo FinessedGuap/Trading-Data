@@ -523,26 +523,23 @@ css = f"""
   .cal-week-r {{ font-size:1.2em; font-weight:700; margin-top:10px; color:#fff; }}
   .cal-day-trades {{ color:#5a6a88; font-size:0.64em; margin-top:3px; text-align:center; }}
   .cal-day-green {{
-    background:rgba(74,222,128,0.06); border:1px solid rgba(74,222,128,0.18);
+    background:rgba(74,222,128,0.08); border:1px solid rgba(74,222,128,0.25);
     border-radius:16px; min-height:88px; display:flex; flex-direction:column;
     align-items:center; justify-content:center; padding:8px; text-align:center;
-    transition:all 0.2s ease; cursor:pointer; text-decoration:none;
+    transition:all 0.2s ease; cursor:pointer;
+    backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px);
+    box-shadow:0 8px 24px rgba(74,222,128,0.08);
   }}
-  .cal-day-green:hover {{ background:rgba(74,222,128,0.12); border-color:rgba(74,222,128,0.35); transform:translateY(-2px); }}
+  .cal-day-green:hover {{ background:rgba(74,222,128,0.14); border-color:rgba(74,222,128,0.4); transform:translateY(-2px); box-shadow:0 12px 28px rgba(74,222,128,0.12); }}
   .cal-day-red {{
-    background:rgba(248,113,113,0.06); border:1px solid rgba(248,113,113,0.18);
+    background:rgba(248,113,113,0.08); border:1px solid rgba(248,113,113,0.25);
     border-radius:16px; min-height:88px; display:flex; flex-direction:column;
     align-items:center; justify-content:center; padding:8px; text-align:center;
-    transition:all 0.2s ease; cursor:pointer; text-decoration:none;
+    transition:all 0.2s ease; cursor:pointer;
+    backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px);
+    box-shadow:0 8px 24px rgba(248,113,113,0.08);
   }}
-  .cal-day-red:hover {{ background:rgba(248,113,113,0.12); border-color:rgba(248,113,113,0.35); transform:translateY(-2px); }}
-  div[data-testid="stButton"] button {{
-    width:100%; min-height:88px; border-radius:16px;
-    font-family:'Inter',sans-serif; white-space:pre-line; line-height:1.4;
-    transition:all 0.25s ease; font-weight:600;
-    background:rgba(96,165,250,0.06) !important;
-    border:1px solid rgba(96,165,250,0.18) !important; color:#fff !important;
-  }}
+  .cal-day-red:hover {{ background:rgba(248,113,113,0.14); border-color:rgba(248,113,113,0.4); transform:translateY(-2px); box-shadow:0 12px 28px rgba(248,113,113,0.12); }}
   div[data-testid="stButton"] button:hover {{ transform:translateY(-2px); border-color:rgba(96,165,250,0.4) !important; }}
   div[data-testid="column"]:first-child div[data-testid="stButton"] button,
   div[data-testid="column"]:last-child div[data-testid="stButton"] button {{
