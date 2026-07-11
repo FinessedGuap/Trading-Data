@@ -253,7 +253,7 @@ def calc_consistency_score(df_in, session_stats):
     scores = []
     if 'Trade Quality Rating' in df_in.columns:
         temp = df_in.dropna(subset=['Trade Quality Rating'])
-        a_plus = temp[temp['Trade Quality Rating'].str.contains('A\+', na=False, regex=True)]
+        a_plus = temp[temp['Trade Quality Rating'].str.contains(r'A\+', na=False, regex=True)]
         if len(temp) > 0:
             scores.append(('A+ quality trades', round(len(a_plus) / len(temp) * 100)))
     if 'Rules Followed? Y/N' in df_in.columns:
@@ -468,6 +468,14 @@ for key, val in [
     if key not in st.session_state:
         st.session_state[key] = val
 
+# Pick up calendar day-click coming in via URL query param (?day=YYYY-MM-DD)
+if "day" in st.query_params:
+    try:
+        st.session_state.selected_day = datetime.strptime(st.query_params["day"], "%Y-%m-%d").date()
+    except Exception:
+        pass
+    st.query_params.clear()
+
 ACCENT = '#60a5fa'; ACCENT_SOFT = '#7fb2f5'
 GOLD = '#f59e0b'; GOLD_SOFT = '#fcd34d'
 PURPLE = '#a78bfa'; PURPLE_SOFT = '#c4b5fd'
@@ -515,23 +523,19 @@ css = f"""
   .cal-week-r {{ font-size:1.2em; font-weight:700; margin-top:10px; color:#fff; }}
   .cal-day-trades {{ color:#5a6a88; font-size:0.64em; margin-top:3px; text-align:center; }}
   .cal-day-green {{
-    background:rgba(74,222,128,0.12); border:1px solid rgba(74,222,128,0.3);
+    background:rgba(74,222,128,0.06); border:1px solid rgba(74,222,128,0.18);
     border-radius:16px; min-height:88px; display:flex; flex-direction:column;
     align-items:center; justify-content:center; padding:8px; text-align:center;
-    transition:all 0.2s ease; cursor:pointer;
+    transition:all 0.2s ease; cursor:pointer; text-decoration:none;
   }}
-  .cal-day-green:hover {{ background:rgba(74,222,128,0.2); border-color:rgba(74,222,128,0.5); transform:translateY(-2px); }}
+  .cal-day-green:hover {{ background:rgba(74,222,128,0.12); border-color:rgba(74,222,128,0.35); transform:translateY(-2px); }}
   .cal-day-red {{
-    background:rgba(248,113,113,0.12); border:1px solid rgba(248,113,113,0.3);
+    background:rgba(248,113,113,0.06); border:1px solid rgba(248,113,113,0.18);
     border-radius:16px; min-height:88px; display:flex; flex-direction:column;
     align-items:center; justify-content:center; padding:8px; text-align:center;
-    transition:all 0.2s ease; cursor:pointer;
+    transition:all 0.2s ease; cursor:pointer; text-decoration:none;
   }}
-  .cal-day-red:hover {{ background:rgba(248,113,113,0.2); border-color:rgba(248,113,113,0.5); transform:translateY(-2px); }}
-  [class*="st-key-cal_win_"] div[data-testid="stButton"] button {{ background:rgba(74,222,128,0.06) !important; border:1px solid rgba(74,222,128,0.18) !important; }}
-  [class*="st-key-cal_win_"] div[data-testid="stButton"] button:hover {{ background:rgba(74,222,128,0.12) !important; border-color:rgba(74,222,128,0.35) !important; }}
-  [class*="st-key-cal_loss_"] div[data-testid="stButton"] button {{ background:rgba(248,113,113,0.06) !important; border:1px solid rgba(248,113,113,0.18) !important; }}
-  [class*="st-key-cal_loss_"] div[data-testid="stButton"] button:hover {{ background:rgba(248,113,113,0.12) !important; border-color:rgba(248,113,113,0.35) !important; }}
+  .cal-day-red:hover {{ background:rgba(248,113,113,0.12); border-color:rgba(248,113,113,0.35); transform:translateY(-2px); }}
   div[data-testid="stButton"] button {{
     width:100%; min-height:88px; border-radius:16px;
     font-family:'Inter',sans-serif; white-space:pre-line; line-height:1.4;
@@ -543,11 +547,6 @@ css = f"""
   div[data-testid="column"]:first-child div[data-testid="stButton"] button,
   div[data-testid="column"]:last-child div[data-testid="stButton"] button {{
     min-height:{NAV_H} !important; border-radius:20px !important; font-size:1.1em !important;
-  }}
-  .cal-btn-hidden div[data-testid="stButton"] button {{
-    opacity:0 !important; height:0 !important; min-height:0 !important;
-    padding:0 !important; margin:0 !important; border:none !important;
-    position:absolute !important; pointer-events:all !important;
   }}
   .trade-detail-card {{ background:rgba(96,165,250,0.05); border:1px solid rgba(96,165,250,0.15); border-radius:16px; padding:16px 20px; margin-bottom:10px; }}
   .eq-legend {{ display:flex; gap:24px; margin-bottom:12px; flex-wrap:wrap; }}
@@ -827,14 +826,14 @@ elif page == 'Calendar':
                     css_class = 'cal-day-green' if r_val >= 0 else 'cal-day-red'
                     r_color = '#4ade80' if r_val >= 0 else '#f87171'
                     num_color = '#eafff0' if r_val >= 0 else '#ffeaea'
-                    color = 'green' if r_val >= 0 else 'red'
-                    key_prefix = 'cal_win' if r_val >= 0 else 'cal_loss'
-                    label = f":{color}[**{day_num}**]\n\n:{color}[{sign}{r_val}R]\n\n{day_data['trades']} trades"
-                    with week_cols[i]:
-                        with st.container(key=f"{key_prefix}_{day_date}"):
-                            if st.button(label, key=f"day_{day_date}", use_container_width=True):
-                                st.session_state.selected_day = day_date
-
+                    week_cols[i].markdown(
+                        f'<a href="?day={day_date.isoformat()}" target="_self" class="{css_class}">'
+                        f'<div style="color:{num_color};font-size:0.82em;font-weight:600;">{day_num}</div>'
+                        f'<div style="color:{r_color};font-size:0.9em;font-weight:700;margin-top:4px;">{sign}{r_val}R</div>'
+                        f'<div style="color:#5a6a88;font-size:0.65em;margin-top:2px;">{day_data["trades"]} trades</div>'
+                        f'</a>',
+                        unsafe_allow_html=True
+                    )
                 else:
                     week_cols[i].markdown(f'<div style="min-height:88px;display:flex;align-items:center;justify-content:center;"><div class="cal-day-num">{day_num}</div></div>', unsafe_allow_html=True)
         wk_sign = '+' if week_total > 0 else ''
