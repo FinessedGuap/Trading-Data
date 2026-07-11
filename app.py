@@ -672,14 +672,17 @@ if page == 'Overview':
             data = monthly_r[m]
             sign = '+' if data['total_r'] > 0 else ''
             is_current = m == this_month_key
+            current_label = '<div style="color:#7fb2f5;font-size:0.65em;margin-top:4px;">Current</div>' if is_current else ''
+            bg_alpha = '0.1' if is_current else '0.04'
+            border_alpha = '0.35' if is_current else '0.1'
+            header_color = '#7fb2f5' if is_current else '#5a6a88'
             col.markdown(
-                f'<div style="background:rgba(96,165,250,{"0.1" if is_current else "0.04"});border:1px solid rgba(96,165,250,{"0.35" if is_current else "0.1"});border-radius:14px;padding:14px;text-align:center;">'
-                f'<div style="color:{"#7fb2f5" if is_current else "#5a6a88"};font-size:0.65em;margin-bottom:6px;text-transform:uppercase;">{m}</div>'
+                f'<div style="background:rgba(96,165,250,{bg_alpha});border:1px solid rgba(96,165,250,{border_alpha});border-radius:14px;padding:14px;text-align:center;">'
+                f'<div style="color:{header_color};font-size:0.65em;margin-bottom:6px;text-transform:uppercase;">{m}</div>'
                 f'<div style="color:#fff;font-size:1.2em;font-weight:700;">{sign}{data["total_r"]}R</div>'
                 f'<div style="color:#5a6a88;font-size:0.65em;margin-top:4px;">{data["win_rate"]}% WR · {data["trades"]} trades</div>'
-                f'{"<div style=\\"color:#7fb2f5;font-size:0.65em;margin-top:4px;\\">Current</div>" if is_current else ""}'
+                f'{current_label}'
                 f'</div>', unsafe_allow_html=True)
-
     st.markdown('<div class="section-label">3SL Window</div>', unsafe_allow_html=True)
     session_rows_html = ""
     for s in session_stats:
