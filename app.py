@@ -528,6 +528,10 @@ css = f"""
     transition:all 0.2s ease; cursor:pointer;
   }}
   .cal-day-red:hover {{ background:rgba(248,113,113,0.2); border-color:rgba(248,113,113,0.5); transform:translateY(-2px); }}
+  .cal-mark-green + div[data-testid="stButton"] button {{ background:rgba(74,222,128,0.12) !important; border:1px solid rgba(74,222,128,0.3) !important; }}
+  .cal-mark-green + div[data-testid="stButton"] button:hover {{ background:rgba(74,222,128,0.2) !important; border-color:rgba(74,222,128,0.5) !important; }}
+  .cal-mark-red + div[data-testid="stButton"] button {{ background:rgba(248,113,113,0.12) !important; border:1px solid rgba(248,113,113,0.3) !important; }}
+  .cal-mark-red + div[data-testid="stButton"] button:hover {{ background:rgba(248,113,113,0.2) !important; border-color:rgba(248,113,113,0.5) !important; }}
   div[data-testid="stButton"] button {{
     width:100%; min-height:88px; border-radius:16px;
     font-family:'Inter',sans-serif; white-space:pre-line; line-height:1.4;
@@ -824,10 +828,13 @@ elif page == 'Calendar':
                     r_color = '#4ade80' if r_val >= 0 else '#f87171'
                     num_color = '#eafff0' if r_val >= 0 else '#ffeaea'
                     color = 'green' if r_val >= 0 else 'red'
+                    marker_class = 'cal-mark-green' if r_val >= 0 else 'cal-mark-red'
                     label = f":{color}[**{day_num}**]\n\n:{color}[{sign}{r_val}R]\n\n{day_data['trades']} trades"
                     with week_cols[i]:
+                        st.markdown(f'<div class="{marker_class}"></div>', unsafe_allow_html=True)
                         if st.button(label, key=f"day_{day_date}", use_container_width=True):
                             st.session_state.selected_day = day_date
+
                 else:
                     week_cols[i].markdown(f'<div style="min-height:88px;display:flex;align-items:center;justify-content:center;"><div class="cal-day-num">{day_num}</div></div>', unsafe_allow_html=True)
         wk_sign = '+' if week_total > 0 else ''
