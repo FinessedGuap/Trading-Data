@@ -321,19 +321,15 @@ def generate_checklist(df_in, session_stats):
         worst = data[-1]
         if best['exp'] > 0:
             green.append({'label': f"Use {best['label']} for {label}", 'detail': f"{best['exp']}R avg · {best['wr']}% WR · {best['n']} trades"})
-        if worst['label'] != best['label']:
-            if worst['exp'] < 0:
-                lbl = worst['label'][:32] + '…' if len(worst['label']) > 32 else worst['label']
-                red.append({'label': f"Avoid {lbl} for {label}", 'detail': f"{worst['exp']}R avg · {worst['wr']}% WR · {worst['n']} trades"})
-            elif worst['wr'] < 40:
-                lbl = worst['label'][:32] + '…' if len(worst['label']) > 32 else worst['label']
-                red.append({'label': f"Avoid {lbl} for {label}", 'detail': f"{worst['exp']}R avg · {worst['wr']}% WR · {worst['n']} trades"})
+        if worst['exp'] < 0 and worst['label'] != best['label']:
+            lbl = worst['label'][:32] + '…' if len(worst['label']) > 32 else worst['label']
+            red.append({'label': f"Avoid {lbl} for {label}", 'detail': f"{worst['exp']}R avg · {worst['wr']}% WR · {worst['n']} trades"})
     if session_stats:
         best_s = max(session_stats, key=lambda x: x['exp'])
         worst_s = min(session_stats, key=lambda x: x['exp'])
         if best_s['exp'] > 0:
             green.append({'label': f"Trade {best_s['session']} session", 'detail': f"{best_s['exp']}R avg · {round(best_s['wr']*100)}% WR · {best_s['n']} trades"})
-        if worst_s['exp'] < 0 or worst_s['wr'] < 0.4:
+        if worst_s['exp'] < 0:
             red.append({'label': f"Avoid {worst_s['session']} session", 'detail': f"{worst_s['exp']}R avg · {round(worst_s['wr']*100)}% WR · {worst_s['n']} trades"})
     return green, red
 
@@ -518,20 +514,6 @@ css = f"""
   .cal-week-label {{ color:{ACCENT_SOFT}; font-size:0.68em; font-weight:700; }}
   .cal-week-r {{ font-size:1.2em; font-weight:700; margin-top:10px; color:#fff; }}
   .cal-day-trades {{ color:#5a6a88; font-size:0.64em; margin-top:3px; text-align:center; }}
-  .cal-day-green {{
-    background:rgba(74,222,128,0.12); border:1px solid rgba(74,222,128,0.3);
-    border-radius:16px; min-height:88px; display:flex; flex-direction:column;
-    align-items:center; justify-content:center; padding:8px; text-align:center;
-    transition:all 0.2s ease; cursor:pointer;
-  }}
-  .cal-day-green:hover {{ background:rgba(74,222,128,0.2); border-color:rgba(74,222,128,0.5); transform:translateY(-2px); }}
-  .cal-day-red {{
-    background:rgba(248,113,113,0.12); border:1px solid rgba(248,113,113,0.3);
-    border-radius:16px; min-height:88px; display:flex; flex-direction:column;
-    align-items:center; justify-content:center; padding:8px; text-align:center;
-    transition:all 0.2s ease; cursor:pointer;
-  }}
-  .cal-day-red:hover {{ background:rgba(248,113,113,0.2); border-color:rgba(248,113,113,0.5); transform:translateY(-2px); }}
   div[data-testid="stButton"] button {{
     width:100%; min-height:88px; border-radius:16px;
     font-family:'Inter',sans-serif; white-space:pre-line; line-height:1.4;
@@ -544,10 +526,17 @@ css = f"""
   div[data-testid="column"]:last-child div[data-testid="stButton"] button {{
     min-height:{NAV_H} !important; border-radius:20px !important; font-size:1.1em !important;
   }}
-  .cal-btn-hidden div[data-testid="stButton"] button {{
-    opacity:0 !important; height:0 !important; min-height:0 !important;
-    padding:0 !important; margin:0 !important; border:none !important;
-    position:absolute !important; pointer-events:all !important;
+  .cal-day-wrapper div[data-testid="stButton"] button[kind="primary"] {{
+    background:rgba(74,222,128,0.12) !important;
+    border:1px solid rgba(74,222,128,0.3) !important;
+    color:#eafff0 !important;
+    box-shadow:0 8px 24px rgba(74,222,128,0.1) !important;
+  }}
+  .cal-day-wrapper div[data-testid="stButton"] button[kind="secondary"] {{
+    background:rgba(248,113,113,0.12) !important;
+    border:1px solid rgba(248,113,113,0.3) !important;
+    color:#ffeaea !important;
+    box-shadow:0 8px 24px rgba(248,113,113,0.1) !important;
   }}
   .trade-detail-card {{ background:rgba(96,165,250,0.05); border:1px solid rgba(96,165,250,0.15); border-radius:16px; padding:16px 20px; margin-bottom:10px; }}
   .eq-legend {{ display:flex; gap:24px; margin-bottom:12px; flex-wrap:wrap; }}
@@ -677,7 +666,7 @@ if page == 'Overview':
                 f'<div style="color:{"#7fb2f5" if is_current else "#5a6a88"};font-size:0.65em;margin-bottom:6px;text-transform:uppercase;">{m}</div>'
                 f'<div style="color:#fff;font-size:1.2em;font-weight:700;">{sign}{data["total_r"]}R</div>'
                 f'<div style="color:#5a6a88;font-size:0.65em;margin-top:4px;">{data["win_rate"]}% WR · {data["trades"]} trades</div>'
-                f'{"<div style=\\"color:#7fb2f5;font-size:0.65em;margin-top:4px;\\">Current</div>" if is_current else ""}'
+                f'{"<div style=chr(39)color:#7fb2f5;font-size:0.65em;margin-top:4px;chr(39)>Current</div>" if is_current else ""}'
                 f'</div>', unsafe_allow_html=True)
 
     st.markdown('<div class="section-label">3SL Window</div>', unsafe_allow_html=True)
@@ -808,6 +797,7 @@ elif page == 'Calendar':
         day_header_cols[i].markdown(f'<div class="cal-header">{d}</div>', unsafe_allow_html=True)
     day_header_cols[7].markdown('<div class="cal-header">Week</div>', unsafe_allow_html=True)
 
+    st.markdown('<div class="cal-day-wrapper">', unsafe_allow_html=True)
     for week_num, week in enumerate(month_matrix):
         if week_num > 0: st.write("")
         week_cols = st.columns(8)
@@ -821,27 +811,14 @@ elif page == 'Calendar':
                 if day_data:
                     week_total += day_data['total_r']; week_trades += day_data['trades']
                     r_val = day_data['total_r']; sign = '+' if r_val > 0 else ''
-                    css_class = 'cal-day-green' if r_val >= 0 else 'cal-day-red'
-                    r_color = '#4ade80' if r_val >= 0 else '#f87171'
-                    num_color = '#eafff0' if r_val >= 0 else '#ffeaea'
-                    week_cols[i].markdown(
-                        f'<div class="{css_class}">'
-                        f'<div style="color:{num_color};font-size:0.82em;font-weight:600;">{day_num}</div>'
-                        f'<div style="color:{r_color};font-size:0.9em;font-weight:700;margin-top:4px;">{sign}{r_val}R</div>'
-                        f'<div style="color:#5a6a88;font-size:0.65em;margin-top:2px;">{day_data["trades"]} trades</div>'
-                        f'</div>',
-                        unsafe_allow_html=True
-                    )
-                    # Hidden button for click detection
-                    with week_cols[i]:
-                        st.markdown('<div class="cal-btn-hidden">', unsafe_allow_html=True)
-                        if st.button(f"{day_num}", key=f"day_{day_date}", use_container_width=True):
-                            st.session_state.selected_day = day_date
-                        st.markdown('</div>', unsafe_allow_html=True)
+                    btn_type = "primary" if r_val >= 0 else "secondary"
+                    if week_cols[i].button(f"{day_num}\n{sign}{r_val}R\n{day_data['trades']} trades", key=f"day_{day_date}", use_container_width=True, type=btn_type):
+                        st.session_state.selected_day = day_date
                 else:
                     week_cols[i].markdown(f'<div style="min-height:88px;display:flex;align-items:center;justify-content:center;"><div class="cal-day-num">{day_num}</div></div>', unsafe_allow_html=True)
         wk_sign = '+' if week_total > 0 else ''
         week_cols[7].markdown(f'<div class="cal-week-summary"><div class="cal-week-label">Week {week_num+1}</div><div class="cal-week-r">{wk_sign}{round(week_total,2)}R</div><div class="cal-day-trades">{week_trades} trades</div></div>', unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
 
     if st.session_state.selected_day:
         st.markdown('<hr class="divider-line">', unsafe_allow_html=True)
