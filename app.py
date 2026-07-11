@@ -835,10 +835,7 @@ elif page == 'Calendar':
                         f'</div>',
                         unsafe_allow_html=True
                     )
-                    week_cols[i].markdown('<div class="cal-hidden-btn">', unsafe_allow_html=True)
-                    if week_cols[i].button(f"{day_num}", key=f"day_{day_date}", use_container_width=True):
-                        st.session_state.selected_day = day_date
-                    week_cols[i].markdown('</div>', unsafe_allow_html=True)
+                    
                 else:
                     week_cols[i].markdown(f'<div style="min-height:88px;display:flex;align-items:center;justify-content:center;"><div class="cal-day-num">{day_num}</div></div>', unsafe_allow_html=True)
         wk_sign = '+' if week_total > 0 else ''
