@@ -28,16 +28,18 @@ if not st.session_state.authenticated:
     with col2:
         st.markdown('<div style="text-align:center;padding:60px 0 20px;font-size:1.8em;font-weight:700;color:#fff;">Trading Data</div>', unsafe_allow_html=True)
         st.markdown('<div style="text-align:center;color:#5a6a88;font-size:0.85em;margin-bottom:32px;">Enter password to access your dashboard</div>', unsafe_allow_html=True)
-        pw = st.text_input("Password", placeholder="Enter password", label_visibility="collapsed")
-        if st.button("Enter", use_container_width=True):
-            if pw == PASSWORD:
-                st.session_state.authenticated = True
-                st.rerun()
-            else:
-                st.error("Incorrect password")
+        with st.form("login_form"):
+            pw = st.text_input("Password", type="password", label_visibility="collapsed")
+            submitted = st.form_submit_button("Enter", use_container_width=True)
+            if submitted:
+                if pw == PASSWORD:
+                    st.session_state.authenticated = True
+                    st.rerun()
+                else:
+                    st.error("Incorrect password")
     st.stop()
 
-
+st.markdown('<meta http-equiv="refresh" content="300">', unsafe_allow_html=True)
 
 NOTION_TOKEN = st.secrets["NOTION_TOKEN"]
 DATABASE_ID = st.secrets["DATABASE_ID"]
@@ -47,6 +49,25 @@ headers = {
     "Content-Type": "application/json",
     "Notion-Version": "2022-06-28"
 }
+
+# ============ THEME ============
+if 'theme' not in st.session_state:
+    st.session_state.theme = 'Blue'
+
+themes = {
+    'Blue':    {'ACCENT': '#60a5fa', 'ACCENT_SOFT': '#7fb2f5', 'BG_TINT': '96,165,250'},
+    'Purple':  {'ACCENT': '#a78bfa', 'ACCENT_SOFT': '#c4b5fd', 'BG_TINT': '167,139,250'},
+    'Green':   {'ACCENT': '#34d399', 'ACCENT_SOFT': '#6ee7b7', 'BG_TINT': '52,211,153'},
+    'Gold':    {'ACCENT': '#fcd34d', 'ACCENT_SOFT': '#fde68a', 'BG_TINT': '252,211,77'},
+    'Neutral': {'ACCENT': '#9ca3af', 'ACCENT_SOFT': '#d1d5db', 'BG_TINT': '156,163,175'},
+}
+active_theme = themes.get(st.session_state.theme, themes['Blue'])
+ACCENT = active_theme['ACCENT']
+ACCENT_SOFT = active_theme['ACCENT_SOFT']
+BG_TINT = active_theme['BG_TINT']
+GOLD = '#f59e0b'; GOLD_SOFT = '#fcd34d'
+PURPLE = '#a78bfa'; PURPLE_SOFT = '#c4b5fd'
+NAV_H = '56px'
 
 def get_all_trades():
     all_results = []
@@ -257,7 +278,7 @@ def calc_consistency_score(df_in, session_stats):
     scores = []
     if 'Trade Quality Rating' in df_in.columns:
         temp = df_in.dropna(subset=['Trade Quality Rating'])
-        a_plus = temp[temp['Trade Quality Rating'].str.contains('A\+', na=False, regex=True)]
+        a_plus = temp[temp['Trade Quality Rating'].str.contains('A\\+', na=False, regex=True)]
         if len(temp) > 0:
             scores.append(('A+ quality trades', round(len(a_plus) / len(temp) * 100)))
     if 'Rules Followed? Y/N' in df_in.columns:
@@ -299,8 +320,6 @@ def find_best_setup(df_in):
 def generate_checklist(df_in, session_stats):
     green = []
     red = []
-
-    # Best performers — what's working
     analysis_cols = [
         ('Entry Model', 'entry model'),
         ('Entry Model Timeframe', 'timeframe'),
@@ -319,71 +338,51 @@ def generate_checklist(df_in, session_stats):
         best = data[0]
         if best['exp'] > 0:
             green.append({'label': f"Use {best['label']} for {label}", 'detail': f"{best['exp']}R avg · {best['wr']}% WR · {best['n']} trades"})
-
-    # Best session
     if session_stats:
         best_s = max(session_stats, key=lambda x: x['exp'])
         if best_s['exp'] > 0:
             green.append({'label': f"Trade {best_s['session']} session", 'detail': f"{best_s['exp']}R avg · {round(best_s['wr']*100)}% WR · {best_s['n']} trades"})
-
-    # ---- WHAT TO AVOID — holistic bad patterns ----
-
-    # Avoid bad sessions
     if session_stats:
         for s in session_stats:
             if s['exp'] < 0 or s['wr'] < 0.4:
                 red.append({'label': f"Avoid {s['session']} session", 'detail': f"{s['exp']}R avg · {round(s['wr']*100)}% WR · {s['n']} trades"})
-
-    # Avoid bad emotional states
     if 'Emotional State Before...' in df_in.columns:
         data = breakdown_by_col(df_in, 'Emotional State Before...', min_trades=2)
         for d in data:
             if d['exp'] < 0 or d['wr'] < 45:
                 red.append({'label': f"Avoid trading when {d['label']}", 'detail': f"{d['exp']}R avg · {d['wr']}% WR · {d['n']} trades"})
-
-    # Avoid bad trade quality
     if 'Trade Quality Rating' in df_in.columns:
         data = breakdown_by_col(df_in, 'Trade Quality Rating', min_trades=2)
         for d in data:
             if d['exp'] < 0 or d['wr'] < 45:
                 red.append({'label': f"Avoid {d['label']} quality trades", 'detail': f"{d['exp']}R avg · {d['wr']}% WR · {d['n']} trades"})
-
-    # Avoid bad news proximity
     if 'News Proximity' in df_in.columns:
         data = breakdown_by_col(df_in, 'News Proximity', min_trades=2)
         for d in data:
             if d['exp'] < 0 or d['wr'] < 45:
                 red.append({'label': f"Avoid trading {d['label']}", 'detail': f"{d['exp']}R avg · {d['wr']}% WR · {d['n']} trades"})
-
-    # Avoid bad entry models
     if 'Entry Model' in df_in.columns:
         data = breakdown_by_col(df_in, 'Entry Model', min_trades=2)
         for d in data:
             if d['exp'] < 0 or d['wr'] < 45:
                 red.append({'label': f"Avoid {d['label']} entry model", 'detail': f"{d['exp']}R avg · {d['wr']}% WR · {d['n']} trades"})
-
-    # Avoid bad market conditions
     if 'Conditions MTF/HTF' in df_in.columns:
         data = breakdown_by_col(df_in, 'Conditions MTF/HTF', min_trades=2)
         for d in data:
             if d['exp'] < 0 or d['wr'] < 45:
                 red.append({'label': f"Avoid trading in {d['label']} conditions", 'detail': f"{d['exp']}R avg · {d['wr']}% WR · {d['n']} trades"})
-
-    # Avoid bad stop loss logic
     if 'Stop Loss Logic' in df_in.columns:
         data = breakdown_by_col(df_in, 'Stop Loss Logic', min_trades=2)
         for d in data:
             if d['exp'] < 0 or d['wr'] < 45:
                 red.append({'label': f"Avoid {d['label']} stop loss", 'detail': f"{d['exp']}R avg · {d['wr']}% WR · {d['n']} trades"})
-
-    # Avoid bad targets
     if 'Target' in df_in.columns:
         data = breakdown_by_col(df_in, 'Target', min_trades=2)
         for d in data:
             if d['exp'] < 0 or d['wr'] < 45:
                 red.append({'label': f"Avoid {d['label']} as target", 'detail': f"{d['exp']}R avg · {d['wr']}% WR · {d['n']} trades"})
-
     return green, red
+
 def catmull(points):
     if len(points) < 2:
         return ""
@@ -438,7 +437,7 @@ def render_breakdown(df_in, col, title):
     data = breakdown_by_col(df_in, col)
     if not data:
         return
-    st.markdown(f'<div style="color:#7fb2f5;font-size:0.7em;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin:14px 0 8px;">{title}</div>', unsafe_allow_html=True)
+    st.markdown(f'<div style="color:{ACCENT_SOFT};font-size:0.7em;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin:14px 0 8px;">{title}</div>', unsafe_allow_html=True)
     max_exp = max(abs(d['exp']) for d in data) if data else 1
     if max_exp == 0: max_exp = 1
     for d in data:
@@ -446,11 +445,11 @@ def render_breakdown(df_in, col, title):
         color = '#4ade80' if d['exp'] >= 0 else '#f87171'
         lbl = d['label'][:30] + '…' if len(d['label']) > 30 else d['label']
         st.markdown(
-            f'<div style="display:grid;grid-template-columns:180px 1fr 55px 55px 30px;gap:10px;align-items:center;padding:7px 0;border-bottom:1px solid rgba(96,165,250,0.06);">'
+            f'<div style="display:grid;grid-template-columns:180px 1fr 55px 55px 30px;gap:10px;align-items:center;padding:7px 0;border-bottom:1px solid rgba({BG_TINT},0.06);">'
             f'<span style="color:#ccc;font-size:0.82em;">{lbl}</span>'
-            f'<div style="background:rgba(96,165,250,0.08);border-radius:6px;height:10px;overflow:hidden;"><div style="width:{bar_pct}%;height:100%;background:linear-gradient(90deg,{color}66,{color});border-radius:6px;"></div></div>'
+            f'<div style="background:rgba({BG_TINT},0.08);border-radius:6px;height:10px;overflow:hidden;"><div style="width:{bar_pct}%;height:100%;background:linear-gradient(90deg,{color}66,{color});border-radius:6px;"></div></div>'
             f'<span style="color:{color};font-size:0.82em;font-weight:600;">{d["exp"]}R</span>'
-            f'<span style="color:#9ab4dd;font-size:0.82em;">{d["wr"]}%</span>'
+            f'<span style="color:{ACCENT_SOFT};font-size:0.82em;">{d["wr"]}%</span>'
             f'<span style="color:#5a6a88;font-size:0.82em;">{d["n"]}</span>'
             f'</div>', unsafe_allow_html=True)
 
@@ -519,57 +518,49 @@ for key, val in [
     if key not in st.session_state:
         st.session_state[key] = val
 
-ACCENT = '#60a5fa'; ACCENT_SOFT = '#7fb2f5'
-GOLD = '#f59e0b'; GOLD_SOFT = '#fcd34d'
-PURPLE = '#a78bfa'; PURPLE_SOFT = '#c4b5fd'
-NAV_H = '56px'
-
 css = f"""
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-  .stApp {{ background:#070b14; font-family:'Inter',sans-serif; }}
+  .stApp {{
+    background:#070b14;
+    background-image: radial-gradient(circle at 15% 10%, rgba({BG_TINT},0.08), transparent 35%),
+                       radial-gradient(circle at 85% 0%, rgba({BG_TINT},0.06), transparent 35%);
+    font-family:'Inter',sans-serif;
+  }}
   section[data-testid="stSidebar"] {{
-    background:rgba(96,165,250,0.03) !important;
-    border-right:1px solid rgba(96,165,250,0.12) !important;
+    background:rgba({BG_TINT},0.03) !important;
+    border-right:1px solid rgba({BG_TINT},0.12) !important;
   }}
   section[data-testid="stSidebar"] > div {{ padding-top:0 !important; }}
   .section-label {{
     font-size:0.72em; font-weight:700; letter-spacing:2.5px; text-transform:uppercase;
     color:{ACCENT_SOFT}; margin:32px 0 16px; display:flex; align-items:center; gap:10px;
   }}
-  .section-label::after {{ content:''; flex:1; height:1px; background:linear-gradient(90deg, rgba(96,165,250,0.2), transparent); }}
+  .section-label::after {{ content:''; flex:1; height:1px; background:linear-gradient(90deg, rgba({BG_TINT},0.2), transparent); }}
   .stat-card {{
-    background:rgba(96,165,250,0.06); backdrop-filter:blur(20px);
-    border:1px solid rgba(96,165,250,0.2); border-radius:18px; padding:20px 14px;
+    background:rgba({BG_TINT},0.06); backdrop-filter:blur(20px);
+    border:1px solid rgba({BG_TINT},0.2); border-radius:18px; padding:20px 14px;
     text-align:center; transition:all 0.25s ease;
   }}
-  .stat-card:hover {{ transform:translateY(-2px); border-color:rgba(96,165,250,0.4); }}
+  .stat-card:hover {{ transform:translateY(-2px); border-color:rgba({BG_TINT},0.4); }}
   .stat-value {{ font-size:1.55em; font-weight:700; color:#fff; }}
   .stat-label {{ color:{ACCENT_SOFT}; font-size:0.64em; margin-top:6px; letter-spacing:0.8px; font-weight:600; text-transform:uppercase; }}
   .glass-panel {{
-    background:rgba(96,165,250,0.05); backdrop-filter:blur(24px);
-    border:1px solid rgba(96,165,250,0.15); border-radius:20px; padding:22px;
-    box-shadow:0 12px 36px rgba(96,165,250,0.08); margin-bottom:14px;
+    background:rgba({BG_TINT},0.05); backdrop-filter:blur(24px);
+    border:1px solid rgba({BG_TINT},0.15); border-radius:20px; padding:22px;
+    box-shadow:0 12px 36px rgba({BG_TINT},0.08); margin-bottom:14px;
   }}
   .nav-banner {{
-    background:rgba(96,165,250,0.05); backdrop-filter:blur(24px);
-    border:1px solid rgba(96,165,250,0.15); border-radius:20px; padding:0 24px;
+    background:rgba({BG_TINT},0.05); backdrop-filter:blur(24px);
+    border:1px solid rgba({BG_TINT},0.15); border-radius:20px; padding:0 24px;
     text-align:center; display:flex; align-items:center; justify-content:center;
     min-height:{NAV_H}; box-sizing:border-box; margin-bottom:16px;
   }}
   .nav-label {{ font-size:1.2em; font-weight:800; color:#fff; }}
-  .divider-line {{ border:none; border-top:1px solid rgba(96,165,250,0.1); margin:32px 0; }}
+  .divider-line {{ border:none; border-top:1px solid rgba({BG_TINT},0.1); margin:32px 0; }}
   .cal-header {{ color:{ACCENT_SOFT}; font-size:0.72em; text-align:center; letter-spacing:1.5px; font-weight:600; text-transform:uppercase; padding:10px 0; }}
   .cal-day-num {{ color:#3d4a63; font-size:0.78em; font-weight:600; text-align:center; }}
-  .cal-hidden-btn {{
-    height:0 !important; overflow:hidden !important; margin:0 !important; padding:0 !important;
-  }}
-  .cal-hidden-btn div[data-testid="stButton"] button {{
-    opacity:0 !important; height:0 !important; min-height:0 !important;
-    padding:0 !important; margin:0 !important; border:none !important;
-    pointer-events:all !important; position:absolute !important;
-  }}
-  .cal-week-summary {{ background:rgba(96,165,250,0.06); border:1px solid rgba(96,165,250,0.18); border-radius:16px; padding:12px 6px; text-align:center; min-height:88px; }}
+  .cal-week-summary {{ background:rgba({BG_TINT},0.06); border:1px solid rgba({BG_TINT},0.18); border-radius:16px; padding:12px 6px; text-align:center; min-height:88px; }}
   .cal-week-label {{ color:{ACCENT_SOFT}; font-size:0.68em; font-weight:700; }}
   .cal-week-r {{ font-size:1.2em; font-weight:700; margin-top:10px; color:#fff; }}
   .cal-day-trades {{ color:#5a6a88; font-size:0.64em; margin-top:3px; text-align:center; }}
@@ -577,47 +568,45 @@ css = f"""
     width:100%; min-height:88px; border-radius:16px;
     font-family:'Inter',sans-serif; white-space:pre-line; line-height:1.4;
     transition:all 0.25s ease; font-weight:600;
-    background:rgba(96,165,250,0.06) !important;
-    border:1px solid rgba(96,165,250,0.18) !important; color:#fff !important;
+    background:rgba({BG_TINT},0.06) !important;
+    border:1px solid rgba({BG_TINT},0.18) !important; color:#fff !important;
   }}
-  div[data-testid="stButton"] button:hover {{ transform:translateY(-2px); border-color:rgba(96,165,250,0.4) !important; }}
+  div[data-testid="stButton"] button:hover {{ transform:translateY(-2px); border-color:rgba({BG_TINT},0.4) !important; }}
   div[data-testid="column"]:first-child div[data-testid="stButton"] button,
   div[data-testid="column"]:last-child div[data-testid="stButton"] button {{
     min-height:{NAV_H} !important; border-radius:20px !important; font-size:1.1em !important;
   }}
-  .cal-day-wrapper div[data-testid="stButton"] button[kind="primary"] {{
-    background:rgba(74,222,128,0.12) !important;
-    border:1px solid rgba(74,222,128,0.3) !important;
-    color:#eafff0 !important;
-    box-shadow:0 8px 24px rgba(74,222,128,0.1) !important;
-  }}
-  .cal-day-wrapper div[data-testid="stButton"] button[kind="secondary"] {{
-    background:rgba(248,113,113,0.12) !important;
-    border:1px solid rgba(248,113,113,0.3) !important;
-    color:#ffeaea !important;
-    box-shadow:0 8px 24px rgba(248,113,113,0.1) !important;
-  }}
-  .trade-detail-card {{ background:rgba(96,165,250,0.05); border:1px solid rgba(96,165,250,0.15); border-radius:16px; padding:16px 20px; margin-bottom:10px; }}
+  .trade-detail-card {{ background:rgba({BG_TINT},0.05); border:1px solid rgba({BG_TINT},0.15); border-radius:16px; padding:16px 20px; margin-bottom:10px; }}
   .eq-legend {{ display:flex; gap:24px; margin-bottom:12px; flex-wrap:wrap; }}
   .eq-legend-item {{ display:flex; align-items:center; gap:8px; font-size:0.82em; font-weight:600; }}
   .eq-legend-dot {{ width:28px; height:3px; border-radius:2px; }}
   .streak-box {{ width:30px; height:30px; border-radius:7px; display:inline-flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; margin:2px; }}
-  .checklist-item {{ display:flex; align-items:flex-start; gap:12px; padding:10px 0; border-bottom:1px solid rgba(96,165,250,0.08); }}
+  .checklist-item {{ display:flex; align-items:flex-start; gap:12px; padding:10px 0; border-bottom:1px solid rgba({BG_TINT},0.08); }}
   .checklist-dot {{ width:8px; height:8px; border-radius:50%; margin-top:5px; flex-shrink:0; }}
+  section[data-testid="stSidebar"] div[data-testid="stButton"] button {{
+    min-height:40px !important; background:rgba({BG_TINT},0.06) !important;
+    border:1px solid rgba({BG_TINT},0.15) !important; color:#fff !important;
+    border-radius:10px !important; font-size:0.85em !important;
+  }}
+  section[data-testid="stSidebar"] div[data-testid="stButton"] button:hover {{
+    border-color:rgba({BG_TINT},0.4) !important; background:rgba({BG_TINT},0.12) !important;
+  }}
 </style>
 """
 st.markdown(css, unsafe_allow_html=True)
 
 # ============ SIDEBAR ============
 with st.sidebar:
-    st.markdown('<div style="font-size:1.1em;font-weight:700;color:#fff;padding:20px 16px 4px;">Trading Data</div>', unsafe_allow_html=True)
-    st.markdown('<div style="font-size:0.7em;color:#5a6a88;padding:0 16px 16px;border-bottom:1px solid rgba(96,165,250,0.1);margin-bottom:8px;">Trading Journal</div>', unsafe_allow_html=True)
+    st.markdown(f'<div style="font-size:1.1em;font-weight:700;color:#fff;padding:20px 16px 4px;">Trading Data</div>', unsafe_allow_html=True)
+    st.markdown(f'<div style="font-size:0.7em;color:#5a6a88;padding:0 16px 16px;border-bottom:1px solid rgba({BG_TINT},0.1);margin-bottom:8px;">Trading Journal</div>', unsafe_allow_html=True)
+
     pages = [('📊', 'Overview'), ('📈', 'Charts'), ('🗓️', 'Calendar'), ('🔍', 'Edge Analysis'), ('🏆', 'Best Setups')]
     for icon, page_name in pages:
         if st.button(f"{icon}  {page_name}", key=f"nav_{page_name}", use_container_width=True):
             st.session_state.active_page = page_name
             st.rerun()
-    st.markdown(f'<div style="font-size:0.7em;color:#3d4a63;margin-top:24px;padding-top:16px;border-top:1px solid rgba(96,165,250,0.1);">Last updated</div><div style="font-size:0.72em;color:#5a6a88;">{today.strftime("%b %d · %I:%M %p")}</div>', unsafe_allow_html=True)
+
+    st.markdown(f'<div style="font-size:0.7em;color:#3d4a63;margin-top:24px;padding-top:16px;border-top:1px solid rgba({BG_TINT},0.1);">Last updated</div><div style="font-size:0.72em;color:#5a6a88;">{today.strftime("%b %d · %I:%M %p")}</div>', unsafe_allow_html=True)
     if st.button("↻ Refresh", key="refresh_btn", use_container_width=True):
         st.rerun()
     csv = df_main.to_csv(index=False)
@@ -625,6 +614,19 @@ with st.sidebar:
     if st.button("🔒 Logout", key="logout_btn", use_container_width=True):
         st.session_state.authenticated = False
         st.rerun()
+
+    # ============ THEME PICKER ============
+    st.markdown(f'<div style="border-top:1px solid rgba({BG_TINT},0.1);padding-top:12px;margin-top:8px;"><div style="font-size:0.6em;color:#444;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">Theme</div></div>', unsafe_allow_html=True)
+    theme_options = {'Blue': '#60a5fa', 'Purple': '#a78bfa', 'Green': '#34d399', 'Gold': '#fcd34d', 'Neutral': '#9ca3af'}
+    theme_cols = st.columns(5)
+    for i, (name, hex_color) in enumerate(theme_options.items()):
+        is_active = st.session_state.theme == name
+        border = '2px solid #fff' if is_active else '2px solid transparent'
+        shadow = f'box-shadow:0 0 6px {hex_color};' if is_active else ''
+        theme_cols[i].markdown(f'<div style="width:22px;height:22px;border-radius:50%;background:{hex_color};border:{border};{shadow}margin:auto;"></div>', unsafe_allow_html=True)
+        if theme_cols[i].button("·", key=f"theme_{name}", use_container_width=True):
+            st.session_state.theme = name
+            st.rerun()
 
 page = st.session_state.active_page
 
@@ -635,7 +637,7 @@ if page == 'Overview':
 
     cur = main_stats.get('cur_streak', 0)
     cur_type = main_stats.get('cur_streak_type', '—')
-    cur_color = '#4ade80' if cur_type == 'W' else ('#f87171' if cur_type == 'L' else '#60a5fa')
+    cur_color = '#4ade80' if cur_type == 'W' else ('#f87171' if cur_type == 'L' else ACCENT)
     cur_label = 'Win Streak' if cur_type == 'W' else ('Loss Streak' if cur_type == 'L' else 'Streak')
     this_month_key = today.strftime('%Y-%m')
     this_month_r = monthly_r.get(this_month_key, {}).get('total_r', 0)
@@ -648,14 +650,13 @@ if page == 'Overview':
     st.markdown(
         f'<div class="glass-panel" style="display:flex;align-items:center;padding:18px 24px;">'
         f'<div style="text-align:center;flex:1;"><div style="font-size:1.6em;font-weight:700;color:{cur_color};">{cur}</div><div style="font-size:0.62em;color:#5a6a88;margin-top:3px;text-transform:uppercase;letter-spacing:0.5px;">{cur_label}</div></div>'
-        f'<div style="width:1px;height:40px;background:rgba(96,165,250,0.15);"></div>'
+        f'<div style="width:1px;height:40px;background:rgba({BG_TINT},0.15);"></div>'
         f'<div style="text-align:center;flex:1;"><div style="font-size:1.6em;font-weight:700;color:{ACCENT};">{consistency_score}%</div><div style="font-size:0.62em;color:#5a6a88;margin-top:3px;text-transform:uppercase;letter-spacing:0.5px;">Consistency</div></div>'
-        f'<div style="width:1px;height:40px;background:rgba(96,165,250,0.15);"></div>'
+        f'<div style="width:1px;height:40px;background:rgba({BG_TINT},0.15);"></div>'
         f'<div style="text-align:center;flex:1;"><div style="font-size:1.6em;font-weight:700;color:#fff;">{("+" if this_month_r > 0 else "")}{this_month_r}R</div><div style="font-size:0.62em;color:#5a6a88;margin-top:3px;text-transform:uppercase;letter-spacing:0.5px;">This Month</div></div>'
-        f'<div style="width:1px;height:40px;background:rgba(96,165,250,0.15);"></div>'
+        f'<div style="width:1px;height:40px;background:rgba({BG_TINT},0.15);"></div>'
         f'<div style="text-align:center;flex:1;"><div style="font-size:1.6em;font-weight:700;color:{diff_color};">{diff_sign}{diff}R</div><div style="font-size:0.62em;color:#5a6a88;margin-top:3px;text-transform:uppercase;letter-spacing:0.5px;">vs Last Month</div></div>'
-        f'</div>',
-        unsafe_allow_html=True)
+        f'</div>', unsafe_allow_html=True)
 
     st.markdown('<div class="section-label">Performance</div>', unsafe_allow_html=True)
     overviews = [
@@ -705,10 +706,10 @@ if page == 'Overview':
     trade_results = main_stats.get('trade_results', [])[-20:]
     streak_html = '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:12px;">'
     for r in trade_results:
-        color = 'rgba(74,222,128,0.8)' if r == 'W' else ('rgba(248,113,113,0.7)' if r == 'L' else 'rgba(96,165,250,0.5)')
+        color = 'rgba(74,222,128,0.8)' if r == 'W' else ('rgba(248,113,113,0.7)' if r == 'L' else f'rgba({BG_TINT},0.5)')
         text_color = '#000' if r == 'W' else '#fff'
         streak_html += f'<div class="streak-box" style="background:{color};color:{text_color};">{r}</div>'
-    streak_html += f'<div class="streak-box" style="border:1px dashed rgba(96,165,250,0.3);color:#3d4a63;">?</div></div>'
+    streak_html += f'<div class="streak-box" style="border:1px dashed rgba({BG_TINT},0.3);color:#3d4a63;">?</div></div>'
     streak_html += f'<div style="font-size:0.72em;color:#5a6a88;">Last 20 trades &nbsp;·&nbsp; <span style="color:{cur_color};">Current streak: {cur} {cur_type}</span></div>'
     st.markdown(f'<div class="glass-panel">{streak_html}</div>', unsafe_allow_html=True)
 
@@ -720,13 +721,16 @@ if page == 'Overview':
             data = monthly_r[m]
             sign = '+' if data['total_r'] > 0 else ''
             is_current = m == this_month_key
+            current_label = f'<div style="color:{ACCENT_SOFT};font-size:0.65em;margin-top:4px;">Current</div>' if is_current else ''
+            bg_alpha = '0.1' if is_current else '0.04'
+            border_alpha = '0.35' if is_current else '0.1'
+            header_color = ACCENT_SOFT if is_current else '#5a6a88'
             col.markdown(
-                f'<div style="background:rgba(96,165,250,{"0.1" if is_current else "0.04"});border:1px solid rgba(96,165,250,{"0.35" if is_current else "0.1"});border-radius:14px;padding:14px;text-align:center;">'
-                f'<div style="color:{"#7fb2f5" if is_current else "#5a6a88"};font-size:0.65em;margin-bottom:6px;text-transform:uppercase;">{m}</div>'
+                f'<div style="background:rgba({BG_TINT},{bg_alpha});border:1px solid rgba({BG_TINT},{border_alpha});border-radius:14px;padding:14px;text-align:center;">'
+                f'<div style="color:{header_color};font-size:0.65em;margin-bottom:6px;text-transform:uppercase;">{m}</div>'
                 f'<div style="color:#fff;font-size:1.2em;font-weight:700;">{sign}{data["total_r"]}R</div>'
                 f'<div style="color:#5a6a88;font-size:0.65em;margin-top:4px;">{data["win_rate"]}% WR · {data["trades"]} trades</div>'
-                f'{"<div style=chr(39)color:#7fb2f5;font-size:0.65em;margin-top:4px;chr(39)>Current</div>" if is_current else ""}'
-                f'</div>', unsafe_allow_html=True)
+                f'{current_label}</div>', unsafe_allow_html=True)
 
     st.markdown('<div class="section-label">3SL Window</div>', unsafe_allow_html=True)
     session_rows_html = ""
@@ -735,22 +739,20 @@ if page == 'Overview':
         session_rows_html += (
             f'<div style="display:grid;grid-template-columns:100px 1fr 70px 60px 40px;gap:16px;align-items:center;padding:10px 0;">'
             f'<span style="color:{ACCENT_SOFT};font-weight:600;">{s["session"]}</span>'
-            f'<div style="background:rgba(96,165,250,0.1);border-radius:8px;height:14px;overflow:hidden;"><div style="width:{bar_pct}%;height:100%;background:linear-gradient(90deg,rgba(59,130,246,0.6),{ACCENT});border-radius:8px;"></div></div>'
+            f'<div style="background:rgba({BG_TINT},0.1);border-radius:8px;height:14px;overflow:hidden;"><div style="width:{bar_pct}%;height:100%;background:linear-gradient(90deg,rgba({BG_TINT},0.6),{ACCENT});border-radius:8px;"></div></div>'
             f'<span style="color:#fff;font-weight:700;">{s["exp"]}</span>'
-            f'<span style="color:#9ab4dd;">{s["wr"]}</span>'
+            f'<span style="color:{ACCENT_SOFT};">{s["wr"]}</span>'
             f'<span style="color:#5a6a88;">{s["n"]}</span>'
-            f'</div>'
-        )
+            f'</div>')
     st.markdown(
         f'<div class="glass-panel">'
-        f'<div style="display:grid;grid-template-columns:100px 1fr 70px 60px 40px;gap:16px;padding-bottom:10px;margin-bottom:4px;border-bottom:1px solid rgba(96,165,250,0.1);">'
+        f'<div style="display:grid;grid-template-columns:100px 1fr 70px 60px 40px;gap:16px;padding-bottom:10px;margin-bottom:4px;border-bottom:1px solid rgba({BG_TINT},0.1);">'
         f'<span style="color:{ACCENT_SOFT};font-size:0.7em;font-weight:600;">VALUE</span>'
         f'<span style="color:{ACCENT_SOFT};font-size:0.7em;font-weight:600;">CHART</span>'
         f'<span style="color:{ACCENT_SOFT};font-size:0.7em;font-weight:600;">EXP</span>'
         f'<span style="color:{ACCENT_SOFT};font-size:0.7em;font-weight:600;">WR</span>'
         f'<span style="color:{ACCENT_SOFT};font-size:0.7em;font-weight:600;">N</span>'
-        f'</div>{session_rows_html}</div>',
-        unsafe_allow_html=True)
+        f'</div>{session_rows_html}</div>', unsafe_allow_html=True)
 
 # ============ PAGE: CHARTS ============
 elif page == 'Charts':
@@ -781,8 +783,7 @@ elif page == 'Charts':
         f'<div class="eq-legend">'
         f'<div class="eq-legend-item"><div class="eq-legend-dot" style="background:{GOLD};box-shadow:0 0 6px {GOLD};"></div><span style="color:{GOLD_SOFT};">XAUUSD ({len(xau_eq)} trades)</span></div>'
         f'<div class="eq-legend-item"><div class="eq-legend-dot" style="background:{PURPLE};box-shadow:0 0 6px {PURPLE};"></div><span style="color:{PURPLE_SOFT};">NASDAQ ({len(nas_eq)} trades)</span></div>'
-        f'</div>{combined_svg}</div>',
-        unsafe_allow_html=True)
+        f'</div>{combined_svg}</div>', unsafe_allow_html=True)
 
     rolling = main_stats.get('rolling_wr', [])
     if rolling:
@@ -798,20 +799,19 @@ elif page == 'Charts':
         trend_bg = '74,222,128' if trending else '248,113,113'
         rsvg = f"""<svg viewBox="0 0 {rsvg_w} {rsvg_h}" style="width:100%;height:120px;display:block;">
           <defs>
-            <linearGradient id="rFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="rgba(96,165,250,0.25)"/><stop offset="100%" stop-color="rgba(96,165,250,0)"/></linearGradient>
+            <linearGradient id="rFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="rgba({BG_TINT},0.25)"/><stop offset="100%" stop-color="rgba({BG_TINT},0)"/></linearGradient>
             <filter id="rGlow" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
           </defs>
           <line x1="0" y1="{baseline_y:.1f}" x2="{rsvg_w}" y2="{baseline_y:.1f}" stroke="rgba(255,255,255,0.08)" stroke-width="1" stroke-dasharray="4,4"/>
           {'<path d="' + rfill + '" fill="url(#rFill)"/>' if rfill else ''}
-          {'<path d="' + rline + '" fill="none" stroke="#60a5fa" stroke-width="2.5" stroke-linecap="round" filter="url(#rGlow)"/>' if rline else ''}
+          {'<path d="' + rline + f'" fill="none" stroke="{ACCENT}" stroke-width="2.5" stroke-linecap="round" filter="url(#rGlow)"/>' if rline else ''}
         </svg>"""
         st.markdown(
             f'<div class="glass-panel">'
             f'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">'
             f'<div><div style="color:#cfe0fb;font-weight:600;font-size:1.05em;">Rolling Win Rate</div><div style="color:#5a6a88;font-size:0.72em;margin-top:2px;">Last 10 trades window</div></div>'
             f'<div style="background:rgba({trend_bg},0.1);border:1px solid rgba({trend_bg},0.2);border-radius:8px;padding:4px 10px;font-size:0.72em;color:{trend_color};">{trend_text}</div>'
-            f'</div>{rsvg}</div>',
-            unsafe_allow_html=True)
+            f'</div>{rsvg}</div>', unsafe_allow_html=True)
 
     donut_configs = [
         ('Overall', main_stats.get('wins',0), main_stats.get('losses',0), main_stats.get('breakevens',0), ['#1d4ed8','#3b82f6','#93c5fd'], 'rgba(96,165,250,0.4)', ACCENT_SOFT),
@@ -856,7 +856,6 @@ elif page == 'Calendar':
         day_header_cols[i].markdown(f'<div class="cal-header">{d}</div>', unsafe_allow_html=True)
     day_header_cols[7].markdown('<div class="cal-header">Week</div>', unsafe_allow_html=True)
 
-    st.markdown('<div class="cal-day-wrapper">', unsafe_allow_html=True)
     for week_num, week in enumerate(month_matrix):
         if week_num > 0: st.write("")
         week_cols = st.columns(8)
@@ -872,26 +871,22 @@ elif page == 'Calendar':
                     r_val = day_data['total_r']; sign = '+' if r_val > 0 else ''
                     if r_val >= 0:
                         day_style = "background:rgba(74,222,128,0.08);border:1px solid rgba(74,222,128,0.25);box-shadow:0 8px 24px rgba(74,222,128,0.06);"
-                        r_color = '#4ade80'
-                        num_color = '#eafff0'
+                        r_color = '#4ade80'; num_color = '#eafff0'
                     else:
                         day_style = "background:rgba(248,113,113,0.08);border:1px solid rgba(248,113,113,0.25);box-shadow:0 8px 24px rgba(248,113,113,0.06);"
-                        r_color = '#f87171'
-                        num_color = '#ffeaea'
+                        r_color = '#f87171'; num_color = '#ffeaea'
                     week_cols[i].markdown(
                         f'<div style="{day_style}backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-radius:16px;min-height:88px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8px;text-align:center;">'
                         f'<div style="color:{num_color};font-size:0.82em;font-weight:600;">{day_num}</div>'
                         f'<div style="color:{r_color};font-size:0.9em;font-weight:700;margin-top:4px;">{sign}{r_val}R</div>'
                         f'<div style="color:#5a6a88;font-size:0.65em;margin-top:2px;">{day_data["trades"]} trades</div>'
-                        f'</div>',
-                        unsafe_allow_html=True
-                    )
-                    
+                        f'</div>', unsafe_allow_html=True)
+                    if week_cols[i].button(f"{day_num}", key=f"day_{day_date}", use_container_width=True):
+                        st.session_state.selected_day = day_date
                 else:
                     week_cols[i].markdown(f'<div style="min-height:88px;display:flex;align-items:center;justify-content:center;"><div class="cal-day-num">{day_num}</div></div>', unsafe_allow_html=True)
         wk_sign = '+' if week_total > 0 else ''
         week_cols[7].markdown(f'<div class="cal-week-summary"><div class="cal-week-label">Week {week_num+1}</div><div class="cal-week-r">{wk_sign}{round(week_total,2)}R</div><div class="cal-day-trades">{week_trades} trades</div></div>', unsafe_allow_html=True)
-    st.markdown('</div>', unsafe_allow_html=True)
 
     if st.session_state.selected_day:
         st.markdown('<hr class="divider-line">', unsafe_allow_html=True)
@@ -953,18 +948,17 @@ elif page == 'Edge Analysis':
             f'<div style="display:flex;align-items:center;justify-content:center;padding:20px 0;">'
             f'<div style="position:relative;width:100px;height:100px;">'
             f'<svg viewBox="0 0 100 100" style="width:100px;height:100px;transform:rotate(-90deg);">'
-            f'<circle cx="50" cy="50" r="40" fill="none" stroke="rgba(96,165,250,0.1)" stroke-width="10"/>'
+            f'<circle cx="50" cy="50" r="40" fill="none" stroke="rgba({BG_TINT},0.1)" stroke-width="10"/>'
             f'<circle cx="50" cy="50" r="40" fill="none" stroke="{ACCENT}" stroke-width="10" stroke-dasharray="251" stroke-dashoffset="{round(251-(consistency_score/100)*251)}" stroke-linecap="round"/>'
             f'</svg>'
             f'<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;"><div style="font-size:1.3em;font-weight:700;color:#fff;">{consistency_score}%</div></div>'
-            f'</div></div>',
-            unsafe_allow_html=True)
+            f'</div></div>', unsafe_allow_html=True)
     with cs_cols[1]:
         for label, score in consistency_breakdown:
             color = '#4ade80' if score >= 70 else ('#f59e0b' if score >= 50 else '#f87171')
             st.markdown(
-                f'<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(96,165,250,0.08);">'
-                f'<span style="color:#9ab4dd;font-size:0.82em;">{label}</span>'
+                f'<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba({BG_TINT},0.08);">'
+                f'<span style="color:{ACCENT_SOFT};font-size:0.82em;">{label}</span>'
                 f'<span style="color:{color};font-weight:700;font-size:0.82em;">{score}%</span>'
                 f'</div>', unsafe_allow_html=True)
 
@@ -975,7 +969,7 @@ elif page == 'Best Setups':
 
     if best_setup:
         st.markdown(f'<div style="color:{ACCENT_SOFT};font-size:0.72em;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:14px;">Top Setup Finder</div>', unsafe_allow_html=True)
-        tags_html = ''.join([f'<span style="background:rgba(96,165,250,0.15);border:1px solid rgba(96,165,250,0.3);border-radius:6px;padding:4px 10px;font-size:0.75em;color:#60a5fa;margin:3px;">{b["label"]}</span>' for b in best_setup['combos']])
+        tags_html = ''.join([f'<span style="background:rgba({BG_TINT},0.15);border:1px solid rgba({BG_TINT},0.3);border-radius:6px;padding:4px 10px;font-size:0.75em;color:{ACCENT};margin:3px;">{b["label"]}</span>' for b in best_setup['combos']])
         overall_color = '#4ade80' if best_setup['overall_wr'] >= 60 else ('#f59e0b' if best_setup['overall_wr'] >= 45 else '#f87171')
         st.markdown(
             f'<div class="glass-panel" style="border-color:rgba(74,222,128,0.2);">'
@@ -984,8 +978,7 @@ elif page == 'Best Setups':
             f'<div style="text-align:center;"><div style="font-size:1.4em;font-weight:700;color:{overall_color};">{best_setup["overall_wr"]}%</div><div style="font-size:0.65em;color:#5a6a88;margin-top:3px;">AVG WIN RATE</div></div>'
             f'<div style="text-align:center;"><div style="font-size:1.4em;font-weight:700;color:#fff;">+{best_setup["overall_exp"]}R</div><div style="font-size:0.65em;color:#5a6a88;margin-top:3px;">AVG EXPECTANCY</div></div>'
             f'<div style="text-align:center;"><div style="font-size:1.4em;font-weight:700;color:{ACCENT_SOFT};">{len(best_setup["combos"])}</div><div style="font-size:0.65em;color:#5a6a88;margin-top:3px;">VARIABLES</div></div>'
-            f'</div></div>',
-            unsafe_allow_html=True)
+            f'</div></div>', unsafe_allow_html=True)
 
     st.markdown(f'<div style="color:{ACCENT_SOFT};font-size:0.72em;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin:24px 0 14px;">Best of each variable</div>', unsafe_allow_html=True)
     setup_cols_list = [
@@ -1003,12 +996,12 @@ elif page == 'Best Setups':
             continue
         color = '#4ade80' if best['exp'] >= 0 else '#f87171'
         html = (
-            f'<div style="background:rgba(96,165,250,0.05);border:1px solid rgba(96,165,250,0.12);border-radius:12px;padding:14px;margin-bottom:10px;">'
+            f'<div style="background:rgba({BG_TINT},0.05);border:1px solid rgba({BG_TINT},0.12);border-radius:12px;padding:14px;margin-bottom:10px;">'
             f'<div style="font-size:0.65em;color:#5a6a88;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">{label}</div>'
             f'<div style="font-size:0.95em;font-weight:600;color:#ddd;margin-bottom:8px;">{best["label"]}</div>'
             f'<div style="display:flex;gap:14px;">'
             f'<span style="color:{color};font-size:0.8em;font-weight:700;">{best["exp"]}R avg</span>'
-            f'<span style="color:#9ab4dd;font-size:0.8em;">{best["wr"]}% WR</span>'
+            f'<span style="color:{ACCENT_SOFT};font-size:0.8em;">{best["wr"]}% WR</span>'
             f'<span style="color:#5a6a88;font-size:0.8em;">{best["n"]} trades</span>'
             f'</div></div>'
         )
