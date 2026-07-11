@@ -299,6 +299,8 @@ def find_best_setup(df_in):
 def generate_checklist(df_in, session_stats):
     green = []
     red = []
+
+    # Best performers — what's working
     analysis_cols = [
         ('Entry Model', 'entry model'),
         ('Entry Model Timeframe', 'timeframe'),
@@ -308,9 +310,6 @@ def generate_checklist(df_in, session_stats):
         ('Entry + Confirmation', 'rejection candle'),
         ('Trade Quality Rating', 'trade quality'),
         ('Entry Confluences', 'entry confluence'),
-        ('Hour', 'time of day'),
-        ('Emotional State Before...', 'emotional state'),
-        ('News Proximity', 'news proximity'),
         ('Conditions MTF/HTF', 'market conditions'),
     ]
     for col, label in analysis_cols:
@@ -318,21 +317,73 @@ def generate_checklist(df_in, session_stats):
         if not data:
             continue
         best = data[0]
-        worst = data[-1]
         if best['exp'] > 0:
             green.append({'label': f"Use {best['label']} for {label}", 'detail': f"{best['exp']}R avg · {best['wr']}% WR · {best['n']} trades"})
-        if worst['exp'] < 0 and worst['label'] != best['label']:
-            lbl = worst['label'][:32] + '…' if len(worst['label']) > 32 else worst['label']
-            red.append({'label': f"Avoid {lbl} for {label}", 'detail': f"{worst['exp']}R avg · {worst['wr']}% WR · {worst['n']} trades"})
+
+    # Best session
     if session_stats:
         best_s = max(session_stats, key=lambda x: x['exp'])
-        worst_s = min(session_stats, key=lambda x: x['exp'])
         if best_s['exp'] > 0:
             green.append({'label': f"Trade {best_s['session']} session", 'detail': f"{best_s['exp']}R avg · {round(best_s['wr']*100)}% WR · {best_s['n']} trades"})
-        if worst_s['exp'] < 0:
-            red.append({'label': f"Avoid {worst_s['session']} session", 'detail': f"{worst_s['exp']}R avg · {round(worst_s['wr']*100)}% WR · {worst_s['n']} trades"})
-    return green, red
 
+    # ---- WHAT TO AVOID — holistic bad patterns ----
+
+    # Avoid bad sessions
+    if session_stats:
+        for s in session_stats:
+            if s['exp'] < 0 or s['wr'] < 0.4:
+                red.append({'label': f"Avoid {s['session']} session", 'detail': f"{s['exp']}R avg · {round(s['wr']*100)}% WR · {s['n']} trades"})
+
+    # Avoid bad emotional states
+    if 'Emotional State Before...' in df_in.columns:
+        data = breakdown_by_col(df_in, 'Emotional State Before...', min_trades=2)
+        for d in data:
+            if d['exp'] < 0 or d['wr'] < 45:
+                red.append({'label': f"Avoid trading when {d['label']}", 'detail': f"{d['exp']}R avg · {d['wr']}% WR · {d['n']} trades"})
+
+    # Avoid bad trade quality
+    if 'Trade Quality Rating' in df_in.columns:
+        data = breakdown_by_col(df_in, 'Trade Quality Rating', min_trades=2)
+        for d in data:
+            if d['exp'] < 0 or d['wr'] < 45:
+                red.append({'label': f"Avoid {d['label']} quality trades", 'detail': f"{d['exp']}R avg · {d['wr']}% WR · {d['n']} trades"})
+
+    # Avoid bad news proximity
+    if 'News Proximity' in df_in.columns:
+        data = breakdown_by_col(df_in, 'News Proximity', min_trades=2)
+        for d in data:
+            if d['exp'] < 0 or d['wr'] < 45:
+                red.append({'label': f"Avoid trading {d['label']}", 'detail': f"{d['exp']}R avg · {d['wr']}% WR · {d['n']} trades"})
+
+    # Avoid bad entry models
+    if 'Entry Model' in df_in.columns:
+        data = breakdown_by_col(df_in, 'Entry Model', min_trades=2)
+        for d in data:
+            if d['exp'] < 0 or d['wr'] < 45:
+                red.append({'label': f"Avoid {d['label']} entry model", 'detail': f"{d['exp']}R avg · {d['wr']}% WR · {d['n']} trades"})
+
+    # Avoid bad market conditions
+    if 'Conditions MTF/HTF' in df_in.columns:
+        data = breakdown_by_col(df_in, 'Conditions MTF/HTF', min_trades=2)
+        for d in data:
+            if d['exp'] < 0 or d['wr'] < 45:
+                red.append({'label': f"Avoid trading in {d['label']} conditions", 'detail': f"{d['exp']}R avg · {d['wr']}% WR · {d['n']} trades"})
+
+    # Avoid bad stop loss logic
+    if 'Stop Loss Logic' in df_in.columns:
+        data = breakdown_by_col(df_in, 'Stop Loss Logic', min_trades=2)
+        for d in data:
+            if d['exp'] < 0 or d['wr'] < 45:
+                red.append({'label': f"Avoid {d['label']} stop loss", 'detail': f"{d['exp']}R avg · {d['wr']}% WR · {d['n']} trades"})
+
+    # Avoid bad targets
+    if 'Target' in df_in.columns:
+        data = breakdown_by_col(df_in, 'Target', min_trades=2)
+        for d in data:
+            if d['exp'] < 0 or d['wr'] < 45:
+                red.append({'label': f"Avoid {d['label']} as target", 'detail': f"{d['exp']}R avg · {d['wr']}% WR · {d['n']} trades"})
+
+    return green, red
 def catmull(points):
     if len(points) < 2:
         return ""
