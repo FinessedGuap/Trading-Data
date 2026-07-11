@@ -16,21 +16,25 @@ if not st.session_state.authenticated:
     st.markdown("""
     <style>
     .stApp { background:#070b14; font-family:'Inter',sans-serif; }
+    div[data-testid="stButton"] button {
+        background:rgba(96,165,250,0.1) !important;
+        border:1px solid rgba(96,165,250,0.3) !important;
+        color:#fff !important; border-radius:10px !important;
+        min-height:44px !important;
+    }
     </style>
     """, unsafe_allow_html=True)
     col1, col2, col3 = st.columns([2,2,2])
     with col2:
         st.markdown('<div style="text-align:center;padding:60px 0 20px;font-size:1.8em;font-weight:700;color:#fff;">Trading Data</div>', unsafe_allow_html=True)
         st.markdown('<div style="text-align:center;color:#5a6a88;font-size:0.85em;margin-bottom:32px;">Enter password to access your dashboard</div>', unsafe_allow_html=True)
-        with st.form("login_form"):
-            pw = st.text_input("Password", type="password", label_visibility="collapsed")
-            submitted = st.form_submit_button("Enter", use_container_width=True)
-            if submitted:
-                if pw == PASSWORD:
-                    st.session_state.authenticated = True
-                    st.rerun()
-                else:
-                    st.error("Incorrect password")
+        pw = st.text_input("", placeholder="Password", type="password", label_visibility="collapsed")
+        if st.button("Enter", use_container_width=True):
+            if pw == PASSWORD:
+                st.session_state.authenticated = True
+                st.rerun()
+            else:
+                st.error("Incorrect password")
     st.stop()
 
 st.markdown('<meta http-equiv="refresh" content="300">', unsafe_allow_html=True)
@@ -253,7 +257,7 @@ def calc_consistency_score(df_in, session_stats):
     scores = []
     if 'Trade Quality Rating' in df_in.columns:
         temp = df_in.dropna(subset=['Trade Quality Rating'])
-        a_plus = temp[temp['Trade Quality Rating'].str.contains(r'A\+', na=False, regex=True)]
+        a_plus = temp[temp['Trade Quality Rating'].str.contains('A\+', na=False, regex=True)]
         if len(temp) > 0:
             scores.append(('A+ quality trades', round(len(a_plus) / len(temp) * 100)))
     if 'Rules Followed? Y/N' in df_in.columns:
@@ -468,14 +472,6 @@ for key, val in [
     if key not in st.session_state:
         st.session_state[key] = val
 
-# Pick up calendar day-click coming in via URL query param (?day=YYYY-MM-DD)
-if "day" in st.query_params:
-    try:
-        st.session_state.selected_day = datetime.strptime(st.query_params["day"], "%Y-%m-%d").date()
-    except Exception:
-        pass
-    st.query_params.clear()
-
 ACCENT = '#60a5fa'; ACCENT_SOFT = '#7fb2f5'
 GOLD = '#f59e0b'; GOLD_SOFT = '#fcd34d'
 PURPLE = '#a78bfa'; PURPLE_SOFT = '#c4b5fd'
@@ -523,27 +519,35 @@ css = f"""
   .cal-week-r {{ font-size:1.2em; font-weight:700; margin-top:10px; color:#fff; }}
   .cal-day-trades {{ color:#5a6a88; font-size:0.64em; margin-top:3px; text-align:center; }}
   .cal-day-green {{
-    background:rgba(74,222,128,0.08); border:1px solid rgba(74,222,128,0.25);
+    background:rgba(74,222,128,0.12); border:1px solid rgba(74,222,128,0.3);
     border-radius:16px; min-height:88px; display:flex; flex-direction:column;
     align-items:center; justify-content:center; padding:8px; text-align:center;
     transition:all 0.2s ease; cursor:pointer;
-    backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px);
-    box-shadow:0 8px 24px rgba(74,222,128,0.08);
   }}
-  .cal-day-green:hover {{ background:rgba(74,222,128,0.14); border-color:rgba(74,222,128,0.4); transform:translateY(-2px); box-shadow:0 12px 28px rgba(74,222,128,0.12); }}
+  .cal-day-green:hover {{ background:rgba(74,222,128,0.2); border-color:rgba(74,222,128,0.5); transform:translateY(-2px); }}
   .cal-day-red {{
-    background:rgba(248,113,113,0.08); border:1px solid rgba(248,113,113,0.25);
+    background:rgba(248,113,113,0.12); border:1px solid rgba(248,113,113,0.3);
     border-radius:16px; min-height:88px; display:flex; flex-direction:column;
     align-items:center; justify-content:center; padding:8px; text-align:center;
     transition:all 0.2s ease; cursor:pointer;
-    backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px);
-    box-shadow:0 8px 24px rgba(248,113,113,0.08);
   }}
-  .cal-day-red:hover {{ background:rgba(248,113,113,0.14); border-color:rgba(248,113,113,0.4); transform:translateY(-2px); box-shadow:0 12px 28px rgba(248,113,113,0.12); }}
+  .cal-day-red:hover {{ background:rgba(248,113,113,0.2); border-color:rgba(248,113,113,0.5); transform:translateY(-2px); }}
+  div[data-testid="stButton"] button {{
+    width:100%; min-height:88px; border-radius:16px;
+    font-family:'Inter',sans-serif; white-space:pre-line; line-height:1.4;
+    transition:all 0.25s ease; font-weight:600;
+    background:rgba(96,165,250,0.06) !important;
+    border:1px solid rgba(96,165,250,0.18) !important; color:#fff !important;
+  }}
   div[data-testid="stButton"] button:hover {{ transform:translateY(-2px); border-color:rgba(96,165,250,0.4) !important; }}
   div[data-testid="column"]:first-child div[data-testid="stButton"] button,
   div[data-testid="column"]:last-child div[data-testid="stButton"] button {{
     min-height:{NAV_H} !important; border-radius:20px !important; font-size:1.1em !important;
+  }}
+  .cal-btn-hidden div[data-testid="stButton"] button {{
+    opacity:0 !important; height:0 !important; min-height:0 !important;
+    padding:0 !important; margin:0 !important; border:none !important;
+    position:absolute !important; pointer-events:all !important;
   }}
   .trade-detail-card {{ background:rgba(96,165,250,0.05); border:1px solid rgba(96,165,250,0.15); border-radius:16px; padding:16px 20px; margin-bottom:10px; }}
   .eq-legend {{ display:flex; gap:24px; margin-bottom:12px; flex-wrap:wrap; }}
@@ -668,17 +672,14 @@ if page == 'Overview':
             data = monthly_r[m]
             sign = '+' if data['total_r'] > 0 else ''
             is_current = m == this_month_key
-            current_label = '<div style="color:#7fb2f5;font-size:0.65em;margin-top:4px;">Current</div>' if is_current else ''
-            bg_alpha = '0.1' if is_current else '0.04'
-            border_alpha = '0.35' if is_current else '0.1'
-            header_color = '#7fb2f5' if is_current else '#5a6a88'
             col.markdown(
-                f'<div style="background:rgba(96,165,250,{bg_alpha});border:1px solid rgba(96,165,250,{border_alpha});border-radius:14px;padding:14px;text-align:center;">'
-                f'<div style="color:{header_color};font-size:0.65em;margin-bottom:6px;text-transform:uppercase;">{m}</div>'
+                f'<div style="background:rgba(96,165,250,{"0.1" if is_current else "0.04"});border:1px solid rgba(96,165,250,{"0.35" if is_current else "0.1"});border-radius:14px;padding:14px;text-align:center;">'
+                f'<div style="color:{"#7fb2f5" if is_current else "#5a6a88"};font-size:0.65em;margin-bottom:6px;text-transform:uppercase;">{m}</div>'
                 f'<div style="color:#fff;font-size:1.2em;font-weight:700;">{sign}{data["total_r"]}R</div>'
                 f'<div style="color:#5a6a88;font-size:0.65em;margin-top:4px;">{data["win_rate"]}% WR · {data["trades"]} trades</div>'
-                f'{current_label}'
+                f'{"<div style=\\"color:#7fb2f5;font-size:0.65em;margin-top:4px;\\">Current</div>" if is_current else ""}'
                 f'</div>', unsafe_allow_html=True)
+
     st.markdown('<div class="section-label">3SL Window</div>', unsafe_allow_html=True)
     session_rows_html = ""
     for s in session_stats:
@@ -824,13 +825,19 @@ elif page == 'Calendar':
                     r_color = '#4ade80' if r_val >= 0 else '#f87171'
                     num_color = '#eafff0' if r_val >= 0 else '#ffeaea'
                     week_cols[i].markdown(
-                        f'<a href="?day={day_date.isoformat()}" target="_self" class="{css_class}">'
+                        f'<div class="{css_class}">'
                         f'<div style="color:{num_color};font-size:0.82em;font-weight:600;">{day_num}</div>'
                         f'<div style="color:{r_color};font-size:0.9em;font-weight:700;margin-top:4px;">{sign}{r_val}R</div>'
                         f'<div style="color:#5a6a88;font-size:0.65em;margin-top:2px;">{day_data["trades"]} trades</div>'
-                        f'</a>',
+                        f'</div>',
                         unsafe_allow_html=True
                     )
+                    # Hidden button for click detection
+                    with week_cols[i]:
+                        st.markdown('<div class="cal-btn-hidden">', unsafe_allow_html=True)
+                        if st.button(f"{day_num}", key=f"day_{day_date}", use_container_width=True):
+                            st.session_state.selected_day = day_date
+                        st.markdown('</div>', unsafe_allow_html=True)
                 else:
                     week_cols[i].markdown(f'<div style="min-height:88px;display:flex;align-items:center;justify-content:center;"><div class="cal-day-num">{day_num}</div></div>', unsafe_allow_html=True)
         wk_sign = '+' if week_total > 0 else ''
