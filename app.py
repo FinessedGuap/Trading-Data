@@ -510,10 +510,13 @@ css = f"""
   .divider-line {{ border:none; border-top:1px solid rgba(96,165,250,0.1); margin:32px 0; }}
   .cal-header {{ color:{ACCENT_SOFT}; font-size:0.72em; text-align:center; letter-spacing:1.5px; font-weight:600; text-transform:uppercase; padding:10px 0; }}
   .cal-day-num {{ color:#3d4a63; font-size:0.78em; font-weight:600; text-align:center; }}
+  .cal-hidden-btn {{
+    height:0 !important; overflow:hidden !important; margin:0 !important; padding:0 !important;
+  }}
   .cal-hidden-btn div[data-testid="stButton"] button {{
     opacity:0 !important; height:0 !important; min-height:0 !important;
     padding:0 !important; margin:0 !important; border:none !important;
-    pointer-events:all !important;
+    pointer-events:all !important; position:absolute !important;
   }}
   .cal-week-summary {{ background:rgba(96,165,250,0.06); border:1px solid rgba(96,165,250,0.18); border-radius:16px; padding:12px 6px; text-align:center; min-height:88px; }}
   .cal-week-label {{ color:{ACCENT_SOFT}; font-size:0.68em; font-weight:700; }}
