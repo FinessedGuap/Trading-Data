@@ -518,12 +518,17 @@ css = f"""
   .cal-week-label {{ color:{ACCENT_SOFT}; font-size:0.68em; font-weight:700; }}
   .cal-week-r {{ font-size:1.2em; font-weight:700; margin-top:10px; color:#fff; }}
   .cal-day-trades {{ color:#5a6a88; font-size:0.64em; margin-top:3px; text-align:center; }}
-  div[data-testid="stButton"] button {{
-    width:100%; min-height:88px; border-radius:16px;
-    font-family:'Inter',sans-serif; white-space:pre-line; line-height:1.4;
-    transition:all 0.25s ease; font-weight:600;
-    background:rgba(96,165,250,0.06) !important;
-    border:1px solid rgba(96,165,250,0.18) !important; color:#fff !important;
+  div[data-testid="stButton"] button[kind="primary"] {{
+    background:rgba(74,222,128,0.12) !important;
+    border:1px solid rgba(74,222,128,0.3) !important;
+    color:#eafff0 !important;
+    box-shadow:0 8px 24px rgba(74,222,128,0.1) !important;
+  }}
+  div[data-testid="stButton"] button[kind="secondary"] {{
+    background:rgba(248,113,113,0.12) !important;
+    border:1px solid rgba(248,113,113,0.3) !important;
+    color:#ffeaea !important;
+    box-shadow:0 8px 24px rgba(248,113,113,0.1) !important;
   }}
   div[data-testid="stButton"] button:hover {{ transform:translateY(-2px); border-color:rgba(96,165,250,0.4) !important; }}
   div[data-testid="column"]:first-child div[data-testid="stButton"] button,
@@ -829,10 +834,11 @@ elif page == 'Calendar':
             else:
                 day_date = datetime(cal_year, cal_month, day_num).date()
                 day_data = daily_r.get(day_date)
-                if day_data:
+               if day_data:
                     week_total += day_data['total_r']; week_trades += day_data['trades']
                     r_val = day_data['total_r']; sign = '+' if r_val > 0 else ''
-                    if week_cols[i].button(f"{day_num}\n{sign}{r_val}R\n{day_data['trades']} trades", key=f"day_{day_date}", use_container_width=True):
+                    btn_type = "primary" if r_val >= 0 else "secondary"
+                    if week_cols[i].button(f"{day_num}\n{sign}{r_val}R\n{day_data['trades']} trades", key=f"day_{day_date}", use_container_width=True, type=btn_type):
                         st.session_state.selected_day = day_date
                 else:
                     week_cols[i].markdown(f'<div style="min-height:88px;display:flex;align-items:center;justify-content:center;"><div class="cal-day-num">{day_num}</div></div>', unsafe_allow_html=True)
