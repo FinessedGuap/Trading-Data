@@ -510,6 +510,11 @@ css = f"""
   .divider-line {{ border:none; border-top:1px solid rgba(96,165,250,0.1); margin:32px 0; }}
   .cal-header {{ color:{ACCENT_SOFT}; font-size:0.72em; text-align:center; letter-spacing:1.5px; font-weight:600; text-transform:uppercase; padding:10px 0; }}
   .cal-day-num {{ color:#3d4a63; font-size:0.78em; font-weight:600; text-align:center; }}
+  .cal-hidden-btn div[data-testid="stButton"] button {{
+    opacity:0 !important; height:0 !important; min-height:0 !important;
+    padding:0 !important; margin:0 !important; border:none !important;
+    pointer-events:all !important;
+  }}
   .cal-week-summary {{ background:rgba(96,165,250,0.06); border:1px solid rgba(96,165,250,0.18); border-radius:16px; padding:12px 6px; text-align:center; min-height:88px; }}
   .cal-week-label {{ color:{ACCENT_SOFT}; font-size:0.68em; font-weight:700; }}
   .cal-week-r {{ font-size:1.2em; font-weight:700; margin-top:10px; color:#fff; }}
@@ -811,9 +816,26 @@ elif page == 'Calendar':
                 if day_data:
                     week_total += day_data['total_r']; week_trades += day_data['trades']
                     r_val = day_data['total_r']; sign = '+' if r_val > 0 else ''
-                    btn_type = "primary" if r_val >= 0 else "secondary"
-                    if week_cols[i].button(f"{day_num}\n{sign}{r_val}R\n{day_data['trades']} trades", key=f"day_{day_date}", use_container_width=True, type=btn_type):
+                    if r_val >= 0:
+                        day_style = "background:rgba(74,222,128,0.08);border:1px solid rgba(74,222,128,0.25);box-shadow:0 8px 24px rgba(74,222,128,0.06);"
+                        r_color = '#4ade80'
+                        num_color = '#eafff0'
+                    else:
+                        day_style = "background:rgba(248,113,113,0.08);border:1px solid rgba(248,113,113,0.25);box-shadow:0 8px 24px rgba(248,113,113,0.06);"
+                        r_color = '#f87171'
+                        num_color = '#ffeaea'
+                    week_cols[i].markdown(
+                        f'<div style="{day_style}backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-radius:16px;min-height:88px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8px;text-align:center;">'
+                        f'<div style="color:{num_color};font-size:0.82em;font-weight:600;">{day_num}</div>'
+                        f'<div style="color:{r_color};font-size:0.9em;font-weight:700;margin-top:4px;">{sign}{r_val}R</div>'
+                        f'<div style="color:#5a6a88;font-size:0.65em;margin-top:2px;">{day_data["trades"]} trades</div>'
+                        f'</div>',
+                        unsafe_allow_html=True
+                    )
+                    week_cols[i].markdown('<div class="cal-hidden-btn">', unsafe_allow_html=True)
+                    if week_cols[i].button(f"{day_num}", key=f"day_{day_date}", use_container_width=True):
                         st.session_state.selected_day = day_date
+                    week_cols[i].markdown('</div>', unsafe_allow_html=True)
                 else:
                     week_cols[i].markdown(f'<div style="min-height:88px;display:flex;align-items:center;justify-content:center;"><div class="cal-day-num">{day_num}</div></div>', unsafe_allow_html=True)
         wk_sign = '+' if week_total > 0 else ''
