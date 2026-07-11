@@ -614,14 +614,22 @@ if page == 'Overview':
     ]
     idx = st.session_state.overview_idx
     current = overviews[idx]
-    nav_l, nav_mid, nav_r = st.columns([1, 8, 1])
-    if nav_l.button("←", key="prev_ov", use_container_width=True):
-        st.session_state.overview_idx = (idx - 1) % len(overviews)
-        st.rerun()
-    nav_mid.markdown(f'<div class="nav-banner"><span class="nav-label" style="color:{current["color"]};">{current["label"]} Performance</span></div>', unsafe_allow_html=True)
-    if nav_r.button("→", key="next_ov", use_container_width=True):
-        st.session_state.overview_idx = (idx + 1) % len(overviews)
-        st.rerun()
+    prev_col, next_col = st.columns(2)
+    with prev_col:
+        if st.button(f"← {overviews[(idx-1) % len(overviews)]['label']}", key="prev_ov", use_container_width=True):
+            st.session_state.overview_idx = (idx - 1) % len(overviews)
+            st.rerun()
+    with next_col:
+        if st.button(f"{overviews[(idx+1) % len(overviews)]['label']} →", key="next_ov", use_container_width=True):
+            st.session_state.overview_idx = (idx + 1) % len(overviews)
+            st.rerun()
+
+    st.markdown(
+        f'<div class="nav-banner" style="margin-bottom:16px;">'
+        f'<span class="nav-label" style="color:{current["color"]};">{current["label"]} Performance</span>'
+        f'</div>',
+        unsafe_allow_html=True
+    )
     st.write("")
 
     stat_data = [
