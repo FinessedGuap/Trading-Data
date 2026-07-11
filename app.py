@@ -528,10 +528,10 @@ css = f"""
     transition:all 0.2s ease; cursor:pointer;
   }}
   .cal-day-red:hover {{ background:rgba(248,113,113,0.2); border-color:rgba(248,113,113,0.5); transform:translateY(-2px); }}
-  [class*="st-key-cal_win_"] div[data-testid="stButton"] button {{ background:rgba(74,222,128,0.12) !important; border:1px solid rgba(74,222,128,0.3) !important; }}
-  [class*="st-key-cal_win_"] div[data-testid="stButton"] button:hover {{ background:rgba(74,222,128,0.2) !important; border-color:rgba(74,222,128,0.5) !important; }}
-  [class*="st-key-cal_loss_"] div[data-testid="stButton"] button {{ background:rgba(248,113,113,0.12) !important; border:1px solid rgba(248,113,113,0.3) !important; }}
-  [class*="st-key-cal_loss_"] div[data-testid="stButton"] button:hover {{ background:rgba(248,113,113,0.2) !important; border-color:rgba(248,113,113,0.5) !important; }}
+  [class*="st-key-cal_win_"] div[data-testid="stButton"] button {{ background:rgba(74,222,128,0.06) !important; border:1px solid rgba(74,222,128,0.18) !important; }}
+  [class*="st-key-cal_win_"] div[data-testid="stButton"] button:hover {{ background:rgba(74,222,128,0.12) !important; border-color:rgba(74,222,128,0.35) !important; }}
+  [class*="st-key-cal_loss_"] div[data-testid="stButton"] button {{ background:rgba(248,113,113,0.06) !important; border:1px solid rgba(248,113,113,0.18) !important; }}
+  [class*="st-key-cal_loss_"] div[data-testid="stButton"] button:hover {{ background:rgba(248,113,113,0.12) !important; border-color:rgba(248,113,113,0.35) !important; }}
   div[data-testid="stButton"] button {{
     width:100%; min-height:88px; border-radius:16px;
     font-family:'Inter',sans-serif; white-space:pre-line; line-height:1.4;
