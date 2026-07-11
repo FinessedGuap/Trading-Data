@@ -28,7 +28,7 @@ if not st.session_state.authenticated:
     with col2:
         st.markdown('<div style="text-align:center;padding:60px 0 20px;font-size:1.8em;font-weight:700;color:#fff;">Trading Data</div>', unsafe_allow_html=True)
         st.markdown('<div style="text-align:center;color:#5a6a88;font-size:0.85em;margin-bottom:32px;">Enter password to access your dashboard</div>', unsafe_allow_html=True)
-        pw = st.text_input("", placeholder="Password", type="password", label_visibility="collapsed")
+        pw = st.text_input("Password", placeholder="Password", type="password", label_visibility="collapsed")
         if st.button("Enter", use_container_width=True):
             if pw == PASSWORD:
                 st.session_state.authenticated = True
