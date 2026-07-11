@@ -16,25 +16,21 @@ if not st.session_state.authenticated:
     st.markdown("""
     <style>
     .stApp { background:#070b14; font-family:'Inter',sans-serif; }
-    div[data-testid="stButton"] button {
-        background:rgba(96,165,250,0.1) !important;
-        border:1px solid rgba(96,165,250,0.3) !important;
-        color:#fff !important; border-radius:10px !important;
-        min-height:44px !important;
-    }
     </style>
     """, unsafe_allow_html=True)
     col1, col2, col3 = st.columns([2,2,2])
     with col2:
         st.markdown('<div style="text-align:center;padding:60px 0 20px;font-size:1.8em;font-weight:700;color:#fff;">Trading Data</div>', unsafe_allow_html=True)
         st.markdown('<div style="text-align:center;color:#5a6a88;font-size:0.85em;margin-bottom:32px;">Enter password to access your dashboard</div>', unsafe_allow_html=True)
-        pw = st.text_input("Password", placeholder="Password", type="password", label_visibility="collapsed")
-        if st.button("Enter", use_container_width=True):
-            if pw == PASSWORD:
-                st.session_state.authenticated = True
-                st.rerun()
-            else:
-                st.error("Incorrect password")
+        with st.form("login_form"):
+            pw = st.text_input("Password", type="password", label_visibility="collapsed")
+            submitted = st.form_submit_button("Enter", use_container_width=True)
+            if submitted:
+                if pw == PASSWORD:
+                    st.session_state.authenticated = True
+                    st.rerun()
+                else:
+                    st.error("Incorrect password")
     st.stop()
 
 st.markdown('<meta http-equiv="refresh" content="300">', unsafe_allow_html=True)
