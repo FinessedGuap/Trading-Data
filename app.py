@@ -823,20 +823,11 @@ elif page == 'Calendar':
                     css_class = 'cal-day-green' if r_val >= 0 else 'cal-day-red'
                     r_color = '#4ade80' if r_val >= 0 else '#f87171'
                     num_color = '#eafff0' if r_val >= 0 else '#ffeaea'
-                    week_cols[i].markdown(
-                        f'<div class="{css_class}">'
-                        f'<div style="color:{num_color};font-size:0.82em;font-weight:600;">{day_num}</div>'
-                        f'<div style="color:{r_color};font-size:0.9em;font-weight:700;margin-top:4px;">{sign}{r_val}R</div>'
-                        f'<div style="color:#5a6a88;font-size:0.65em;margin-top:2px;">{day_data["trades"]} trades</div>'
-                        f'</div>',
-                        unsafe_allow_html=True
-                    )
-                    # Hidden button for click detection
+                    color = 'green' if r_val >= 0 else 'red'
+                    label = f":{color}[**{day_num}**]\n\n:{color}[{sign}{r_val}R]\n\n{day_data['trades']} trades"
                     with week_cols[i]:
-                        st.markdown('<div class="cal-btn-hidden">', unsafe_allow_html=True)
-                        if st.button(f"{day_num}", key=f"day_{day_date}", use_container_width=True):
+                        if st.button(label, key=f"day_{day_date}", use_container_width=True):
                             st.session_state.selected_day = day_date
-                        st.markdown('</div>', unsafe_allow_html=True)
                 else:
                     week_cols[i].markdown(f'<div style="min-height:88px;display:flex;align-items:center;justify-content:center;"><div class="cal-day-num">{day_num}</div></div>', unsafe_allow_html=True)
         wk_sign = '+' if week_total > 0 else ''
