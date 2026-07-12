@@ -16,7 +16,8 @@ if not st.session_state.authenticated:
     st.markdown("""
     <style>
     .stApp { background:#070b14; font-family:'Inter',sans-serif; }
-    div[data-testid="stButton"] button {
+    div[data-testid="stForm"] { background:transparent; border:none; }
+    div[data-testid="stButton"] button, div[data-testid="stFormSubmitButton"] button {
         background:rgba(96,165,250,0.1) !important;
         border:1px solid rgba(96,165,250,0.3) !important;
         color:#fff !important; border-radius:10px !important;
@@ -29,7 +30,7 @@ if not st.session_state.authenticated:
         st.markdown('<div style="text-align:center;padding:60px 0 20px;font-size:1.8em;font-weight:700;color:#fff;">Trading Data</div>', unsafe_allow_html=True)
         st.markdown('<div style="text-align:center;color:#5a6a88;font-size:0.85em;margin-bottom:32px;">Enter password to access your dashboard</div>', unsafe_allow_html=True)
         with st.form("login_form"):
-            pw = st.text_input("Password", type="password", label_visibility="collapsed")
+            pw = st.text_input("Password", type="password", label_visibility="collapsed", autocomplete="off")
             submitted = st.form_submit_button("Enter", use_container_width=True)
             if submitted:
                 if pw == PASSWORD:
@@ -38,8 +39,6 @@ if not st.session_state.authenticated:
                 else:
                     st.error("Incorrect password")
     st.stop()
-
-st.markdown('<meta http-equiv="refresh" content="300">', unsafe_allow_html=True)
 
 NOTION_TOKEN = st.secrets["NOTION_TOKEN"]
 DATABASE_ID = st.secrets["DATABASE_ID"]
@@ -518,6 +517,9 @@ for key, val in [
     if key not in st.session_state:
         st.session_state[key] = val
 
+# Overall donut uses theme accent colours
+overall_donut_colors = [ACCENT, f'{ACCENT}99', f'{ACCENT}44']
+
 css = f"""
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
@@ -527,6 +529,11 @@ css = f"""
                        radial-gradient(circle at 85% 0%, rgba({BG_TINT},0.06), transparent 35%);
     font-family:'Inter',sans-serif;
   }}
+  @keyframes fadeIn {{
+    from {{ opacity:0; transform:translateY(8px); }}
+    to {{ opacity:1; transform:translateY(0); }}
+  }}
+  .main-content {{ animation: fadeIn 0.3s ease; }}
   section[data-testid="stSidebar"] {{
     background:rgba({BG_TINT},0.03) !important;
     border-right:1px solid rgba({BG_TINT},0.12) !important;
@@ -591,14 +598,24 @@ css = f"""
   section[data-testid="stSidebar"] div[data-testid="stButton"] button:hover {{
     border-color:rgba({BG_TINT},0.4) !important; background:rgba({BG_TINT},0.12) !important;
   }}
+  .theme-btn-wrap div[data-testid="stButton"] button {{
+    min-height:4px !important; height:4px !important; opacity:0 !important;
+    padding:0 !important; margin:0 !important; border:none !important;
+    background:transparent !important; position:relative !important;
+    top:-26px !important; pointer-events:all !important;
+  }}
+  .cal-day-hidden div[data-testid="stButton"] button {{
+    opacity:0 !important; height:0 !important; min-height:0 !important;
+    padding:0 !important; margin:0 !important; border:none !important;
+    pointer-events:none !important;
+  }}
 </style>
 """
 st.markdown(css, unsafe_allow_html=True)
 
 # ============ SIDEBAR ============
 with st.sidebar:
-    st.markdown(f'<div style="font-size:1.1em;font-weight:700;color:#fff;padding:20px 16px 4px;">Trading Data</div>', unsafe_allow_html=True)
-    st.markdown(f'<div style="font-size:0.7em;color:#5a6a88;padding:0 16px 16px;border-bottom:1px solid rgba({BG_TINT},0.1);margin-bottom:8px;">Trading Journal</div>', unsafe_allow_html=True)
+    st.markdown(f'<div style="font-size:1.1em;font-weight:700;color:#fff;padding:20px 16px 16px;border-bottom:1px solid rgba({BG_TINT},0.1);margin-bottom:8px;">Trading Data</div>', unsafe_allow_html=True)
 
     pages = [('📊', 'Overview'), ('📈', 'Charts'), ('🗓️', 'Calendar'), ('🔍', 'Edge Analysis'), ('🏆', 'Best Setups')]
     for icon, page_name in pages:
@@ -606,29 +623,31 @@ with st.sidebar:
             st.session_state.active_page = page_name
             st.rerun()
 
-    st.markdown(f'<div style="font-size:0.7em;color:#3d4a63;margin-top:24px;padding-top:16px;border-top:1px solid rgba({BG_TINT},0.1);">Last updated</div><div style="font-size:0.72em;color:#5a6a88;">{today.strftime("%b %d · %I:%M %p")}</div>', unsafe_allow_html=True)
+    st.markdown('<div style="margin-top:20px;"></div>', unsafe_allow_html=True)
     if st.button("↻ Refresh", key="refresh_btn", use_container_width=True):
         st.rerun()
-    csv = df_main.to_csv(index=False)
-    st.download_button("⬇ Export CSV", csv, "trades.csv", "text/csv", key="dl_csv", use_container_width=True)
     if st.button("🔒 Logout", key="logout_btn", use_container_width=True):
         st.session_state.authenticated = False
         st.rerun()
 
     # ============ THEME PICKER ============
-    st.markdown(f'<div style="border-top:1px solid rgba({BG_TINT},0.1);padding-top:12px;margin-top:8px;"><div style="font-size:0.6em;color:#444;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">Theme</div></div>', unsafe_allow_html=True)
+    st.markdown(f'<div style="border-top:1px solid rgba({BG_TINT},0.1);padding-top:12px;margin-top:12px;"><div style="font-size:0.6em;color:#444;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">Theme</div></div>', unsafe_allow_html=True)
     theme_options = {'Blue': '#60a5fa', 'Purple': '#a78bfa', 'Green': '#34d399', 'Gold': '#fcd34d', 'Neutral': '#9ca3af'}
     theme_cols = st.columns(5)
     for i, (name, hex_color) in enumerate(theme_options.items()):
         is_active = st.session_state.theme == name
         border = '2px solid #fff' if is_active else '2px solid transparent'
-        shadow = f'box-shadow:0 0 6px {hex_color};' if is_active else ''
-        theme_cols[i].markdown(f'<div style="width:22px;height:22px;border-radius:50%;background:{hex_color};border:{border};{shadow}margin:auto;"></div>', unsafe_allow_html=True)
-        if theme_cols[i].button("·", key=f"theme_{name}", use_container_width=True):
+        shadow = f'box-shadow:0 0 8px {hex_color};' if is_active else ''
+        theme_cols[i].markdown(f'<div style="width:24px;height:24px;border-radius:50%;background:{hex_color};border:{border};{shadow}margin:auto;cursor:pointer;"></div>', unsafe_allow_html=True)
+        theme_cols[i].markdown('<div class="theme-btn-wrap">', unsafe_allow_html=True)
+        if theme_cols[i].button("x", key=f"theme_{name}"):
             st.session_state.theme = name
             st.rerun()
+        theme_cols[i].markdown('</div>', unsafe_allow_html=True)
 
 page = st.session_state.active_page
+
+st.markdown('<div class="main-content">', unsafe_allow_html=True)
 
 # ============ PAGE: OVERVIEW ============
 if page == 'Overview':
@@ -813,10 +832,14 @@ elif page == 'Charts':
             f'<div style="background:rgba({trend_bg},0.1);border:1px solid rgba({trend_bg},0.2);border-radius:8px;padding:4px 10px;font-size:0.72em;color:{trend_color};">{trend_text}</div>'
             f'</div>{rsvg}</div>', unsafe_allow_html=True)
 
+    # Overall donut uses theme accent, others keep their pair colours
     donut_configs = [
-        ('Overall', main_stats.get('wins',0), main_stats.get('losses',0), main_stats.get('breakevens',0), ['#1d4ed8','#3b82f6','#93c5fd'], 'rgba(96,165,250,0.4)', ACCENT_SOFT),
-        ('XAUUSD', xau_stats.get('wins',0), xau_stats.get('losses',0), xau_stats.get('breakevens',0), ['#b45309','#f59e0b','#fde68a'], 'rgba(245,158,11,0.4)', GOLD_SOFT),
-        ('NASDAQ', nas_stats.get('wins',0), nas_stats.get('losses',0), nas_stats.get('breakevens',0), ['#6d28d9','#a78bfa','#ede9fe'], 'rgba(167,139,250,0.4)', PURPLE_SOFT),
+        ('Overall', main_stats.get('wins',0), main_stats.get('losses',0), main_stats.get('breakevens',0),
+         [ACCENT, f'{ACCENT}aa', f'{ACCENT}44'], f'rgba({BG_TINT},0.4)', ACCENT_SOFT),
+        ('XAUUSD', xau_stats.get('wins',0), xau_stats.get('losses',0), xau_stats.get('breakevens',0),
+         ['#b45309','#f59e0b','#fde68a'], 'rgba(245,158,11,0.4)', GOLD_SOFT),
+        ('NASDAQ', nas_stats.get('wins',0), nas_stats.get('losses',0), nas_stats.get('breakevens',0),
+         ['#6d28d9','#a78bfa','#ede9fe'], 'rgba(167,139,250,0.4)', PURPLE_SOFT),
     ]
     donut_cols = st.columns(3)
     for col, (label, w, l, b, colors, glow, title_color) in zip(donut_cols, donut_configs):
@@ -876,13 +899,11 @@ elif page == 'Calendar':
                         day_style = "background:rgba(248,113,113,0.08);border:1px solid rgba(248,113,113,0.25);box-shadow:0 8px 24px rgba(248,113,113,0.06);"
                         r_color = '#f87171'; num_color = '#ffeaea'
                     week_cols[i].markdown(
-                        f'<div style="{day_style}backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-radius:16px;min-height:88px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8px;text-align:center;">'
+                        f'<div style="{day_style}backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-radius:16px;min-height:88px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8px;text-align:center;transition:all 0.2s ease;">'
                         f'<div style="color:{num_color};font-size:0.82em;font-weight:600;">{day_num}</div>'
                         f'<div style="color:{r_color};font-size:0.9em;font-weight:700;margin-top:4px;">{sign}{r_val}R</div>'
                         f'<div style="color:#5a6a88;font-size:0.65em;margin-top:2px;">{day_data["trades"]} trades</div>'
                         f'</div>', unsafe_allow_html=True)
-                    if week_cols[i].button(f"{day_num}", key=f"day_{day_date}", use_container_width=True):
-                        st.session_state.selected_day = day_date
                 else:
                     week_cols[i].markdown(f'<div style="min-height:88px;display:flex;align-items:center;justify-content:center;"><div class="cal-day-num">{day_num}</div></div>', unsafe_allow_html=True)
         wk_sign = '+' if week_total > 0 else ''
@@ -1009,3 +1030,5 @@ elif page == 'Best Setups':
             col1.markdown(html, unsafe_allow_html=True)
         else:
             col2.markdown(html, unsafe_allow_html=True)
+
+st.markdown('</div>', unsafe_allow_html=True)
