@@ -529,31 +529,47 @@ css = f"""
                        radial-gradient(circle at 85% 0%, rgba({BG_TINT},0.06), transparent 35%);
     font-family:'Inter',sans-serif;
   }}
+ @keyframes fadeUp {{
+    from {{ opacity:0; transform:translateY(40px); }}
+    to {{ opacity:1; transform:translateY(0); }}
+  }}
   @keyframes fadeIn {{
     from {{ opacity:0; transform:translateY(16px); }}
     to {{ opacity:1; transform:translateY(0); }}
   }}
   @keyframes slideIn {{
-    from {{ opacity:0; transform:translateX(-12px); }}
+    from {{ opacity:0; transform:translateX(-20px); }}
     to {{ opacity:1; transform:translateX(0); }}
   }}
-  @keyframes scaleIn {{
-    from {{ opacity:0; transform:scale(0.97); }}
-    to {{ opacity:1; transform:scale(1); }}
-  }}
   .main-content {{
-    animation: scaleIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    animation: fadeUp 0.5s cubic-bezier(0.16, 1, 0.3, 1);
   }}
   .glass-panel {{
-    animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    animation: fadeUp 0.5s cubic-bezier(0.16, 1, 0.3, 1);
     animation-fill-mode: both;
   }}
   .stat-card {{
-    animation: fadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    animation: fadeUp 0.5s cubic-bezier(0.16, 1, 0.3, 1);
     animation-fill-mode: both;
   }}
   .section-label {{
-    animation: slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    animation: slideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    animation-fill-mode: both;
+  }}
+  .cal-week-summary {{
+    animation: fadeUp 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    animation-fill-mode: both;
+  }}
+  .streak-box {{
+    animation: fadeUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    animation-fill-mode: both;
+  }}
+  .checklist-item {{
+    animation: slideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    animation-fill-mode: both;
+  }}
+  .trade-detail-card {{
+    animation: fadeUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
     animation-fill-mode: both;
   }}
   section[data-testid="stSidebar"] {{
