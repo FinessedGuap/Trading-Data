@@ -17,7 +17,7 @@ if not st.session_state.authenticated:
     <style>
     .stApp { background:#070b14; font-family:'Inter',sans-serif; }
     div[data-testid="stForm"] { background:transparent; border:none; }
-    div[data-testid="stButton"] button, div[data-testid="stFormSubmitButton"] button {
+    div[data-testid="stFormSubmitButton"] button {
         background:rgba(96,165,250,0.1) !important;
         border:1px solid rgba(96,165,250,0.3) !important;
         color:#fff !important; border-radius:10px !important;
@@ -30,7 +30,7 @@ if not st.session_state.authenticated:
         st.markdown('<div style="text-align:center;padding:60px 0 20px;font-size:1.8em;font-weight:700;color:#fff;">Trading Data</div>', unsafe_allow_html=True)
         st.markdown('<div style="text-align:center;color:#5a6a88;font-size:0.85em;margin-bottom:32px;">Enter password to access your dashboard</div>', unsafe_allow_html=True)
         with st.form("login_form"):
-            pw = st.text_input("Password", type="password", label_visibility="collapsed", autocomplete="off")
+            pw = st.text_input("Password", type="password", label_visibility="collapsed", autocomplete="new-password")
             submitted = st.form_submit_button("Enter", use_container_width=True)
             if submitted:
                 if pw == PASSWORD:
@@ -517,8 +517,13 @@ for key, val in [
     if key not in st.session_state:
         st.session_state[key] = val
 
-# Overall donut uses theme accent colours
-overall_donut_colors = [ACCENT, f'{ACCENT}99', f'{ACCENT}44']
+# Build stat data for counter animation
+stat_data_for_js = {
+    'total_r': main_stats.get('total_r', 0),
+    'win_rate': main_stats.get('win_rate', 0),
+    'expectancy': main_stats.get('expectancy', 0),
+    'total_trades': main_stats.get('total_trades', 0),
+}
 
 css = f"""
 <style>
@@ -529,47 +534,80 @@ css = f"""
                        radial-gradient(circle at 85% 0%, rgba({BG_TINT},0.06), transparent 35%);
     font-family:'Inter',sans-serif;
   }}
- @keyframes fadeUp {{
+  @keyframes fadeUp {{
     from {{ opacity:0; transform:translateY(40px); }}
-    to {{ opacity:1; transform:translateY(0); }}
-  }}
-  @keyframes fadeIn {{
-    from {{ opacity:0; transform:translateY(16px); }}
     to {{ opacity:1; transform:translateY(0); }}
   }}
   @keyframes slideIn {{
     from {{ opacity:0; transform:translateX(-20px); }}
     to {{ opacity:1; transform:translateX(0); }}
   }}
-  .main-content {{
-    animation: fadeUp 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  @keyframes pulseGlow {{
+    0%, 100% {{ box-shadow: 0 0 8px rgba(74,222,128,0.4); }}
+    50% {{ box-shadow: 0 0 20px rgba(74,222,128,0.9), 0 0 40px rgba(74,222,128,0.3); }}
   }}
+  @keyframes shimmer {{
+    from {{ background-position: -400px 0; }}
+    to {{ background-position: 400px 0; }}
+  }}
+  @keyframes ripple {{
+    to {{ transform: scale(4); opacity: 0; }}
+  }}
+  .main-content {{ animation: fadeUp 0.5s cubic-bezier(0.16,1,0.3,1); }}
   .glass-panel {{
-    animation: fadeUp 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    animation: fadeUp 0.5s cubic-bezier(0.16,1,0.3,1);
     animation-fill-mode: both;
+    position: relative; overflow: hidden;
+  }}
+  .glass-panel::after {{
+    content: '';
+    position: absolute;
+    top: 0; left: -100%;
+    width: 60%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba({BG_TINT},0.08), transparent);
+    animation: sweep 2s ease-in-out 0.5s forwards;
+  }}
+  @keyframes sweep {{
+    from {{ left: -100%; }}
+    to {{ left: 150%; }}
   }}
   .stat-card {{
-    animation: fadeUp 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    animation: fadeUp 0.5s cubic-bezier(0.16,1,0.3,1);
     animation-fill-mode: both;
+    position: relative; overflow: hidden; cursor: pointer;
+  }}
+  .stat-card::after {{
+    content: '';
+    position: absolute;
+    border-radius: 50%;
+    background: rgba({BG_TINT},0.2);
+    transform: scale(0);
+    pointer-events: none;
+  }}
+  .stat-card.rippling::after {{
+    animation: ripple 0.6s linear;
   }}
   .section-label {{
-    animation: slideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-    animation-fill-mode: both;
-  }}
-  .cal-week-summary {{
-    animation: fadeUp 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    animation: slideIn 0.4s cubic-bezier(0.16,1,0.3,1);
     animation-fill-mode: both;
   }}
   .streak-box {{
-    animation: fadeUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    animation: fadeUp 0.4s cubic-bezier(0.16,1,0.3,1);
     animation-fill-mode: both;
   }}
+  .streak-box.active-streak {{
+    animation: pulseGlow 2s ease-in-out infinite !important;
+  }}
   .checklist-item {{
-    animation: slideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    animation: slideIn 0.4s cubic-bezier(0.16,1,0.3,1);
     animation-fill-mode: both;
   }}
   .trade-detail-card {{
-    animation: fadeUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    animation: fadeUp 0.4s cubic-bezier(0.16,1,0.3,1);
+    animation-fill-mode: both;
+  }}
+  .cal-week-summary {{
+    animation: fadeUp 0.5s cubic-bezier(0.16,1,0.3,1);
     animation-fill-mode: both;
   }}
   section[data-testid="stSidebar"] {{
@@ -639,19 +677,7 @@ css = f"""
   section[data-testid="stSidebar"] div[data-testid="stButton"] button[data-testid="baseButton-secondary"] {{
     min-height:6px !important; max-height:6px !important; height:6px !important;
     opacity:0 !important; padding:0 !important; margin:0 !important;
-    border:none !important; background:transparent !important;
-    overflow:hidden !important;
-  }}
-  .theme-btn-wrap div[data-testid="stButton"] button {{
-    min-height:4px !important; height:4px !important; opacity:0 !important;
-    padding:0 !important; margin:0 !important; border:none !important;
-    background:transparent !important; position:relative !important;
-    top:-26px !important; pointer-events:all !important;
-  }}
-  .cal-day-hidden div[data-testid="stButton"] button {{
-    opacity:0 !important; height:0 !important; min-height:0 !important;
-    padding:0 !important; margin:0 !important; border:none !important;
-    pointer-events:none !important;
+    border:none !important; background:transparent !important; overflow:hidden !important;
   }}
 </style>
 """
@@ -674,7 +700,6 @@ with st.sidebar:
         st.session_state.authenticated = False
         st.rerun()
 
-# ============ THEME PICKER ============
     st.markdown(f'<div style="border-top:1px solid rgba({BG_TINT},0.1);padding-top:12px;margin-top:12px;"><div style="font-size:0.6em;color:#444;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">Theme</div></div>', unsafe_allow_html=True)
     theme_options = {'Blue': '#60a5fa', 'Purple': '#a78bfa', 'Green': '#34d399', 'Gold': '#fcd34d', 'Neutral': '#9ca3af'}
     theme_cols = st.columns(5)
@@ -682,17 +707,12 @@ with st.sidebar:
         is_active = st.session_state.theme == name
         border = '2px solid #fff' if is_active else '2px solid transparent'
         shadow = f'box-shadow:0 0 8px {hex_color};' if is_active else ''
-        theme_cols[i].markdown(
-            f'<div style="width:22px;height:22px;border-radius:50%;background:{hex_color};border:{border};{shadow}margin:0 auto 4px;"></div>',
-            unsafe_allow_html=True
-        )
+        theme_cols[i].markdown(f'<div style="width:22px;height:22px;border-radius:50%;background:{hex_color};border:{border};{shadow}margin:auto;"></div>', unsafe_allow_html=True)
         if theme_cols[i].button(" ", key=f"theme_{name}", use_container_width=True):
             st.session_state.theme = name
             st.rerun()
-        theme_cols[i].markdown('</div>', unsafe_allow_html=True)
 
 page = st.session_state.active_page
-
 st.markdown('<div class="main-content">', unsafe_allow_html=True)
 
 # ============ PAGE: OVERVIEW ============
@@ -714,14 +734,40 @@ if page == 'Overview':
 
     st.markdown(
         f'<div class="glass-panel" style="display:flex;align-items:center;padding:18px 24px;">'
-        f'<div style="text-align:center;flex:1;"><div style="font-size:1.6em;font-weight:700;color:{cur_color};">{cur}</div><div style="font-size:0.62em;color:#5a6a88;margin-top:3px;text-transform:uppercase;letter-spacing:0.5px;">{cur_label}</div></div>'
+        f'<div style="text-align:center;flex:1;"><div style="font-size:1.6em;font-weight:700;color:{cur_color};" id="val-streak">{cur}</div><div style="font-size:0.62em;color:#5a6a88;margin-top:3px;text-transform:uppercase;letter-spacing:0.5px;">{cur_label}</div></div>'
         f'<div style="width:1px;height:40px;background:rgba({BG_TINT},0.15);"></div>'
-        f'<div style="text-align:center;flex:1;"><div style="font-size:1.6em;font-weight:700;color:{ACCENT};">{consistency_score}%</div><div style="font-size:0.62em;color:#5a6a88;margin-top:3px;text-transform:uppercase;letter-spacing:0.5px;">Consistency</div></div>'
+        f'<div style="text-align:center;flex:1;"><div style="font-size:1.6em;font-weight:700;color:{ACCENT};" id="val-consistency">0%</div><div style="font-size:0.62em;color:#5a6a88;margin-top:3px;text-transform:uppercase;letter-spacing:0.5px;">Consistency</div></div>'
         f'<div style="width:1px;height:40px;background:rgba({BG_TINT},0.15);"></div>'
-        f'<div style="text-align:center;flex:1;"><div style="font-size:1.6em;font-weight:700;color:#fff;">{("+" if this_month_r > 0 else "")}{this_month_r}R</div><div style="font-size:0.62em;color:#5a6a88;margin-top:3px;text-transform:uppercase;letter-spacing:0.5px;">This Month</div></div>'
+        f'<div style="text-align:center;flex:1;"><div style="font-size:1.6em;font-weight:700;color:#fff;" id="val-month">0R</div><div style="font-size:0.62em;color:#5a6a88;margin-top:3px;text-transform:uppercase;letter-spacing:0.5px;">This Month</div></div>'
         f'<div style="width:1px;height:40px;background:rgba({BG_TINT},0.15);"></div>'
-        f'<div style="text-align:center;flex:1;"><div style="font-size:1.6em;font-weight:700;color:{diff_color};">{diff_sign}{diff}R</div><div style="font-size:0.62em;color:#5a6a88;margin-top:3px;text-transform:uppercase;letter-spacing:0.5px;">vs Last Month</div></div>'
-        f'</div>', unsafe_allow_html=True)
+        f'<div style="text-align:center;flex:1;"><div style="font-size:1.6em;font-weight:700;color:{diff_color};" id="val-diff">0R</div><div style="font-size:0.62em;color:#5a6a88;margin-top:3px;text-transform:uppercase;letter-spacing:0.5px;">vs Last Month</div></div>'
+        f'</div>',
+        unsafe_allow_html=True)
+
+    # Counter animation JS
+    st.markdown(f"""
+    <script>
+    function animateCounter(el, target, suffix, decimals, duration) {{
+        if (!el) return;
+        let start = 0;
+        const startTime = performance.now();
+        function update(now) {{
+            const elapsed = now - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            const ease = 1 - Math.pow(1 - progress, 3);
+            const val = target * ease;
+            el.textContent = (decimals > 0 ? val.toFixed(decimals) : Math.round(val)) + suffix;
+            if (progress < 1) requestAnimationFrame(update);
+        }}
+        requestAnimationFrame(update);
+    }}
+    setTimeout(() => {{
+        animateCounter(document.getElementById('val-consistency'), {consistency_score}, '%', 0, 1000);
+        animateCounter(document.getElementById('val-month'), {abs(this_month_r)}, 'R', 2, 1000);
+        animateCounter(document.getElementById('val-diff'), {abs(diff)}, 'R', 2, 1000);
+    }}, 200);
+    </script>
+    """, unsafe_allow_html=True)
 
     st.markdown('<div class="section-label">Performance</div>', unsafe_allow_html=True)
     overviews = [
@@ -745,35 +791,71 @@ if page == 'Overview':
     st.markdown(f'<div class="nav-banner"><span class="nav-label" style="color:{current["color"]};">{current["label"]} Performance</span></div>', unsafe_allow_html=True)
 
     stat_data = [
-        ('Total Trades', current['stats'].get('total_trades','—')),
-        ('Win Rate', f"{current['stats'].get('win_rate','—')}%"),
-        ('Total R', current['stats'].get('total_r','—')),
-        ('Avg R / Trade', current['stats'].get('avg_r','—')),
-        ('Expectancy', current['stats'].get('expectancy','—')),
-        ('Avg Win', current['stats'].get('avg_win','—')),
-        ('Avg Loss', current['stats'].get('avg_loss','—')),
-        ('Best Trade', current['stats'].get('best_trade','—')),
-        ('Worst Trade', current['stats'].get('worst_trade','—')),
-        ('Max Drawdown', current['stats'].get('max_drawdown','—')),
-        ('Max Streak', current['stats'].get('max_consec_losses','—')),
-        ('Wins', current['stats'].get('wins','—')),
-        ('Losses', current['stats'].get('losses','—')),
-        ('Breakevens', current['stats'].get('breakevens','—')),
+        ('Total Trades', current['stats'].get('total_trades', 0), '', 0),
+        ('Win Rate', current['stats'].get('win_rate', 0), '%', 1),
+        ('Total R', current['stats'].get('total_r', 0), '', 2),
+        ('Avg R / Trade', current['stats'].get('avg_r', 0), '', 2),
+        ('Expectancy', current['stats'].get('expectancy', 0), '', 2),
+        ('Avg Win', current['stats'].get('avg_win', 0), '', 2),
+        ('Avg Loss', current['stats'].get('avg_loss', 0), '', 2),
+        ('Best Trade', current['stats'].get('best_trade', 0), '', 2),
+        ('Worst Trade', current['stats'].get('worst_trade', 0), '', 2),
+        ('Max Drawdown', current['stats'].get('max_drawdown', 0), '', 2),
+        ('Max Streak', current['stats'].get('max_consec_losses', 0), '', 0),
+        ('Wins', current['stats'].get('wins', 0), '', 0),
+        ('Losses', current['stats'].get('losses', 0), '', 0),
+        ('Breakevens', current['stats'].get('breakevens', 0), '', 0),
     ]
+
+    counter_js = ""
     for i in range(0, len(stat_data), 7):
         row_data = stat_data[i:i+7]
         cols = st.columns(len(row_data))
-        for col, (label, value) in zip(cols, row_data):
-            col.markdown(f'<div class="stat-card" style="border-color:{current["color"]}44;"><div class="stat-value">{value}</div><div class="stat-label" style="color:{current["color"]};">{label}</div></div>', unsafe_allow_html=True)
+        for j, (col, (label, value, suffix, decimals)) in enumerate(zip(cols, row_data)):
+            card_id = f"stat_{i}_{j}"
+            delay = (i * 7 + j) * 60
+            col.markdown(
+                f'<div class="stat-card" style="border-color:{current["color"]}44;animation-delay:{delay}ms;" onclick="this.classList.add(\'rippling\');setTimeout(()=>this.classList.remove(\'rippling\'),700)">'
+                f'<div class="stat-value" id="{card_id}">0{suffix}</div>'
+                f'<div class="stat-label" style="color:{current["color"]};">{label}</div>'
+                f'</div>',
+                unsafe_allow_html=True
+            )
+            counter_js += f"animateCounter(document.getElementById('{card_id}'), {abs(value) if value else 0}, '{suffix}', {decimals}, 900, {delay});\n"
         st.write("")
 
+    st.markdown(f"""
+    <script>
+    function animateCounter(el, target, suffix, decimals, duration, delay) {{
+        if (!el) return;
+        setTimeout(() => {{
+            let startTime = null;
+            function update(now) {{
+                if (!startTime) startTime = now;
+                const elapsed = now - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                const ease = 1 - Math.pow(1 - progress, 3);
+                const val = target * ease;
+                el.textContent = (decimals > 0 ? val.toFixed(decimals) : Math.round(val)) + suffix;
+                if (progress < 1) requestAnimationFrame(update);
+            }}
+            requestAnimationFrame(update);
+        }}, delay);
+    }}
+    {counter_js}
+    </script>
+    """, unsafe_allow_html=True)
+
+    # Recent trades with pulsing glow on current streak
     st.markdown('<div class="section-label">Recent Trades</div>', unsafe_allow_html=True)
     trade_results = main_stats.get('trade_results', [])[-20:]
     streak_html = '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:12px;">'
-    for r in trade_results:
+    for idx_r, r in enumerate(trade_results):
+        is_last = idx_r == len(trade_results) - 1
         color = 'rgba(74,222,128,0.8)' if r == 'W' else ('rgba(248,113,113,0.7)' if r == 'L' else f'rgba({BG_TINT},0.5)')
         text_color = '#000' if r == 'W' else '#fff'
-        streak_html += f'<div class="streak-box" style="background:{color};color:{text_color};">{r}</div>'
+        extra_class = 'active-streak' if is_last else ''
+        streak_html += f'<div class="streak-box {extra_class}" style="background:{color};color:{text_color};animation-delay:{idx_r * 30}ms;">{r}</div>'
     streak_html += f'<div class="streak-box" style="border:1px dashed rgba({BG_TINT},0.3);color:#3d4a63;">?</div></div>'
     streak_html += f'<div style="font-size:0.72em;color:#5a6a88;">Last 20 trades &nbsp;·&nbsp; <span style="color:{cur_color};">Current streak: {cur} {cur_type}</span></div>'
     st.markdown(f'<div class="glass-panel">{streak_html}</div>', unsafe_allow_html=True)
@@ -791,7 +873,7 @@ if page == 'Overview':
             border_alpha = '0.35' if is_current else '0.1'
             header_color = ACCENT_SOFT if is_current else '#5a6a88'
             col.markdown(
-                f'<div style="background:rgba({BG_TINT},{bg_alpha});border:1px solid rgba({BG_TINT},{border_alpha});border-radius:14px;padding:14px;text-align:center;">'
+                f'<div style="background:rgba({BG_TINT},{bg_alpha});border:1px solid rgba({BG_TINT},{border_alpha});border-radius:14px;padding:14px;text-align:center;animation:fadeUp 0.5s cubic-bezier(0.16,1,0.3,1) {i*80}ms both;">'
                 f'<div style="color:{header_color};font-size:0.65em;margin-bottom:6px;text-transform:uppercase;">{m}</div>'
                 f'<div style="color:#fff;font-size:1.2em;font-weight:700;">{sign}{data["total_r"]}R</div>'
                 f'<div style="color:#5a6a88;font-size:0.65em;margin-top:4px;">{data["win_rate"]}% WR · {data["trades"]} trades</div>'
@@ -804,7 +886,7 @@ if page == 'Overview':
         session_rows_html += (
             f'<div style="display:grid;grid-template-columns:100px 1fr 70px 60px 40px;gap:16px;align-items:center;padding:10px 0;">'
             f'<span style="color:{ACCENT_SOFT};font-weight:600;">{s["session"]}</span>'
-            f'<div style="background:rgba({BG_TINT},0.1);border-radius:8px;height:14px;overflow:hidden;"><div style="width:{bar_pct}%;height:100%;background:linear-gradient(90deg,rgba({BG_TINT},0.6),{ACCENT});border-radius:8px;"></div></div>'
+            f'<div style="background:rgba({BG_TINT},0.1);border-radius:8px;height:14px;overflow:hidden;"><div style="width:{bar_pct}%;height:100%;background:linear-gradient(90deg,rgba({BG_TINT},0.6),{ACCENT});border-radius:8px;transition:width 1s ease;"></div></div>'
             f'<span style="color:#fff;font-weight:700;">{s["exp"]}</span>'
             f'<span style="color:{ACCENT_SOFT};">{s["wr"]}</span>'
             f'<span style="color:#5a6a88;">{s["n"]}</span>'
@@ -830,8 +912,12 @@ elif page == 'Charts':
     nas_line, nas_fill = make_curve(nas_eq, svg_w, svg_h)
     xau_fill_path = f'<path d="{xau_fill}" fill="url(#xauFill)" opacity="0.5"/>' if xau_fill else ''
     nas_fill_path = f'<path d="{nas_fill}" fill="url(#nasFill)" opacity="0.4"/>' if nas_fill else ''
-    xau_line_path = f'<path d="{xau_line}" fill="none" stroke="{GOLD}" stroke-width="3" stroke-linecap="round" filter="url(#xauGlow)"/>' if xau_line else ''
-    nas_line_path = f'<path d="{nas_line}" fill="none" stroke="{PURPLE}" stroke-width="3" stroke-linecap="round" filter="url(#nasGlow)"/>' if nas_line else ''
+
+    # Equity curve with draw-on animation
+    xau_len = len(xau_line) * 3 if xau_line else 0
+    nas_len = len(nas_line) * 3 if nas_line else 0
+    xau_line_path = f'<path id="xau-path" d="{xau_line}" fill="none" stroke="{GOLD}" stroke-width="3" stroke-linecap="round" filter="url(#xauGlow)" stroke-dasharray="{xau_len}" stroke-dashoffset="{xau_len}"><animate attributeName="stroke-dashoffset" from="{xau_len}" to="0" dur="1.5s" ease="ease-in-out" begin="0s" fill="freeze"/></path>' if xau_line else ''
+    nas_line_path = f'<path id="nas-path" d="{nas_line}" fill="none" stroke="{PURPLE}" stroke-width="3" stroke-linecap="round" filter="url(#nasGlow)" stroke-dasharray="{nas_len}" stroke-dashoffset="{nas_len}"><animate attributeName="stroke-dashoffset" from="{nas_len}" to="0" dur="1.5s" ease="ease-in-out" begin="0.3s" fill="freeze"/></path>' if nas_line else ''
 
     combined_svg = f"""<svg viewBox="0 0 {svg_w} {svg_h}" style="width:100%;height:280px;display:block;">
       <defs>
@@ -862,14 +948,14 @@ elif page == 'Charts':
         trend_color = '#4ade80' if trending else '#f87171'
         trend_text = 'Trending up ↑' if trending else 'Trending down ↓'
         trend_bg = '74,222,128' if trending else '248,113,113'
+        r_len = len(rline) * 3 if rline else 0
         rsvg = f"""<svg viewBox="0 0 {rsvg_w} {rsvg_h}" style="width:100%;height:120px;display:block;">
           <defs>
             <linearGradient id="rFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="rgba({BG_TINT},0.25)"/><stop offset="100%" stop-color="rgba({BG_TINT},0)"/></linearGradient>
-            <filter id="rGlow" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
           </defs>
           <line x1="0" y1="{baseline_y:.1f}" x2="{rsvg_w}" y2="{baseline_y:.1f}" stroke="rgba(255,255,255,0.08)" stroke-width="1" stroke-dasharray="4,4"/>
           {'<path d="' + rfill + '" fill="url(#rFill)"/>' if rfill else ''}
-          {'<path d="' + rline + f'" fill="none" stroke="{ACCENT}" stroke-width="2.5" stroke-linecap="round" filter="url(#rGlow)"/>' if rline else ''}
+          {'<path d="' + rline + f'" fill="none" stroke="{ACCENT}" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="{r_len}" stroke-dashoffset="{r_len}"><animate attributeName="stroke-dashoffset" from="{r_len}" to="0" dur="1.2s" begin="0s" fill="freeze"/></path>' if rline else ''}
         </svg>"""
         st.markdown(
             f'<div class="glass-panel">'
@@ -878,7 +964,6 @@ elif page == 'Charts':
             f'<div style="background:rgba({trend_bg},0.1);border:1px solid rgba({trend_bg},0.2);border-radius:8px;padding:4px 10px;font-size:0.72em;color:{trend_color};">{trend_text}</div>'
             f'</div>{rsvg}</div>', unsafe_allow_html=True)
 
-    # Overall donut uses theme accent, others keep their pair colours
     donut_configs = [
         ('Overall', main_stats.get('wins',0), main_stats.get('losses',0), main_stats.get('breakevens',0),
          [ACCENT, f'{ACCENT}aa', f'{ACCENT}44'], f'rgba({BG_TINT},0.4)', ACCENT_SOFT),
@@ -944,8 +1029,9 @@ elif page == 'Calendar':
                     else:
                         day_style = "background:rgba(248,113,113,0.08);border:1px solid rgba(248,113,113,0.25);box-shadow:0 8px 24px rgba(248,113,113,0.06);"
                         r_color = '#f87171'; num_color = '#ffeaea'
+                    delay = (week_num * 7 + i) * 40
                     week_cols[i].markdown(
-                        f'<div style="{day_style}backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-radius:16px;min-height:88px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8px;text-align:center;transition:all 0.2s ease;">'
+                        f'<div style="{day_style}backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-radius:16px;min-height:88px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8px;text-align:center;animation:fadeUp 0.5s cubic-bezier(0.16,1,0.3,1) {delay}ms both;">'
                         f'<div style="color:{num_color};font-size:0.82em;font-weight:600;">{day_num}</div>'
                         f'<div style="color:{r_color};font-size:0.9em;font-weight:700;margin-top:4px;">{sign}{r_val}R</div>'
                         f'<div style="color:#5a6a88;font-size:0.65em;margin-top:2px;">{day_data["trades"]} trades</div>'
@@ -953,7 +1039,7 @@ elif page == 'Calendar':
                 else:
                     week_cols[i].markdown(f'<div style="min-height:88px;display:flex;align-items:center;justify-content:center;"><div class="cal-day-num">{day_num}</div></div>', unsafe_allow_html=True)
         wk_sign = '+' if week_total > 0 else ''
-        week_cols[7].markdown(f'<div class="cal-week-summary"><div class="cal-week-label">Week {week_num+1}</div><div class="cal-week-r">{wk_sign}{round(week_total,2)}R</div><div class="cal-day-trades">{week_trades} trades</div></div>', unsafe_allow_html=True)
+        week_cols[7].markdown(f'<div class="cal-week-summary" style="animation-delay:{week_num*80}ms;"><div class="cal-week-label">Week {week_num+1}</div><div class="cal-week-r">{wk_sign}{round(week_total,2)}R</div><div class="cal-day-trades">{week_trades} trades</div></div>', unsafe_allow_html=True)
 
     if st.session_state.selected_day:
         st.markdown('<hr class="divider-line">', unsafe_allow_html=True)
@@ -998,12 +1084,12 @@ elif page == 'Edge Analysis':
         cl_cols = st.columns(2)
         with cl_cols[0]:
             st.markdown('<div style="color:#4ade80;font-size:0.7em;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">✓ What\'s working — do more of this</div>', unsafe_allow_html=True)
-            for item in green_checklist:
-                st.markdown(f'<div class="checklist-item"><div class="checklist-dot" style="background:#4ade80;box-shadow:0 0 6px rgba(74,222,128,0.4);"></div><div><div style="color:#ddd;font-size:0.88em;font-weight:600;">{item["label"]}</div><div style="color:#5a6a88;font-size:0.76em;margin-top:2px;">{item["detail"]}</div></div></div>', unsafe_allow_html=True)
+            for idx_c, item in enumerate(green_checklist):
+                st.markdown(f'<div class="checklist-item" style="animation-delay:{idx_c*50}ms;"><div class="checklist-dot" style="background:#4ade80;box-shadow:0 0 6px rgba(74,222,128,0.4);"></div><div><div style="color:#ddd;font-size:0.88em;font-weight:600;">{item["label"]}</div><div style="color:#5a6a88;font-size:0.76em;margin-top:2px;">{item["detail"]}</div></div></div>', unsafe_allow_html=True)
         with cl_cols[1]:
             st.markdown('<div style="color:#f87171;font-size:0.7em;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">✗ What to avoid</div>', unsafe_allow_html=True)
-            for item in red_checklist:
-                st.markdown(f'<div class="checklist-item"><div class="checklist-dot" style="background:#f87171;box-shadow:0 0 6px rgba(248,113,113,0.4);"></div><div><div style="color:#ddd;font-size:0.88em;font-weight:600;">{item["label"]}</div><div style="color:#5a6a88;font-size:0.76em;margin-top:2px;">{item["detail"]}</div></div></div>', unsafe_allow_html=True)
+            for idx_c, item in enumerate(red_checklist):
+                st.markdown(f'<div class="checklist-item" style="animation-delay:{idx_c*50}ms;"><div class="checklist-dot" style="background:#f87171;box-shadow:0 0 6px rgba(248,113,113,0.4);"></div><div><div style="color:#ddd;font-size:0.88em;font-weight:600;">{item["label"]}</div><div style="color:#5a6a88;font-size:0.76em;margin-top:2px;">{item["detail"]}</div></div></div>', unsafe_allow_html=True)
     else:
         st.markdown('<div style="color:#5a6a88;font-size:0.85em;">Not enough data yet — keep logging trades and this will populate automatically.</div>', unsafe_allow_html=True)
 
@@ -1016,15 +1102,17 @@ elif page == 'Edge Analysis':
             f'<div style="position:relative;width:100px;height:100px;">'
             f'<svg viewBox="0 0 100 100" style="width:100px;height:100px;transform:rotate(-90deg);">'
             f'<circle cx="50" cy="50" r="40" fill="none" stroke="rgba({BG_TINT},0.1)" stroke-width="10"/>'
-            f'<circle cx="50" cy="50" r="40" fill="none" stroke="{ACCENT}" stroke-width="10" stroke-dasharray="251" stroke-dashoffset="{round(251-(consistency_score/100)*251)}" stroke-linecap="round"/>'
+            f'<circle cx="50" cy="50" r="40" fill="none" stroke="{ACCENT}" stroke-width="10" stroke-dasharray="251" stroke-dashoffset="251">'
+            f'<animate attributeName="stroke-dashoffset" from="251" to="{round(251-(consistency_score/100)*251)}" dur="1s" begin="0.2s" fill="freeze"/>'
+            f'</circle>'
             f'</svg>'
             f'<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;"><div style="font-size:1.3em;font-weight:700;color:#fff;">{consistency_score}%</div></div>'
             f'</div></div>', unsafe_allow_html=True)
     with cs_cols[1]:
-        for label, score in consistency_breakdown:
+        for idx_c, (label, score) in enumerate(consistency_breakdown):
             color = '#4ade80' if score >= 70 else ('#f59e0b' if score >= 50 else '#f87171')
             st.markdown(
-                f'<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba({BG_TINT},0.08);">'
+                f'<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba({BG_TINT},0.08);animation:slideIn 0.4s cubic-bezier(0.16,1,0.3,1) {idx_c*80}ms both;">'
                 f'<span style="color:{ACCENT_SOFT};font-size:0.82em;">{label}</span>'
                 f'<span style="color:{color};font-weight:700;font-size:0.82em;">{score}%</span>'
                 f'</div>', unsafe_allow_html=True)
@@ -1036,7 +1124,7 @@ elif page == 'Best Setups':
 
     if best_setup:
         st.markdown(f'<div style="color:{ACCENT_SOFT};font-size:0.72em;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:14px;">Top Setup Finder</div>', unsafe_allow_html=True)
-        tags_html = ''.join([f'<span style="background:rgba({BG_TINT},0.15);border:1px solid rgba({BG_TINT},0.3);border-radius:6px;padding:4px 10px;font-size:0.75em;color:{ACCENT};margin:3px;">{b["label"]}</span>' for b in best_setup['combos']])
+        tags_html = ''.join([f'<span style="background:rgba({BG_TINT},0.15);border:1px solid rgba({BG_TINT},0.3);border-radius:6px;padding:4px 10px;font-size:0.75em;color:{ACCENT};margin:3px;animation:fadeUp 0.4s cubic-bezier(0.16,1,0.3,1) {i*60}ms both;display:inline-block;">{b["label"]}</span>' for i, b in enumerate(best_setup['combos'])])
         overall_color = '#4ade80' if best_setup['overall_wr'] >= 60 else ('#f59e0b' if best_setup['overall_wr'] >= 45 else '#f87171')
         st.markdown(
             f'<div class="glass-panel" style="border-color:rgba(74,222,128,0.2);">'
@@ -1062,8 +1150,9 @@ elif page == 'Best Setups':
         if not best:
             continue
         color = '#4ade80' if best['exp'] >= 0 else '#f87171'
+        delay = i * 60
         html = (
-            f'<div style="background:rgba({BG_TINT},0.05);border:1px solid rgba({BG_TINT},0.12);border-radius:12px;padding:14px;margin-bottom:10px;">'
+            f'<div style="background:rgba({BG_TINT},0.05);border:1px solid rgba({BG_TINT},0.12);border-radius:12px;padding:14px;margin-bottom:10px;animation:fadeUp 0.5s cubic-bezier(0.16,1,0.3,1) {delay}ms both;">'
             f'<div style="font-size:0.65em;color:#5a6a88;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">{label}</div>'
             f'<div style="font-size:0.95em;font-weight:600;color:#ddd;margin-bottom:8px;">{best["label"]}</div>'
             f'<div style="display:flex;gap:14px;">'
