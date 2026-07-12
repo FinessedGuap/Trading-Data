@@ -530,10 +530,32 @@ css = f"""
     font-family:'Inter',sans-serif;
   }}
   @keyframes fadeIn {{
-    from {{ opacity:0; transform:translateY(8px); }}
+    from {{ opacity:0; transform:translateY(16px); }}
     to {{ opacity:1; transform:translateY(0); }}
   }}
-  .main-content {{ animation: fadeIn 0.3s ease; }}
+  @keyframes slideIn {{
+    from {{ opacity:0; transform:translateX(-12px); }}
+    to {{ opacity:1; transform:translateX(0); }}
+  }}
+  @keyframes scaleIn {{
+    from {{ opacity:0; transform:scale(0.97); }}
+    to {{ opacity:1; transform:scale(1); }}
+  }}
+  .main-content {{
+    animation: scaleIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  }}
+  .glass-panel {{
+    animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    animation-fill-mode: both;
+  }}
+  .stat-card {{
+    animation: fadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    animation-fill-mode: both;
+  }}
+  .section-label {{
+    animation: slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    animation-fill-mode: both;
+  }}
   section[data-testid="stSidebar"] {{
     background:rgba({BG_TINT},0.03) !important;
     border-right:1px solid rgba({BG_TINT},0.12) !important;
