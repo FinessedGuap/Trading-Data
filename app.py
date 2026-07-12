@@ -598,6 +598,12 @@ css = f"""
   section[data-testid="stSidebar"] div[data-testid="stButton"] button:hover {{
     border-color:rgba({BG_TINT},0.4) !important; background:rgba({BG_TINT},0.12) !important;
   }}
+  section[data-testid="stSidebar"] div[data-testid="stButton"] button[data-testid="baseButton-secondary"] {{
+    min-height:6px !important; max-height:6px !important; height:6px !important;
+    opacity:0 !important; padding:0 !important; margin:0 !important;
+    border:none !important; background:transparent !important;
+    overflow:hidden !important;
+  }}
   .theme-btn-wrap div[data-testid="stButton"] button {{
     min-height:4px !important; height:4px !important; opacity:0 !important;
     padding:0 !important; margin:0 !important; border:none !important;
@@ -630,7 +636,7 @@ with st.sidebar:
         st.session_state.authenticated = False
         st.rerun()
 
-    # ============ THEME PICKER ============
+# ============ THEME PICKER ============
     st.markdown(f'<div style="border-top:1px solid rgba({BG_TINT},0.1);padding-top:12px;margin-top:12px;"><div style="font-size:0.6em;color:#444;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">Theme</div></div>', unsafe_allow_html=True)
     theme_options = {'Blue': '#60a5fa', 'Purple': '#a78bfa', 'Green': '#34d399', 'Gold': '#fcd34d', 'Neutral': '#9ca3af'}
     theme_cols = st.columns(5)
@@ -638,9 +644,11 @@ with st.sidebar:
         is_active = st.session_state.theme == name
         border = '2px solid #fff' if is_active else '2px solid transparent'
         shadow = f'box-shadow:0 0 8px {hex_color};' if is_active else ''
-        theme_cols[i].markdown(f'<div style="width:24px;height:24px;border-radius:50%;background:{hex_color};border:{border};{shadow}margin:auto;cursor:pointer;"></div>', unsafe_allow_html=True)
-        theme_cols[i].markdown('<div class="theme-btn-wrap">', unsafe_allow_html=True)
-        if theme_cols[i].button("x", key=f"theme_{name}"):
+        theme_cols[i].markdown(
+            f'<div style="width:22px;height:22px;border-radius:50%;background:{hex_color};border:{border};{shadow}margin:0 auto 4px;"></div>',
+            unsafe_allow_html=True
+        )
+        if theme_cols[i].button(" ", key=f"theme_{name}", use_container_width=True):
             st.session_state.theme = name
             st.rerun()
         theme_cols[i].markdown('</div>', unsafe_allow_html=True)
