@@ -1,3 +1,4 @@
+import streamlit.components.v1 as components
 import streamlit as st
 import requests
 import pandas as pd
@@ -716,6 +717,31 @@ if page == 'Overview':
         f'<div style="text-align:center;flex:1;"><div style="font-size:1.6em;font-weight:700;color:{diff_color};" id="banner-diff">0R</div><div style="font-size:0.62em;color:#5a6a88;margin-top:3px;text-transform:uppercase;letter-spacing:0.5px;">vs Last Month</div></div>'
         f'</div>',
         unsafe_allow_html=True)
+
+    components.html(f"""
+    <script>
+    function countUp(selector, target, decimals, suffix, finalText, duration) {{
+        var el = window.parent.document.getElementById(selector);
+        if (!el) return;
+        var startTime = null;
+        function step(ts) {{
+            if (!startTime) startTime = ts;
+            var progress = Math.min((ts - startTime) / duration, 1);
+            var ease = 1 - Math.pow(1 - progress, 3);
+            var val = target * ease;
+            el.textContent = (decimals > 0 ? val.toFixed(decimals) : Math.round(val)) + suffix;
+            if (progress < 1) requestAnimationFrame(step);
+            else el.textContent = finalText;
+        }}
+        requestAnimationFrame(step);
+    }}
+    setTimeout(function() {{
+        countUp('banner-consistency', {consistency_score}, 0, '%', '{consistency_score}%', 1000);
+        countUp('banner-month', {abs(this_month_r)}, 2, 'R', '{month_sign}{this_month_r}R', 1000);
+        countUp('banner-diff', {abs(diff)}, 2, 'R', '{diff_sign}{diff}R', 1000);
+    }}, 200);
+    </script>
+    """, height=0)
 
     month_display = f"{month_sign}{this_month_r}"
     diff_display = f"{diff_sign}{diff}"
