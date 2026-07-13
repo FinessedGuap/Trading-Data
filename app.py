@@ -895,7 +895,7 @@ elif page == 'Charts':
     xau_line, xau_fill = make_curve(xau_eq, svg_w, svg_h)
     nas_line, nas_fill = make_curve(nas_eq, svg_w, svg_h)
     xau_fill_path = f'<path d="{xau_fill}" fill="url(#xauFill)" opacity="0.5"/>' if xau_fill else ''
-    nas_fill_path = f'<path d="{nas_fill}" fill="url(#nasFill)" opacity="0.4"/>' if nas_fill else ''
+    nas_fill_path = ''
     xau_len = 2000
     nas_len = 2000
     xau_line_path = f'<path d="{xau_line}" fill="none" stroke="{GOLD}" stroke-width="3" stroke-linecap="round" filter="url(#xauGlow)" stroke-dasharray="{xau_len}" stroke-dashoffset="{xau_len}"><animate attributeName="stroke-dashoffset" from="{xau_len}" to="0" dur="2.5s" begin="0s" fill="freeze"/></path>' if xau_line else ''
