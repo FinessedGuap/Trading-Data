@@ -1,5 +1,5 @@
-import streamlit.components.v1 as components
 import streamlit as st
+import streamlit.components.v1 as components
 import requests
 import pandas as pd
 from datetime import datetime
@@ -708,7 +708,7 @@ if page == 'Overview':
 
     st.markdown(
         f'<div class="glass-panel" style="display:flex;align-items:center;padding:18px 24px;">'
-        f'<div style="text-align:center;flex:1;"><div style="font-size:1.6em;font-weight:700;color:{cur_color};" id="banner-streak">{cur}</div><div style="font-size:0.62em;color:#5a6a88;margin-top:3px;text-transform:uppercase;letter-spacing:0.5px;">{cur_label}</div></div>'
+        f'<div style="text-align:center;flex:1;"><div style="font-size:1.6em;font-weight:700;color:{cur_color};">{cur}</div><div style="font-size:0.62em;color:#5a6a88;margin-top:3px;text-transform:uppercase;letter-spacing:0.5px;">{cur_label}</div></div>'
         f'<div style="width:1px;height:40px;background:rgba({BG_TINT},0.15);"></div>'
         f'<div style="text-align:center;flex:1;"><div style="font-size:1.6em;font-weight:700;color:{ACCENT};" id="banner-consistency">0%</div><div style="font-size:0.62em;color:#5a6a88;margin-top:3px;text-transform:uppercase;letter-spacing:0.5px;">Consistency</div></div>'
         f'<div style="width:1px;height:40px;background:rgba({BG_TINT},0.15);"></div>'
@@ -718,7 +718,7 @@ if page == 'Overview':
         f'</div>',
         unsafe_allow_html=True)
 
-components.html(f"""
+    components.html(f"""
 <script>
 function countUp(selector, target, decimals, suffix, finalText, duration) {{
     var el = window.parent.document.getElementById(selector);
@@ -764,11 +764,10 @@ setTimeout(function() {{
         }});
     }}, {{ threshold: 0.1, rootMargin: '0px 0px -40px 0px' }});
     targets.forEach(function(el) {{ observer.observe(el); }});
-}}, 300);
+}}, 400);
 </script>
     """, height=0)
 
-    
     st.markdown('<div class="section-label">Performance</div>', unsafe_allow_html=True)
     overviews = [
         {'label': 'Overall', 'stats': main_stats, 'color': ACCENT_SOFT},
@@ -816,8 +815,7 @@ setTimeout(function() {{
                 f'<div class="stat-value">{value}</div>'
                 f'<div class="stat-label" style="color:{current["color"]};">{label}</div>'
                 f'</div>',
-                unsafe_allow_html=True
-            )
+                unsafe_allow_html=True)
         st.write("")
 
     st.markdown('<div class="section-label">Recent Trades</div>', unsafe_allow_html=True)
@@ -886,15 +884,12 @@ elif page == 'Charts':
     nas_line, nas_fill = make_curve(nas_eq, svg_w, svg_h)
     xau_fill_path = f'<path d="{xau_fill}" fill="url(#xauFill)" opacity="0.5"/>' if xau_fill else ''
     nas_fill_path = ''
-    xau_len = 2000
-    nas_len = 2000
-    xau_line_path = f'<path d="{xau_line}" fill="none" stroke="{GOLD}" stroke-width="3" stroke-linecap="round" filter="url(#xauGlow)" stroke-dasharray="{xau_len}" stroke-dashoffset="{xau_len}"><animate attributeName="stroke-dashoffset" from="{xau_len}" to="0" dur="2.5s" begin="0s" fill="freeze"/></path>' if xau_line else ''
-    nas_line_path = f'<path d="{nas_line}" fill="none" stroke="{PURPLE}" stroke-width="3" stroke-linecap="round" filter="url(#nasGlow)" stroke-dasharray="{nas_len}" stroke-dashoffset="{nas_len}"><animate attributeName="stroke-dashoffset" from="{nas_len}" to="0" dur="2.5s" begin="0.4s" fill="freeze"/></path>' if nas_line else ''
+    xau_line_path = f'<path d="{xau_line}" fill="none" stroke="{GOLD}" stroke-width="3" stroke-linecap="round" filter="url(#xauGlow)" stroke-dasharray="2000" stroke-dashoffset="2000"><animate attributeName="stroke-dashoffset" from="2000" to="0" dur="2.5s" begin="0s" fill="freeze"/></path>' if xau_line else ''
+    nas_line_path = f'<path d="{nas_line}" fill="none" stroke="{PURPLE}" stroke-width="3" stroke-linecap="round" filter="url(#nasGlow)" stroke-dasharray="2000" stroke-dashoffset="2000"><animate attributeName="stroke-dashoffset" from="2000" to="0" dur="2.5s" begin="0.4s" fill="freeze"/></path>' if nas_line else ''
 
     combined_svg = f"""<svg viewBox="0 0 {svg_w} {svg_h}" style="width:100%;height:280px;display:block;">
       <defs>
         <linearGradient id="xauFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="rgba(245,158,11,0.3)"/><stop offset="100%" stop-color="rgba(245,158,11,0)"/></linearGradient>
-        <linearGradient id="nasFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="rgba(167,139,250,0.3)"/><stop offset="100%" stop-color="rgba(167,139,250,0)"/></linearGradient>
         <filter id="xauGlow" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="4" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
         <filter id="nasGlow" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="4" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
       </defs>
@@ -920,14 +915,13 @@ elif page == 'Charts':
         trend_color = '#4ade80' if trending else '#f87171'
         trend_text = 'Trending up ↑' if trending else 'Trending down ↓'
         trend_bg = '74,222,128' if trending else '248,113,113'
-        r_len = 2000
         rsvg = f"""<svg viewBox="0 0 {rsvg_w} {rsvg_h}" style="width:100%;height:120px;display:block;">
           <defs>
             <linearGradient id="rFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="rgba({BG_TINT},0.25)"/><stop offset="100%" stop-color="rgba({BG_TINT},0)"/></linearGradient>
           </defs>
           <line x1="0" y1="{baseline_y:.1f}" x2="{rsvg_w}" y2="{baseline_y:.1f}" stroke="rgba(255,255,255,0.08)" stroke-width="1" stroke-dasharray="4,4"/>
           {'<path d="' + rfill + '" fill="url(#rFill)"/>' if rfill else ''}
-          {'<path d="' + rline + f'" fill="none" stroke="{ACCENT}" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="{r_len}" stroke-dashoffset="{r_len}"><animate attributeName="stroke-dashoffset" from="{r_len}" to="0" dur="2s" begin="0s" fill="freeze"/></path>' if rline else ''}
+          {'<path d="' + rline + f'" fill="none" stroke="{ACCENT}" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="2000" stroke-dashoffset="2000"><animate attributeName="stroke-dashoffset" from="2000" to="0" dur="2s" begin="0s" fill="freeze"/></path>' if rline else ''}
         </svg>"""
         st.markdown(
             f'<div class="glass-panel">'
@@ -956,7 +950,7 @@ elif page == 'Calendar':
     cal_month = st.session_state.cal_month
     cal_year = st.session_state.cal_year
     month_total_r = sum(v['total_r'] for k, v in daily_r.items() if k.month == cal_month and k.year == cal_year)
-    month_sign = '+' if month_total_r > 0 else ''
+    month_sign2 = '+' if month_total_r > 0 else ''
     month_name = datetime(cal_year, cal_month, 1).strftime("%B %Y")
 
     nav_col_left, nav_col_mid, nav_col_right = st.columns([1, 8, 1])
@@ -966,7 +960,7 @@ elif page == 'Calendar':
         else:
             st.session_state.cal_month -= 1
         st.rerun()
-    nav_col_mid.markdown(f'<div class="nav-banner"><span class="nav-label">{month_name} &nbsp;·&nbsp; Total R: <span style="color:{ACCENT};">{month_sign}{round(month_total_r,2)}</span></span></div>', unsafe_allow_html=True)
+    nav_col_mid.markdown(f'<div class="nav-banner"><span class="nav-label">{month_name} &nbsp;·&nbsp; Total R: <span style="color:{ACCENT};">{month_sign2}{round(month_total_r,2)}</span></span></div>', unsafe_allow_html=True)
     if nav_col_right.button("→", key="next_month", use_container_width=True):
         if st.session_state.cal_month == 12:
             st.session_state.cal_month = 1; st.session_state.cal_year += 1
