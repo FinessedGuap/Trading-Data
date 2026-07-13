@@ -768,6 +768,7 @@ setTimeout(function() {{
 </script>
     """, height=0)
 
+    
     st.markdown('<div class="section-label">Performance</div>', unsafe_allow_html=True)
     overviews = [
         {'label': 'Overall', 'stats': main_stats, 'color': ACCENT_SOFT},
