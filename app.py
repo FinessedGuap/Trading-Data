@@ -763,8 +763,9 @@ if page == 'Overview':
     }}
     setTimeout(() => {{
         animateCounter(document.getElementById('val-consistency'), {consistency_score}, '%', 0, 1000);
-        animateCounter(document.getElementById('val-month'), {abs(this_month_r)}, 'R', 2, 1000);
-        animateCounter(document.getElementById('val-diff'), {abs(diff)}, 'R', 2, 1000);
+        animateCounter(document.getElementById('val-consistency'), {consistency_score}, '%', 0, 1000);
+        document.getElementById('val-month').textContent = '{("+" if this_month_r > 0 else "")}{this_month_r}R';
+        document.getElementById('val-diff').textContent = '{diff_sign}{diff}R';
     }}, 200);
     </script>
     """, unsafe_allow_html=True)
@@ -790,38 +791,34 @@ if page == 'Overview':
 
     st.markdown(f'<div class="nav-banner"><span class="nav-label" style="color:{current["color"]};">{current["label"]} Performance</span></div>', unsafe_allow_html=True)
 
-    stat_data = [
-        ('Total Trades', current['stats'].get('total_trades', 0), '', 0),
-        ('Win Rate', current['stats'].get('win_rate', 0), '%', 1),
-        ('Total R', current['stats'].get('total_r', 0), '', 2),
-        ('Avg R / Trade', current['stats'].get('avg_r', 0), '', 2),
-        ('Expectancy', current['stats'].get('expectancy', 0), '', 2),
-        ('Avg Win', current['stats'].get('avg_win', 0), '', 2),
-        ('Avg Loss', current['stats'].get('avg_loss', 0), '', 2),
-        ('Best Trade', current['stats'].get('best_trade', 0), '', 2),
-        ('Worst Trade', current['stats'].get('worst_trade', 0), '', 2),
-        ('Max Drawdown', current['stats'].get('max_drawdown', 0), '', 2),
-        ('Max Streak', current['stats'].get('max_consec_losses', 0), '', 0),
-        ('Wins', current['stats'].get('wins', 0), '', 0),
-        ('Losses', current['stats'].get('losses', 0), '', 0),
-        ('Breakevens', current['stats'].get('breakevens', 0), '', 0),
+   stat_data = [
+        ('Total Trades', current['stats'].get('total_trades','—')),
+        ('Win Rate', f"{current['stats'].get('win_rate','—')}%"),
+        ('Total R', current['stats'].get('total_r','—')),
+        ('Avg R / Trade', current['stats'].get('avg_r','—')),
+        ('Expectancy', current['stats'].get('expectancy','—')),
+        ('Avg Win', current['stats'].get('avg_win','—')),
+        ('Avg Loss', current['stats'].get('avg_loss','—')),
+        ('Best Trade', current['stats'].get('best_trade','—')),
+        ('Worst Trade', current['stats'].get('worst_trade','—')),
+        ('Max Drawdown', current['stats'].get('max_drawdown','—')),
+        ('Max Streak', current['stats'].get('max_consec_losses','—')),
+        ('Wins', current['stats'].get('wins','—')),
+        ('Losses', current['stats'].get('losses','—')),
+        ('Breakevens', current['stats'].get('breakevens','—')),
     ]
-
-    counter_js = ""
     for i in range(0, len(stat_data), 7):
         row_data = stat_data[i:i+7]
         cols = st.columns(len(row_data))
-        for j, (col, (label, value, suffix, decimals)) in enumerate(zip(cols, row_data)):
-            card_id = f"stat_{i}_{j}"
-            delay = (i * 7 + j) * 60
+        for j, (col, (label, value)) in enumerate(zip(cols, row_data)):
+            delay = (i * 7 + j) * 40
             col.markdown(
-                f'<div class="stat-card" style="border-color:{current["color"]}44;animation-delay:{delay}ms;" onclick="this.classList.add(\'rippling\');setTimeout(()=>this.classList.remove(\'rippling\'),700)">'
-                f'<div class="stat-value" id="{card_id}">0{suffix}</div>'
+                f'<div class="stat-card" style="border-color:{current["color"]}44;animation-delay:{delay}ms;">'
+                f'<div class="stat-value">{value}</div>'
                 f'<div class="stat-label" style="color:{current["color"]};">{label}</div>'
                 f'</div>',
                 unsafe_allow_html=True
             )
-            counter_js += f"animateCounter(document.getElementById('{card_id}'), {abs(value) if value else 0}, '{suffix}', {decimals}, 900, {delay});\n"
         st.write("")
 
     st.markdown(f"""
@@ -916,8 +913,8 @@ elif page == 'Charts':
     # Equity curve with draw-on animation
     xau_len = len(xau_line) * 3 if xau_line else 0
     nas_len = len(nas_line) * 3 if nas_line else 0
-    xau_line_path = f'<path id="xau-path" d="{xau_line}" fill="none" stroke="{GOLD}" stroke-width="3" stroke-linecap="round" filter="url(#xauGlow)" stroke-dasharray="{xau_len}" stroke-dashoffset="{xau_len}"><animate attributeName="stroke-dashoffset" from="{xau_len}" to="0" dur="1.5s" ease="ease-in-out" begin="0s" fill="freeze"/></path>' if xau_line else ''
-    nas_line_path = f'<path id="nas-path" d="{nas_line}" fill="none" stroke="{PURPLE}" stroke-width="3" stroke-linecap="round" filter="url(#nasGlow)" stroke-dasharray="{nas_len}" stroke-dashoffset="{nas_len}"><animate attributeName="stroke-dashoffset" from="{nas_len}" to="0" dur="1.5s" ease="ease-in-out" begin="0.3s" fill="freeze"/></path>' if nas_line else ''
+    xau_line_path = f'<path id="xau-path" d="{xau_line}" fill="none" stroke="{GOLD}" stroke-width="3" stroke-linecap="round" filter="url(#xauGlow)" stroke-dasharray="{xau_len}" stroke-dashoffset="{xau_len}"><animate attributeName="stroke-dashoffset" from="{xau_len}" to="0" dur="2.5s" ease="ease-in-out" begin="0s" fill="freeze"/></path>' if xau_line else ''
+    nas_line_path = f'<path id="nas-path" d="{nas_line}" fill="none" stroke="{PURPLE}" stroke-width="3" stroke-linecap="round" filter="url(#nasGlow)" stroke-dasharray="{nas_len}" stroke-dashoffset="{nas_len}"><animate attributeName="stroke-dashoffset" from="{nas_len}" to="0" dur="2.5s" ease="ease-in-out" begin="0.3s" fill="freeze"/></path>' if nas_line else ''
 
     combined_svg = f"""<svg viewBox="0 0 {svg_w} {svg_h}" style="width:100%;height:280px;display:block;">
       <defs>
@@ -955,7 +952,7 @@ elif page == 'Charts':
           </defs>
           <line x1="0" y1="{baseline_y:.1f}" x2="{rsvg_w}" y2="{baseline_y:.1f}" stroke="rgba(255,255,255,0.08)" stroke-width="1" stroke-dasharray="4,4"/>
           {'<path d="' + rfill + '" fill="url(#rFill)"/>' if rfill else ''}
-          {'<path d="' + rline + f'" fill="none" stroke="{ACCENT}" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="{r_len}" stroke-dashoffset="{r_len}"><animate attributeName="stroke-dashoffset" from="{r_len}" to="0" dur="1.2s" begin="0s" fill="freeze"/></path>' if rline else ''}
+          {'<path d="' + rline + f'" fill="none" stroke="{ACCENT}" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="{r_len}" stroke-dashoffset="{r_len}"><animate attributeName="stroke-dashoffset" from="{r_len}" to="0" dur="2s" begin="0s" fill="freeze"/></path>' if rline else ''}
         </svg>"""
         st.markdown(
             f'<div class="glass-panel">'
