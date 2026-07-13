@@ -758,7 +758,7 @@ if page == 'Overview':
         row_data = stat_data[i:i+7]
         cols = st.columns(len(row_data))
         for j, (col, (label, value)) in enumerate(zip(cols, row_data)):
-            delay = (i * 7 + j) * 40
+            delay = (i * 7 + j) * 25
             col.markdown(
                 f'<div class="stat-card" style="border-color:{current["color"]}44;animation-delay:{delay}ms;">'
                 f'<div class="stat-value">{value}</div>'
