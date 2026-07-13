@@ -740,6 +740,56 @@ if page == 'Overview':
         countUp('banner-month', {abs(this_month_r)}, 2, 'R', '{month_sign}{this_month_r}R', 1000);
         countUp('banner-diff', {abs(diff)}, 2, 'R', '{diff_sign}{diff}R', 1000);
     }}, 200);
+
+    // Scroll triggered animations
+    var doc = window.parent.document;
+    var targets = doc.querySelectorAll('.glass-panel, .stat-card, .checklist-item, .trade-detail-card, .cal-week-summary, .streak-box');
+    targets.forEach(function(el) {{
+        el.style.opacity = '0';
+        el.style.transform = 'translateY(30px)';
+        el.style.transition = 'none';
+        el.style.animationName = 'none';
+    }});
+    var observer = new IntersectionObserver(function(entries) {{
+        entries.forEach(function(entry) {{
+            if (entry.isIntersecting) {{
+                var el = entry.target;
+                var delay = parseInt(el.style.animationDelay) || 0;
+                setTimeout(function() {{
+                    el.style.transition = 'opacity 0.5s cubic-bezier(0.16,1,0.3,1), transform 0.5s cubic-bezier(0.16,1,0.3,1)';
+                    el.style.opacity = '1';
+                    el.style.transform = 'translateY(0)';
+                }}, delay);
+                observer.unobserve(el);
+            }}
+        }});
+    }}, {{ threshold: 0.1, rootMargin: '0px 0px -40px 0px' }});
+    setTimeout(function() {{
+        var doc = window.parent.document;
+        var targets = doc.querySelectorAll('.glass-panel, .stat-card, .checklist-item, .trade-detail-card, .cal-week-summary, .streak-box');
+        targets.forEach(function(el) {{ observer.observe(el); }});
+    }}, 300);
+    </script>
+    """, height=0)
+        var el = window.parent.document.getElementById(selector);
+        if (!el) return;
+        var startTime = null;
+        function step(ts) {{
+            if (!startTime) startTime = ts;
+            var progress = Math.min((ts - startTime) / duration, 1);
+            var ease = 1 - Math.pow(1 - progress, 3);
+            var val = target * ease;
+            el.textContent = (decimals > 0 ? val.toFixed(decimals) : Math.round(val)) + suffix;
+            if (progress < 1) requestAnimationFrame(step);
+            else el.textContent = finalText;
+        }}
+        requestAnimationFrame(step);
+    }}
+    setTimeout(function() {{
+        countUp('banner-consistency', {consistency_score}, 0, '%', '{consistency_score}%', 1000);
+        countUp('banner-month', {abs(this_month_r)}, 2, 'R', '{month_sign}{this_month_r}R', 1000);
+        countUp('banner-diff', {abs(diff)}, 2, 'R', '{diff_sign}{diff}R', 1000);
+    }}, 200);
     </script>
     """, height=0)
 
