@@ -49,7 +49,6 @@ headers = {
     "Notion-Version": "2022-06-28"
 }
 
-# ============ THEME ============
 if 'theme' not in st.session_state:
     st.session_state.theme = 'Blue'
 
@@ -517,14 +516,6 @@ for key, val in [
     if key not in st.session_state:
         st.session_state[key] = val
 
-# Build stat data for counter animation
-stat_data_for_js = {
-    'total_r': main_stats.get('total_r', 0),
-    'win_rate': main_stats.get('win_rate', 0),
-    'expectancy': main_stats.get('expectancy', 0),
-    'total_trades': main_stats.get('total_trades', 0),
-}
-
 css = f"""
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
@@ -546,47 +537,32 @@ css = f"""
     0%, 100% {{ box-shadow: 0 0 8px rgba(74,222,128,0.4); }}
     50% {{ box-shadow: 0 0 20px rgba(74,222,128,0.9), 0 0 40px rgba(74,222,128,0.3); }}
   }}
-  @keyframes shimmer {{
-    from {{ background-position: -400px 0; }}
-    to {{ background-position: 400px 0; }}
-  }}
-  @keyframes ripple {{
-    to {{ transform: scale(4); opacity: 0; }}
+  @keyframes panelSweep {{
+    from {{ left: -100%; }}
+    to {{ left: 150%; }}
   }}
   .main-content {{ animation: fadeUp 0.5s cubic-bezier(0.16,1,0.3,1); }}
   .glass-panel {{
+    position: relative; overflow: hidden;
     animation: fadeUp 0.5s cubic-bezier(0.16,1,0.3,1);
     animation-fill-mode: both;
-    position: relative; overflow: hidden;
   }}
   .glass-panel::after {{
     content: '';
     position: absolute;
     top: 0; left: -100%;
     width: 60%; height: 100%;
-    background: linear-gradient(90deg, transparent, rgba({BG_TINT},0.08), transparent);
-    animation: sweep 2s ease-in-out 0.5s forwards;
-  }}
-  @keyframes sweep {{
-    from {{ left: -100%; }}
-    to {{ left: 150%; }}
-  }}
-  .stat-card {{
-    animation: fadeUp 0.5s cubic-bezier(0.16,1,0.3,1);
-    animation-fill-mode: both;
-    position: relative; overflow: hidden; cursor: pointer;
-  }}
-  .stat-card::after {{
-    content: '';
-    position: absolute;
-    border-radius: 50%;
-    background: rgba({BG_TINT},0.2);
-    transform: scale(0);
+    background: linear-gradient(90deg, transparent, rgba({BG_TINT},0.06), transparent);
+    animation: panelSweep 1.5s ease-in-out 0.3s forwards;
     pointer-events: none;
   }}
-  .stat-card.rippling::after {{
-    animation: ripple 0.6s linear;
+  .stat-card {{
+    animation: fadeUp 0.4s cubic-bezier(0.16,1,0.3,1);
+    animation-fill-mode: both;
+    position: relative; overflow: hidden;
+    transition: all 0.25s ease; cursor: pointer;
   }}
+  .stat-card:hover {{ transform:translateY(-2px); border-color:rgba({BG_TINT},0.4); }}
   .section-label {{
     animation: slideIn 0.4s cubic-bezier(0.16,1,0.3,1);
     animation-fill-mode: both;
@@ -623,9 +599,8 @@ css = f"""
   .stat-card {{
     background:rgba({BG_TINT},0.06); backdrop-filter:blur(20px);
     border:1px solid rgba({BG_TINT},0.2); border-radius:18px; padding:20px 14px;
-    text-align:center; transition:all 0.25s ease;
+    text-align:center;
   }}
-  .stat-card:hover {{ transform:translateY(-2px); border-color:rgba({BG_TINT},0.4); }}
   .stat-value {{ font-size:1.55em; font-weight:700; color:#fff; }}
   .stat-label {{ color:{ACCENT_SOFT}; font-size:0.64em; margin-top:6px; letter-spacing:0.8px; font-weight:600; text-transform:uppercase; }}
   .glass-panel {{
@@ -686,20 +661,17 @@ st.markdown(css, unsafe_allow_html=True)
 # ============ SIDEBAR ============
 with st.sidebar:
     st.markdown(f'<div style="font-size:1.1em;font-weight:700;color:#fff;padding:20px 16px 16px;border-bottom:1px solid rgba({BG_TINT},0.1);margin-bottom:8px;">Trading Data</div>', unsafe_allow_html=True)
-
     pages = [('📊', 'Overview'), ('📈', 'Charts'), ('🗓️', 'Calendar'), ('🔍', 'Edge Analysis'), ('🏆', 'Best Setups')]
     for icon, page_name in pages:
         if st.button(f"{icon}  {page_name}", key=f"nav_{page_name}", use_container_width=True):
             st.session_state.active_page = page_name
             st.rerun()
-
     st.markdown('<div style="margin-top:20px;"></div>', unsafe_allow_html=True)
     if st.button("↻ Refresh", key="refresh_btn", use_container_width=True):
         st.rerun()
     if st.button("🔒 Logout", key="logout_btn", use_container_width=True):
         st.session_state.authenticated = False
         st.rerun()
-
     st.markdown(f'<div style="border-top:1px solid rgba({BG_TINT},0.1);padding-top:12px;margin-top:12px;"><div style="font-size:0.6em;color:#444;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">Theme</div></div>', unsafe_allow_html=True)
     theme_options = {'Blue': '#60a5fa', 'Purple': '#a78bfa', 'Green': '#34d399', 'Gold': '#fcd34d', 'Neutral': '#9ca3af'}
     theme_cols = st.columns(5)
@@ -731,44 +703,19 @@ if page == 'Overview':
     diff = round(this_month_r - last_month_r, 2)
     diff_color = '#4ade80' if diff >= 0 else '#f87171'
     diff_sign = '+' if diff >= 0 else ''
+    month_sign = '+' if this_month_r > 0 else ''
 
     st.markdown(
         f'<div class="glass-panel" style="display:flex;align-items:center;padding:18px 24px;">'
-        f'<div style="text-align:center;flex:1;"><div style="font-size:1.6em;font-weight:700;color:{cur_color};" id="val-streak">{cur}</div><div style="font-size:0.62em;color:#5a6a88;margin-top:3px;text-transform:uppercase;letter-spacing:0.5px;">{cur_label}</div></div>'
+        f'<div style="text-align:center;flex:1;"><div style="font-size:1.6em;font-weight:700;color:{cur_color};">{cur}</div><div style="font-size:0.62em;color:#5a6a88;margin-top:3px;text-transform:uppercase;letter-spacing:0.5px;">{cur_label}</div></div>'
         f'<div style="width:1px;height:40px;background:rgba({BG_TINT},0.15);"></div>'
-        f'<div style="text-align:center;flex:1;"><div style="font-size:1.6em;font-weight:700;color:{ACCENT};" id="val-consistency">0%</div><div style="font-size:0.62em;color:#5a6a88;margin-top:3px;text-transform:uppercase;letter-spacing:0.5px;">Consistency</div></div>'
+        f'<div style="text-align:center;flex:1;"><div style="font-size:1.6em;font-weight:700;color:{ACCENT};">{consistency_score}%</div><div style="font-size:0.62em;color:#5a6a88;margin-top:3px;text-transform:uppercase;letter-spacing:0.5px;">Consistency</div></div>'
         f'<div style="width:1px;height:40px;background:rgba({BG_TINT},0.15);"></div>'
-        f'<div style="text-align:center;flex:1;"><div style="font-size:1.6em;font-weight:700;color:#fff;" id="val-month">0R</div><div style="font-size:0.62em;color:#5a6a88;margin-top:3px;text-transform:uppercase;letter-spacing:0.5px;">This Month</div></div>'
+        f'<div style="text-align:center;flex:1;"><div style="font-size:1.6em;font-weight:700;color:#fff;">{month_sign}{this_month_r}R</div><div style="font-size:0.62em;color:#5a6a88;margin-top:3px;text-transform:uppercase;letter-spacing:0.5px;">This Month</div></div>'
         f'<div style="width:1px;height:40px;background:rgba({BG_TINT},0.15);"></div>'
-        f'<div style="text-align:center;flex:1;"><div style="font-size:1.6em;font-weight:700;color:{diff_color};" id="val-diff">0R</div><div style="font-size:0.62em;color:#5a6a88;margin-top:3px;text-transform:uppercase;letter-spacing:0.5px;">vs Last Month</div></div>'
+        f'<div style="text-align:center;flex:1;"><div style="font-size:1.6em;font-weight:700;color:{diff_color};">{diff_sign}{diff}R</div><div style="font-size:0.62em;color:#5a6a88;margin-top:3px;text-transform:uppercase;letter-spacing:0.5px;">vs Last Month</div></div>'
         f'</div>',
         unsafe_allow_html=True)
-
-    # Counter animation JS
-    st.markdown(f"""
-    <script>
-    function animateCounter(el, target, suffix, decimals, duration) {{
-        if (!el) return;
-        let start = 0;
-        const startTime = performance.now();
-        function update(now) {{
-            const elapsed = now - startTime;
-            const progress = Math.min(elapsed / duration, 1);
-            const ease = 1 - Math.pow(1 - progress, 3);
-            const val = target * ease;
-            el.textContent = (decimals > 0 ? val.toFixed(decimals) : Math.round(val)) + suffix;
-            if (progress < 1) requestAnimationFrame(update);
-        }}
-        requestAnimationFrame(update);
-    }}
-    setTimeout(() => {{
-        animateCounter(document.getElementById('val-consistency'), {consistency_score}, '%', 0, 1000);
-        animateCounter(document.getElementById('val-consistency'), {consistency_score}, '%', 0, 1000);
-        document.getElementById('val-month').textContent = '{("+" if this_month_r > 0 else "")}{this_month_r}R';
-        document.getElementById('val-diff').textContent = '{diff_sign}{diff}R';
-    }}, 200);
-    </script>
-    """, unsafe_allow_html=True)
 
     st.markdown('<div class="section-label">Performance</div>', unsafe_allow_html=True)
     overviews = [
@@ -791,21 +738,21 @@ if page == 'Overview':
 
     st.markdown(f'<div class="nav-banner"><span class="nav-label" style="color:{current["color"]};">{current["label"]} Performance</span></div>', unsafe_allow_html=True)
 
-   stat_data = [
-        ('Total Trades', current['stats'].get('total_trades','—')),
-        ('Win Rate', f"{current['stats'].get('win_rate','—')}%"),
-        ('Total R', current['stats'].get('total_r','—')),
-        ('Avg R / Trade', current['stats'].get('avg_r','—')),
-        ('Expectancy', current['stats'].get('expectancy','—')),
-        ('Avg Win', current['stats'].get('avg_win','—')),
-        ('Avg Loss', current['stats'].get('avg_loss','—')),
-        ('Best Trade', current['stats'].get('best_trade','—')),
-        ('Worst Trade', current['stats'].get('worst_trade','—')),
-        ('Max Drawdown', current['stats'].get('max_drawdown','—')),
-        ('Max Streak', current['stats'].get('max_consec_losses','—')),
-        ('Wins', current['stats'].get('wins','—')),
-        ('Losses', current['stats'].get('losses','—')),
-        ('Breakevens', current['stats'].get('breakevens','—')),
+    stat_data = [
+        ('Total Trades', current['stats'].get('total_trades', '—')),
+        ('Win Rate', f"{current['stats'].get('win_rate', '—')}%"),
+        ('Total R', current['stats'].get('total_r', '—')),
+        ('Avg R / Trade', current['stats'].get('avg_r', '—')),
+        ('Expectancy', current['stats'].get('expectancy', '—')),
+        ('Avg Win', current['stats'].get('avg_win', '—')),
+        ('Avg Loss', current['stats'].get('avg_loss', '—')),
+        ('Best Trade', current['stats'].get('best_trade', '—')),
+        ('Worst Trade', current['stats'].get('worst_trade', '—')),
+        ('Max Drawdown', current['stats'].get('max_drawdown', '—')),
+        ('Max Streak', current['stats'].get('max_consec_losses', '—')),
+        ('Wins', current['stats'].get('wins', '—')),
+        ('Losses', current['stats'].get('losses', '—')),
+        ('Breakevens', current['stats'].get('breakevens', '—')),
     ]
     for i in range(0, len(stat_data), 7):
         row_data = stat_data[i:i+7]
@@ -821,29 +768,6 @@ if page == 'Overview':
             )
         st.write("")
 
-    st.markdown(f"""
-    <script>
-    function animateCounter(el, target, suffix, decimals, duration, delay) {{
-        if (!el) return;
-        setTimeout(() => {{
-            let startTime = null;
-            function update(now) {{
-                if (!startTime) startTime = now;
-                const elapsed = now - startTime;
-                const progress = Math.min(elapsed / duration, 1);
-                const ease = 1 - Math.pow(1 - progress, 3);
-                const val = target * ease;
-                el.textContent = (decimals > 0 ? val.toFixed(decimals) : Math.round(val)) + suffix;
-                if (progress < 1) requestAnimationFrame(update);
-            }}
-            requestAnimationFrame(update);
-        }}, delay);
-    }}
-    {counter_js}
-    </script>
-    """, unsafe_allow_html=True)
-
-    # Recent trades with pulsing glow on current streak
     st.markdown('<div class="section-label">Recent Trades</div>', unsafe_allow_html=True)
     trade_results = main_stats.get('trade_results', [])[-20:]
     streak_html = '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:12px;">'
@@ -852,7 +776,8 @@ if page == 'Overview':
         color = 'rgba(74,222,128,0.8)' if r == 'W' else ('rgba(248,113,113,0.7)' if r == 'L' else f'rgba({BG_TINT},0.5)')
         text_color = '#000' if r == 'W' else '#fff'
         extra_class = 'active-streak' if is_last else ''
-        streak_html += f'<div class="streak-box {extra_class}" style="background:{color};color:{text_color};animation-delay:{idx_r * 30}ms;">{r}</div>'
+        delay = idx_r * 30
+        streak_html += f'<div class="streak-box {extra_class}" style="background:{color};color:{text_color};animation-delay:{delay}ms;">{r}</div>'
     streak_html += f'<div class="streak-box" style="border:1px dashed rgba({BG_TINT},0.3);color:#3d4a63;">?</div></div>'
     streak_html += f'<div style="font-size:0.72em;color:#5a6a88;">Last 20 trades &nbsp;·&nbsp; <span style="color:{cur_color};">Current streak: {cur} {cur_type}</span></div>'
     st.markdown(f'<div class="glass-panel">{streak_html}</div>', unsafe_allow_html=True)
@@ -883,7 +808,7 @@ if page == 'Overview':
         session_rows_html += (
             f'<div style="display:grid;grid-template-columns:100px 1fr 70px 60px 40px;gap:16px;align-items:center;padding:10px 0;">'
             f'<span style="color:{ACCENT_SOFT};font-weight:600;">{s["session"]}</span>'
-            f'<div style="background:rgba({BG_TINT},0.1);border-radius:8px;height:14px;overflow:hidden;"><div style="width:{bar_pct}%;height:100%;background:linear-gradient(90deg,rgba({BG_TINT},0.6),{ACCENT});border-radius:8px;transition:width 1s ease;"></div></div>'
+            f'<div style="background:rgba({BG_TINT},0.1);border-radius:8px;height:14px;overflow:hidden;"><div style="width:{bar_pct}%;height:100%;background:linear-gradient(90deg,rgba({BG_TINT},0.6),{ACCENT});border-radius:8px;"></div></div>'
             f'<span style="color:#fff;font-weight:700;">{s["exp"]}</span>'
             f'<span style="color:{ACCENT_SOFT};">{s["wr"]}</span>'
             f'<span style="color:#5a6a88;">{s["n"]}</span>'
@@ -909,12 +834,10 @@ elif page == 'Charts':
     nas_line, nas_fill = make_curve(nas_eq, svg_w, svg_h)
     xau_fill_path = f'<path d="{xau_fill}" fill="url(#xauFill)" opacity="0.5"/>' if xau_fill else ''
     nas_fill_path = f'<path d="{nas_fill}" fill="url(#nasFill)" opacity="0.4"/>' if nas_fill else ''
-
-    # Equity curve with draw-on animation
-    xau_len = len(xau_line) * 3 if xau_line else 0
-    nas_len = len(nas_line) * 3 if nas_line else 0
-    xau_line_path = f'<path id="xau-path" d="{xau_line}" fill="none" stroke="{GOLD}" stroke-width="3" stroke-linecap="round" filter="url(#xauGlow)" stroke-dasharray="{xau_len}" stroke-dashoffset="{xau_len}"><animate attributeName="stroke-dashoffset" from="{xau_len}" to="0" dur="2.5s" ease="ease-in-out" begin="0s" fill="freeze"/></path>' if xau_line else ''
-    nas_line_path = f'<path id="nas-path" d="{nas_line}" fill="none" stroke="{PURPLE}" stroke-width="3" stroke-linecap="round" filter="url(#nasGlow)" stroke-dasharray="{nas_len}" stroke-dashoffset="{nas_len}"><animate attributeName="stroke-dashoffset" from="{nas_len}" to="0" dur="2.5s" ease="ease-in-out" begin="0.3s" fill="freeze"/></path>' if nas_line else ''
+    xau_len = 2000
+    nas_len = 2000
+    xau_line_path = f'<path d="{xau_line}" fill="none" stroke="{GOLD}" stroke-width="3" stroke-linecap="round" filter="url(#xauGlow)" stroke-dasharray="{xau_len}" stroke-dashoffset="{xau_len}"><animate attributeName="stroke-dashoffset" from="{xau_len}" to="0" dur="2.5s" begin="0s" fill="freeze"/></path>' if xau_line else ''
+    nas_line_path = f'<path d="{nas_line}" fill="none" stroke="{PURPLE}" stroke-width="3" stroke-linecap="round" filter="url(#nasGlow)" stroke-dasharray="{nas_len}" stroke-dashoffset="{nas_len}"><animate attributeName="stroke-dashoffset" from="{nas_len}" to="0" dur="2.5s" begin="0.4s" fill="freeze"/></path>' if nas_line else ''
 
     combined_svg = f"""<svg viewBox="0 0 {svg_w} {svg_h}" style="width:100%;height:280px;display:block;">
       <defs>
@@ -945,7 +868,7 @@ elif page == 'Charts':
         trend_color = '#4ade80' if trending else '#f87171'
         trend_text = 'Trending up ↑' if trending else 'Trending down ↓'
         trend_bg = '74,222,128' if trending else '248,113,113'
-        r_len = len(rline) * 3 if rline else 0
+        r_len = 2000
         rsvg = f"""<svg viewBox="0 0 {rsvg_w} {rsvg_h}" style="width:100%;height:120px;display:block;">
           <defs>
             <linearGradient id="rFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="rgba({BG_TINT},0.25)"/><stop offset="100%" stop-color="rgba({BG_TINT},0)"/></linearGradient>
@@ -1026,7 +949,7 @@ elif page == 'Calendar':
                     else:
                         day_style = "background:rgba(248,113,113,0.08);border:1px solid rgba(248,113,113,0.25);box-shadow:0 8px 24px rgba(248,113,113,0.06);"
                         r_color = '#f87171'; num_color = '#ffeaea'
-                    delay = (week_num * 7 + i) * 40
+                    delay = (week_num * 7 + i) * 35
                     week_cols[i].markdown(
                         f'<div style="{day_style}backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-radius:16px;min-height:88px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8px;text-align:center;animation:fadeUp 0.5s cubic-bezier(0.16,1,0.3,1) {delay}ms both;">'
                         f'<div style="color:{num_color};font-size:0.82em;font-weight:600;">{day_num}</div>'
@@ -1101,8 +1024,7 @@ elif page == 'Edge Analysis':
             f'<circle cx="50" cy="50" r="40" fill="none" stroke="rgba({BG_TINT},0.1)" stroke-width="10"/>'
             f'<circle cx="50" cy="50" r="40" fill="none" stroke="{ACCENT}" stroke-width="10" stroke-dasharray="251" stroke-dashoffset="251">'
             f'<animate attributeName="stroke-dashoffset" from="251" to="{round(251-(consistency_score/100)*251)}" dur="1s" begin="0.2s" fill="freeze"/>'
-            f'</circle>'
-            f'</svg>'
+            f'</circle></svg>'
             f'<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;"><div style="font-size:1.3em;font-weight:700;color:#fff;">{consistency_score}%</div></div>'
             f'</div></div>', unsafe_allow_html=True)
     with cs_cols[1]:
@@ -1147,7 +1069,7 @@ elif page == 'Best Setups':
         if not best:
             continue
         color = '#4ade80' if best['exp'] >= 0 else '#f87171'
-        delay = i * 60
+        delay = i * 50
         html = (
             f'<div style="background:rgba({BG_TINT},0.05);border:1px solid rgba({BG_TINT},0.12);border-radius:12px;padding:14px;margin-bottom:10px;animation:fadeUp 0.5s cubic-bezier(0.16,1,0.3,1) {delay}ms both;">'
             f'<div style="font-size:0.65em;color:#5a6a88;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">{label}</div>'
