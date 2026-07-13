@@ -707,15 +707,51 @@ if page == 'Overview':
 
     st.markdown(
         f'<div class="glass-panel" style="display:flex;align-items:center;padding:18px 24px;">'
-        f'<div style="text-align:center;flex:1;"><div style="font-size:1.6em;font-weight:700;color:{cur_color};">{cur}</div><div style="font-size:0.62em;color:#5a6a88;margin-top:3px;text-transform:uppercase;letter-spacing:0.5px;">{cur_label}</div></div>'
+        f'<div style="text-align:center;flex:1;"><div style="font-size:1.6em;font-weight:700;color:{cur_color};" id="banner-streak">{cur}</div><div style="font-size:0.62em;color:#5a6a88;margin-top:3px;text-transform:uppercase;letter-spacing:0.5px;">{cur_label}</div></div>'
         f'<div style="width:1px;height:40px;background:rgba({BG_TINT},0.15);"></div>'
-        f'<div style="text-align:center;flex:1;"><div style="font-size:1.6em;font-weight:700;color:{ACCENT};">{consistency_score}%</div><div style="font-size:0.62em;color:#5a6a88;margin-top:3px;text-transform:uppercase;letter-spacing:0.5px;">Consistency</div></div>'
+        f'<div style="text-align:center;flex:1;"><div style="font-size:1.6em;font-weight:700;color:{ACCENT};" id="banner-consistency">0%</div><div style="font-size:0.62em;color:#5a6a88;margin-top:3px;text-transform:uppercase;letter-spacing:0.5px;">Consistency</div></div>'
         f'<div style="width:1px;height:40px;background:rgba({BG_TINT},0.15);"></div>'
-        f'<div style="text-align:center;flex:1;"><div style="font-size:1.6em;font-weight:700;color:#fff;">{month_sign}{this_month_r}R</div><div style="font-size:0.62em;color:#5a6a88;margin-top:3px;text-transform:uppercase;letter-spacing:0.5px;">This Month</div></div>'
+        f'<div style="text-align:center;flex:1;"><div style="font-size:1.6em;font-weight:700;color:#fff;" id="banner-month">0R</div><div style="font-size:0.62em;color:#5a6a88;margin-top:3px;text-transform:uppercase;letter-spacing:0.5px;">This Month</div></div>'
         f'<div style="width:1px;height:40px;background:rgba({BG_TINT},0.15);"></div>'
-        f'<div style="text-align:center;flex:1;"><div style="font-size:1.6em;font-weight:700;color:{diff_color};">{diff_sign}{diff}R</div><div style="font-size:0.62em;color:#5a6a88;margin-top:3px;text-transform:uppercase;letter-spacing:0.5px;">vs Last Month</div></div>'
+        f'<div style="text-align:center;flex:1;"><div style="font-size:1.6em;font-weight:700;color:{diff_color};" id="banner-diff">0R</div><div style="font-size:0.62em;color:#5a6a88;margin-top:3px;text-transform:uppercase;letter-spacing:0.5px;">vs Last Month</div></div>'
         f'</div>',
         unsafe_allow_html=True)
+
+    month_display = f"{month_sign}{this_month_r}"
+    diff_display = f"{diff_sign}{diff}"
+
+    st.markdown(f"""
+    <script>
+    (function() {{
+        function countUp(id, target, decimals, suffix, duration) {{
+            var el = document.getElementById(id);
+            if (!el) return;
+            var start = 0;
+            var startTime = null;
+            function step(ts) {{
+                if (!startTime) startTime = ts;
+                var progress = Math.min((ts - startTime) / duration, 1);
+                var ease = 1 - Math.pow(1 - progress, 3);
+                var val = target * ease;
+                el.textContent = (decimals > 0 ? val.toFixed(decimals) : Math.round(val)) + suffix;
+                if (progress < 1) requestAnimationFrame(step);
+            }}
+            requestAnimationFrame(step);
+        }}
+        setTimeout(function() {{
+            countUp('banner-consistency', {consistency_score}, 0, '%', 1000);
+            countUp('banner-month', {abs(this_month_r)}, 2, 'R', 1000);
+            countUp('banner-diff', {abs(diff)}, 2, 'R', 1000);
+            var monthEl = document.getElementById('banner-month');
+            var diffEl = document.getElementById('banner-diff');
+            setTimeout(function() {{
+                if (monthEl) monthEl.textContent = '{month_sign}{this_month_r}R';
+                if (diffEl) diffEl.textContent = '{diff_sign}{diff}R';
+            }}, 1050);
+        }}, 100);
+    }})();
+    </script>
+    """, unsafe_allow_html=True)
 
     st.markdown('<div class="section-label">Performance</div>', unsafe_allow_html=True)
     overviews = [
