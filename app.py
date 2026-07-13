@@ -767,9 +767,6 @@ setTimeout(function() {{
 }}, 300);
 </script>
     """, height=0)
-    
-    month_display = f"{month_sign}{this_month_r}"
-    diff_display = f"{diff_sign}{diff}"
 
     st.markdown(f"""
     <script>
