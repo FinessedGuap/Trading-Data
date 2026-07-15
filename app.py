@@ -71,10 +71,6 @@ if not st.session_state.authenticated:
         </div>
         """, unsafe_allow_html=True)
 
-        st.markdown("""
-        <div style="background:rgba(96,165,250,0.04);border:1px solid rgba(96,165,250,0.12);border-radius:20px;padding:28px 24px 24px;">
-        """, unsafe_allow_html=True)
-
         with st.form("login_form"):
            
             pw = st.text_input(
@@ -94,7 +90,6 @@ if not st.session_state.authenticated:
                 else:
                     st.error("Incorrect password — try again")
 
-        st.markdown('</div>', unsafe_allow_html=True)
         st.markdown('<div style="text-align:center;color:#3d4a63;font-size:0.72em;margin-top:20px;">Secured · Private · Your data only</div>', unsafe_allow_html=True)
     st.stop()
 
