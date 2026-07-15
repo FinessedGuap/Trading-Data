@@ -33,7 +33,10 @@ if not st.session_state.authenticated:
         -webkit-backdrop-filter: blur(6px);
         z-index: 0;
     }
-    .stApp > * { position: relative; z-index: 1; }
+    .stApp > * {
+        position: relative;
+        z-index: 1;
+    }
     div[data-testid="stForm"] { background:transparent; border:none; }
     div[data-testid="stFormSubmitButton"] button {
         background:linear-gradient(135deg, rgba(96,165,250,0.2), rgba(96,165,250,0.1)) !important;
@@ -59,13 +62,17 @@ if not st.session_state.authenticated:
         box-shadow:0 0 0 3px rgba(96,165,250,0.1) !important;
     }
     div[data-testid="stTextInput"] input::-webkit-credentials-auto-fill-button {
-        display: none !important; visibility: hidden !important;
+        display: none !important;
+        visibility: hidden !important;
     }
     div[data-testid="stTextInput"] input::-webkit-contacts-auto-fill-button {
-        display: none !important; visibility: hidden !important;
+        display: none !important;
+        visibility: hidden !important;
     }
     input[type="password"]::-ms-reveal,
-    input[type="password"]::-ms-clear { display: none !important; }
+    input[type="password"]::-ms-clear {
+        display: none !important;
+    }
     </style>
     """, unsafe_allow_html=True)
 
@@ -78,8 +85,17 @@ if not st.session_state.authenticated:
             <div style="color:#5a6a88;font-size:0.85em;">Your personal trading journal</div>
         </div>
         """, unsafe_allow_html=True)
+
         with st.form("login_form"):
-            pw = st.text_input("Password", type="password", label_visibility="collapsed", placeholder="Enter your password", autocomplete="off")
+           
+            pw = st.text_input(
+                "Password",
+                type="password",
+                label_visibility="collapsed",
+                placeholder="Enter your password",
+                autocomplete="off"
+            )
+            
             st.markdown('<div style="margin-top:12px;"></div>', unsafe_allow_html=True)
             submitted = st.form_submit_button("Enter Dashboard", use_container_width=True)
             if submitted:
@@ -88,6 +104,7 @@ if not st.session_state.authenticated:
                     st.rerun()
                 else:
                     st.error("Incorrect password — try again")
+
         st.markdown('<div style="text-align:center;color:#3d4a63;font-size:0.72em;margin-top:20px;">Secured · Private · Your data only</div>', unsafe_allow_html=True)
     st.stop()
 
@@ -557,6 +574,7 @@ with st.spinner("Pulling fresh data from Notion..."):
 
 max_abs_exp = max([abs(s['exp']) for s in session_stats]) if session_stats else 1
 if max_abs_exp == 0: max_abs_exp = 1
+
 today = datetime.now()
 
 for key, val in [
@@ -705,10 +723,10 @@ css = f"""
     opacity:0 !important; padding:0 !important; margin:0 !important;
     border:none !important; background:transparent !important; overflow:hidden !important;
   }}
-  .cal-hidden-btns div[data-testid="stButton"] button {{
+  .cal-nav-hidden div[data-testid="stButton"] button {{
     opacity:0 !important; height:0 !important; min-height:0 !important;
     padding:0 !important; margin:0 !important; border:none !important;
-    overflow:hidden !important; pointer-events:all !important;
+    pointer-events:all !important;
   }}
 </style>
 """
@@ -1008,17 +1026,14 @@ elif page == 'Calendar':
     month_sign2 = '+' if month_total_r > 0 else ''
     month_name = datetime(cal_year, cal_month, 1).strftime("%B %Y")
 
-    # Calendar nav — month + R on left, arrows on right
-    nav_left, nav_right = st.columns([6, 1])
-    nav_left.markdown(
+    cal_left, cal_right = st.columns([7, 1])
+    cal_left.markdown(
         f'<div style="background:rgba({BG_TINT},0.05);border:1px solid rgba({BG_TINT},0.15);border-radius:20px;height:56px;display:flex;align-items:center;padding:0 20px;margin-bottom:16px;">'
-        f'<div>'
-        f'<div style="font-size:1.1em;font-weight:800;color:#fff;">{month_name}</div>'
-        f'<div style="font-size:0.75em;color:{ACCENT};margin-top:2px;font-weight:600;">{month_sign2}{round(month_total_r,2)}R total</div>'
-        f'</div></div>',
+        f'<div><div style="font-size:1.1em;font-weight:800;color:#fff;">{month_name}</div>'
+        f'<div style="font-size:0.65em;color:{ACCENT};margin-top:1px;">{month_sign2}{round(month_total_r,2)}R total</div></div>'
+        f'</div>',
         unsafe_allow_html=True)
-
-    arr_l, arr_r = nav_right.columns(2)
+    arr_l, arr_r = cal_right.columns(2)
     with arr_l:
         if st.button("‹", key="prev_month", use_container_width=True):
             if st.session_state.cal_month == 1:
@@ -1033,7 +1048,7 @@ elif page == 'Calendar':
             else:
                 st.session_state.cal_month += 1
             st.rerun()
-
+            
     st.write("")
     cal_module.setfirstweekday(cal_module.MONDAY)
     month_matrix = cal_module.monthcalendar(cal_year, cal_month)
