@@ -642,6 +642,11 @@ css = f"""
   .streak-box {{ width:30px; height:30px; border-radius:7px; display:inline-flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; margin:2px; }}
   .checklist-item {{ display:flex; align-items:flex-start; gap:12px; padding:10px 0; border-bottom:1px solid rgba({BG_TINT},0.08); }}
   .checklist-dot {{ width:8px; height:8px; border-radius:50%; margin-top:5px; flex-shrink:0; }}
+  .cal-nav-hidden div[data-testid="stButton"] button {{
+    opacity:0 !important; height:0 !important; min-height:0 !important;
+    padding:0 !important; margin:0 !important; border:none !important;
+    pointer-events:all !important;
+  }}
   .glass-panel div::-webkit-scrollbar {{ display:none; }}
   section[data-testid="stSidebar"] div[data-testid="stButton"] button {{
     min-height:40px !important; background:rgba({BG_TINT},0.06) !important;
@@ -954,20 +959,31 @@ elif page == 'Calendar':
     month_sign2 = '+' if month_total_r > 0 else ''
     month_name = datetime(cal_year, cal_month, 1).strftime("%B %Y")
 
-    nav_col_left, nav_col_mid, nav_col_right = st.columns([1, 8, 1])
-    if nav_col_left.button("←", key="prev_month", use_container_width=True):
-        if st.session_state.cal_month == 1:
-            st.session_state.cal_month = 12; st.session_state.cal_year -= 1
-        else:
-            st.session_state.cal_month -= 1
-        st.rerun()
-    nav_col_mid.markdown(f'<div class="nav-banner"><span class="nav-label">{month_name} &nbsp;·&nbsp; Total R: <span style="color:{ACCENT};">{month_sign2}{round(month_total_r,2)}</span></span></div>', unsafe_allow_html=True)
-    if nav_col_right.button("→", key="next_month", use_container_width=True):
-        if st.session_state.cal_month == 12:
-            st.session_state.cal_month = 1; st.session_state.cal_year += 1
-        else:
-            st.session_state.cal_month += 1
-        st.rerun()
+   st.markdown(
+        f'<div style="background:rgba({BG_TINT},0.05);border:1px solid rgba({BG_TINT},0.15);border-radius:20px;height:56px;display:flex;align-items:center;padding:0 8px;gap:8px;margin-bottom:16px;">'
+        f'<div id="cal-prev" style="background:rgba({BG_TINT},0.12);border:1px solid rgba({BG_TINT},0.25);border-radius:12px;width:36px;height:38px;display:flex;align-items:center;justify-content:center;font-size:1em;color:{ACCENT};cursor:pointer;flex-shrink:0;">←</div>'
+        f'<div style="flex:1;text-align:center;">'
+        f'<span style="font-size:1.1em;font-weight:800;color:#fff;">{month_name} &nbsp;·&nbsp; <span style="color:{ACCENT};">{month_sign2}{round(month_total_r,2)}R</span></span>'
+        f'</div>'
+        f'<div id="cal-next" style="background:rgba({BG_TINT},0.12);border:1px solid rgba({BG_TINT},0.25);border-radius:12px;width:36px;height:38px;display:flex;align-items:center;justify-content:center;font-size:1em;color:{ACCENT};cursor:pointer;flex-shrink:0;">→</div>'
+        f'</div>',
+        unsafe_allow_html=True)
+
+    col_prev, col_next = st.columns(2)
+    with col_prev:
+        if st.button("←", key="prev_month", use_container_width=True):
+            if st.session_state.cal_month == 1:
+                st.session_state.cal_month = 12; st.session_state.cal_year -= 1
+            else:
+                st.session_state.cal_month -= 1
+            st.rerun()
+    with col_next:
+        if st.button("→", key="next_month", use_container_width=True):
+            if st.session_state.cal_month == 12:
+                st.session_state.cal_month = 1; st.session_state.cal_year += 1
+            else:
+                st.session_state.cal_month += 1
+            st.rerun()
 
     st.write("")
     cal_module.setfirstweekday(cal_module.MONDAY)
