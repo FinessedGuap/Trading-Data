@@ -1034,7 +1034,7 @@ elif page == 'Calendar':
         f'</div>',
         unsafe_allow_html=True)
 
-    st.markdown('<div class="cal-nav-hidden">', unsafe_allow_html=True)
+    st.markdown('<div style="height:0;overflow:hidden;margin:0;padding:0;">', unsafe_allow_html=True)
     col_prev, col_next = st.columns(2)
     with col_prev:
         if st.button("←", key="prev_month", use_container_width=True):
