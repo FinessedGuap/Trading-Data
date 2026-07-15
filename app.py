@@ -84,7 +84,7 @@ if not st.session_state.authenticated:
                 placeholder="Enter your password",
                 autocomplete="off"
             )
-            )
+            
             st.markdown('<div style="margin-top:12px;"></div>', unsafe_allow_html=True)
             submitted = st.form_submit_button("Enter Dashboard", use_container_width=True)
             if submitted:
