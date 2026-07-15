@@ -1026,32 +1026,29 @@ elif page == 'Calendar':
     month_sign2 = '+' if month_total_r > 0 else ''
     month_name = datetime(cal_year, cal_month, 1).strftime("%B %Y")
 
-    st.markdown(
-        f'<div style="background:rgba({BG_TINT},0.05);border:1px solid rgba({BG_TINT},0.15);border-radius:20px;height:56px;display:flex;align-items:center;padding:0 8px;gap:8px;margin-bottom:16px;">'
-        f'<div style="background:rgba({BG_TINT},0.12);border:1px solid rgba({BG_TINT},0.25);border-radius:12px;width:36px;height:38px;display:flex;align-items:center;justify-content:center;font-size:1em;color:{ACCENT};flex-shrink:0;">←</div>'
-        f'<div style="flex:1;text-align:center;"><span style="font-size:1.1em;font-weight:800;color:#fff;">{month_name} &nbsp;·&nbsp; <span style="color:{ACCENT};">{month_sign2}{round(month_total_r,2)}R</span></span></div>'
-        f'<div style="background:rgba({BG_TINT},0.12);border:1px solid rgba({BG_TINT},0.25);border-radius:12px;width:36px;height:38px;display:flex;align-items:center;justify-content:center;font-size:1em;color:{ACCENT};flex-shrink:0;">→</div>'
+    cal_left, cal_right = st.columns([7, 1])
+    cal_left.markdown(
+        f'<div style="background:rgba({BG_TINT},0.05);border:1px solid rgba({BG_TINT},0.15);border-radius:20px;height:56px;display:flex;align-items:center;padding:0 20px;margin-bottom:16px;">'
+        f'<div><div style="font-size:1.1em;font-weight:800;color:#fff;">{month_name}</div>'
+        f'<div style="font-size:0.65em;color:{ACCENT};margin-top:1px;">{month_sign2}{round(month_total_r,2)}R total</div></div>'
         f'</div>',
         unsafe_allow_html=True)
-
-    st.markdown('<div style="height:0;overflow:hidden;margin:0;padding:0;">', unsafe_allow_html=True)
-    col_prev, col_next = st.columns(2)
-    with col_prev:
-        if st.button("←", key="prev_month", use_container_width=True):
+    arr_l, arr_r = cal_right.columns(2)
+    with arr_l:
+        if st.button("‹", key="prev_month", use_container_width=True):
             if st.session_state.cal_month == 1:
                 st.session_state.cal_month = 12; st.session_state.cal_year -= 1
             else:
                 st.session_state.cal_month -= 1
             st.rerun()
-    with col_next:
-        if st.button("→", key="next_month", use_container_width=True):
+    with arr_r:
+        if st.button("›", key="next_month", use_container_width=True):
             if st.session_state.cal_month == 12:
                 st.session_state.cal_month = 1; st.session_state.cal_year += 1
             else:
                 st.session_state.cal_month += 1
             st.rerun()
-    st.markdown('</div>', unsafe_allow_html=True)
-
+            
     st.write("")
     cal_module.setfirstweekday(cal_module.MONDAY)
     month_matrix = cal_module.monthcalendar(cal_year, cal_month)
