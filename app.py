@@ -642,6 +642,7 @@ css = f"""
   .streak-box {{ width:30px; height:30px; border-radius:7px; display:inline-flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; margin:2px; }}
   .checklist-item {{ display:flex; align-items:flex-start; gap:12px; padding:10px 0; border-bottom:1px solid rgba({BG_TINT},0.08); }}
   .checklist-dot {{ width:8px; height:8px; border-radius:50%; margin-top:5px; flex-shrink:0; }}
+  .glass-panel div::-webkit-scrollbar {{ display:none; }}
   section[data-testid="stSidebar"] div[data-testid="stButton"] button {{
     min-height:40px !important; background:rgba({BG_TINT},0.06) !important;
     border:1px solid rgba({BG_TINT},0.15) !important; color:#fff !important;
@@ -819,8 +820,8 @@ setTimeout(function() {{
         st.write("")
 
     st.markdown('<div class="section-label">Recent Trades</div>', unsafe_allow_html=True)
-    trade_results = main_stats.get('trade_results', [])[-20:]
-    streak_html = '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:12px;">'
+    trade_results = main_stats.get('trade_results', [])
+    streak_html = '<div style="display:flex;gap:4px;margin-bottom:12px;overflow-x:auto;padding-bottom:6px;scrollbar-width:none;-ms-overflow-style:none;">'
     for idx_r, r in enumerate(trade_results):
         is_last = idx_r == len(trade_results) - 1
         color = 'rgba(74,222,128,0.8)' if r == 'W' else ('rgba(248,113,113,0.7)' if r == 'L' else f'rgba({BG_TINT},0.5)')
