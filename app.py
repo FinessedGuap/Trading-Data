@@ -76,7 +76,7 @@ if not st.session_state.authenticated:
         """, unsafe_allow_html=True)
 
         with st.form("login_form"):
-            st.markdown('<div style="color:#7fb2f5;font-size:0.72em;font-weight:600;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">Password</div>', unsafe_allow_html=True)
+           
             pw = st.text_input(
                 "Password",
                 type="password",
