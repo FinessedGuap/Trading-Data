@@ -46,6 +46,18 @@ if not st.session_state.authenticated:
         border-color:rgba(96,165,250,0.5) !important;
         box-shadow:0 0 0 3px rgba(96,165,250,0.1) !important;
     }
+    div[data-testid="stTextInput"] input::-webkit-credentials-auto-fill-button {
+        display: none !important;
+        visibility: hidden !important;
+    }
+    div[data-testid="stTextInput"] input::-webkit-contacts-auto-fill-button {
+        display: none !important;
+        visibility: hidden !important;
+    }
+    input[type="password"]::-ms-reveal,
+    input[type="password"]::-ms-clear {
+        display: none !important;
+    }
     </style>
     """, unsafe_allow_html=True)
 
@@ -70,7 +82,8 @@ if not st.session_state.authenticated:
                 type="password",
                 label_visibility="collapsed",
                 placeholder="Enter your password",
-                autocomplete="new-password"
+                autocomplete="off"
+            )
             )
             st.markdown('<div style="margin-top:12px;"></div>', unsafe_allow_html=True)
             submitted = st.form_submit_button("Enter Dashboard", use_container_width=True)
