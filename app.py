@@ -8,7 +8,6 @@ import math
 
 st.set_page_config(page_title="Trading Data", layout="wide", initial_sidebar_state="collapsed")
 
-# ============ PASSWORD GATE ============
 PASSWORD = st.secrets.get("DASHBOARD_PASSWORD", "trading123")
 if 'authenticated' not in st.session_state:
     st.session_state.authenticated = False
@@ -16,29 +15,74 @@ if 'authenticated' not in st.session_state:
 if not st.session_state.authenticated:
     st.markdown("""
     <style>
-    .stApp { background:#070b14; font-family:'Inter',sans-serif; }
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+    .stApp {
+        background:#070b14;
+        background-image: radial-gradient(circle at 20% 20%, rgba(96,165,250,0.06), transparent 40%),
+                          radial-gradient(circle at 80% 80%, rgba(96,165,250,0.04), transparent 40%);
+        font-family:'Inter',sans-serif;
+    }
     div[data-testid="stForm"] { background:transparent; border:none; }
     div[data-testid="stFormSubmitButton"] button {
-        background:rgba(96,165,250,0.1) !important;
-        border:1px solid rgba(96,165,250,0.3) !important;
-        color:#fff !important; border-radius:10px !important;
-        min-height:44px !important;
+        background:linear-gradient(135deg, rgba(96,165,250,0.2), rgba(96,165,250,0.1)) !important;
+        border:1px solid rgba(96,165,250,0.4) !important;
+        color:#fff !important; border-radius:12px !important;
+        min-height:48px !important; font-weight:600 !important;
+        font-size:0.95em !important; letter-spacing:0.5px !important;
+        transition:all 0.2s ease !important;
+    }
+    div[data-testid="stFormSubmitButton"] button:hover {
+        background:linear-gradient(135deg, rgba(96,165,250,0.3), rgba(96,165,250,0.15)) !important;
+        border-color:rgba(96,165,250,0.6) !important;
+        transform:translateY(-1px) !important;
+    }
+    div[data-testid="stTextInput"] input {
+        background:rgba(96,165,250,0.06) !important;
+        border:1px solid rgba(96,165,250,0.2) !important;
+        border-radius:12px !important; color:#fff !important;
+        padding:12px 16px !important; font-size:0.95em !important;
+    }
+    div[data-testid="stTextInput"] input:focus {
+        border-color:rgba(96,165,250,0.5) !important;
+        box-shadow:0 0 0 3px rgba(96,165,250,0.1) !important;
     }
     </style>
     """, unsafe_allow_html=True)
-    col1, col2, col3 = st.columns([2,2,2])
+
+    col1, col2, col3 = st.columns([1.5, 2, 1.5])
     with col2:
-        st.markdown('<div style="text-align:center;padding:60px 0 20px;font-size:1.8em;font-weight:700;color:#fff;">Trading Data</div>', unsafe_allow_html=True)
-        st.markdown('<div style="text-align:center;color:#5a6a88;font-size:0.85em;margin-bottom:32px;">Enter password to access your dashboard</div>', unsafe_allow_html=True)
+        st.markdown("""
+        <div style="text-align:center;padding:60px 0 36px;">
+            <div style="font-size:2.2em;font-weight:800;color:#fff;letter-spacing:-0.5px;margin-bottom:8px;">Trading Data</div>
+            <div style="width:40px;height:3px;background:linear-gradient(90deg,#60a5fa,#a78bfa);border-radius:2px;margin:0 auto 16px;"></div>
+            <div style="color:#5a6a88;font-size:0.85em;">Your personal trading journal</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        st.markdown("""
+        <div style="background:rgba(96,165,250,0.04);border:1px solid rgba(96,165,250,0.12);border-radius:20px;padding:28px 24px 24px;">
+        """, unsafe_allow_html=True)
+
         with st.form("login_form"):
-            pw = st.text_input("Password", type="password", label_visibility="collapsed", autocomplete="new-password")
-            submitted = st.form_submit_button("Enter", use_container_width=True)
+            st.markdown('<div style="color:#7fb2f5;font-size:0.72em;font-weight:600;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">Password</div>', unsafe_allow_html=True)
+            pw = st.text_input(
+                "Password",
+                type="password",
+                label_visibility="collapsed",
+                placeholder="Enter your password",
+                autocomplete="new-password"
+            )
+            st.markdown('<div style="margin-top:12px;"></div>', unsafe_allow_html=True)
+            submitted = st.form_submit_button("Enter Dashboard", use_container_width=True)
             if submitted:
                 if pw == PASSWORD:
                     st.session_state.authenticated = True
                     st.rerun()
                 else:
-                    st.error("Incorrect password")
+                    st.error("Incorrect password — try again")
+
+        st.markdown('</div>', unsafe_allow_html=True)
+        st.markdown('<div style="text-align:center;color:#3d4a63;font-size:0.72em;margin-top:20px;">Secured · Private · Your data only</div>', unsafe_allow_html=True)
     st.stop()
 
 NOTION_TOKEN = st.secrets["NOTION_TOKEN"]
@@ -642,11 +686,6 @@ css = f"""
   .streak-box {{ width:30px; height:30px; border-radius:7px; display:inline-flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; margin:2px; }}
   .checklist-item {{ display:flex; align-items:flex-start; gap:12px; padding:10px 0; border-bottom:1px solid rgba({BG_TINT},0.08); }}
   .checklist-dot {{ width:8px; height:8px; border-radius:50%; margin-top:5px; flex-shrink:0; }}
-  .cal-nav-hidden div[data-testid="stButton"] button {{
-    opacity:0 !important; height:0 !important; min-height:0 !important;
-    padding:0 !important; margin:0 !important; border:none !important;
-    pointer-events:all !important;
-  }}
   .glass-panel div::-webkit-scrollbar {{ display:none; }}
   section[data-testid="stSidebar"] div[data-testid="stButton"] button {{
     min-height:40px !important; background:rgba({BG_TINT},0.06) !important;
@@ -660,6 +699,11 @@ css = f"""
     min-height:6px !important; max-height:6px !important; height:6px !important;
     opacity:0 !important; padding:0 !important; margin:0 !important;
     border:none !important; background:transparent !important; overflow:hidden !important;
+  }}
+  .cal-nav-hidden div[data-testid="stButton"] button {{
+    opacity:0 !important; height:0 !important; min-height:0 !important;
+    padding:0 !important; margin:0 !important; border:none !important;
+    pointer-events:all !important;
   }}
 </style>
 """
@@ -826,7 +870,7 @@ setTimeout(function() {{
 
     st.markdown('<div class="section-label">Recent Trades</div>', unsafe_allow_html=True)
     trade_results = main_stats.get('trade_results', [])
-    streak_html = '<div style="display:flex;gap:4px;margin-bottom:12px;overflow-x:auto;padding-bottom:6px;scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;">'
+    streak_html = '<div style="display:flex;gap:4px;margin-bottom:8px;overflow-x:auto;padding-bottom:6px;scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;">'
     for idx_r, r in enumerate(trade_results):
         is_last = idx_r == len(trade_results) - 1
         color = 'rgba(74,222,128,0.8)' if r == 'W' else ('rgba(248,113,113,0.7)' if r == 'L' else f'rgba({BG_TINT},0.5)')
@@ -834,8 +878,8 @@ setTimeout(function() {{
         extra_class = 'active-streak' if is_last else ''
         delay = idx_r * 30
         streak_html += f'<div class="streak-box {extra_class}" style="background:{color};color:{text_color};animation-delay:{delay}ms;flex-shrink:0;">{r}</div>'
-    streak_html += f'<div class="streak-box" style="border:1px dashed rgba({BG_TINT},0.3);color:#3d4a63;">?</div></div>'
-    streak_html += f'<div style="font-size:0.72em;color:#5a6a88;">Last 20 trades &nbsp;·&nbsp; <span style="color:{cur_color};">Current streak: {cur} {cur_type}</span></div>'
+    streak_html += f'<div class="streak-box" style="border:1px dashed rgba({BG_TINT},0.3);color:#3d4a63;flex-shrink:0;">?</div></div>'
+    streak_html += f'<div style="font-size:0.72em;color:#5a6a88;"><span style="color:{cur_color};">Current streak: {cur} {cur_type}</span></div>'
     st.markdown(f'<div class="glass-panel">{streak_html}</div>', unsafe_allow_html=True)
 
     st.markdown('<div class="section-label">Month vs Month</div>', unsafe_allow_html=True)
@@ -959,16 +1003,15 @@ elif page == 'Calendar':
     month_sign2 = '+' if month_total_r > 0 else ''
     month_name = datetime(cal_year, cal_month, 1).strftime("%B %Y")
 
-   st.markdown(
+    st.markdown(
         f'<div style="background:rgba({BG_TINT},0.05);border:1px solid rgba({BG_TINT},0.15);border-radius:20px;height:56px;display:flex;align-items:center;padding:0 8px;gap:8px;margin-bottom:16px;">'
-        f'<div id="cal-prev" style="background:rgba({BG_TINT},0.12);border:1px solid rgba({BG_TINT},0.25);border-radius:12px;width:36px;height:38px;display:flex;align-items:center;justify-content:center;font-size:1em;color:{ACCENT};cursor:pointer;flex-shrink:0;">←</div>'
-        f'<div style="flex:1;text-align:center;">'
-        f'<span style="font-size:1.1em;font-weight:800;color:#fff;">{month_name} &nbsp;·&nbsp; <span style="color:{ACCENT};">{month_sign2}{round(month_total_r,2)}R</span></span>'
-        f'</div>'
-        f'<div id="cal-next" style="background:rgba({BG_TINT},0.12);border:1px solid rgba({BG_TINT},0.25);border-radius:12px;width:36px;height:38px;display:flex;align-items:center;justify-content:center;font-size:1em;color:{ACCENT};cursor:pointer;flex-shrink:0;">→</div>'
+        f'<div style="background:rgba({BG_TINT},0.12);border:1px solid rgba({BG_TINT},0.25);border-radius:12px;width:36px;height:38px;display:flex;align-items:center;justify-content:center;font-size:1em;color:{ACCENT};flex-shrink:0;">←</div>'
+        f'<div style="flex:1;text-align:center;"><span style="font-size:1.1em;font-weight:800;color:#fff;">{month_name} &nbsp;·&nbsp; <span style="color:{ACCENT};">{month_sign2}{round(month_total_r,2)}R</span></span></div>'
+        f'<div style="background:rgba({BG_TINT},0.12);border:1px solid rgba({BG_TINT},0.25);border-radius:12px;width:36px;height:38px;display:flex;align-items:center;justify-content:center;font-size:1em;color:{ACCENT};flex-shrink:0;">→</div>'
         f'</div>',
         unsafe_allow_html=True)
 
+    st.markdown('<div class="cal-nav-hidden">', unsafe_allow_html=True)
     col_prev, col_next = st.columns(2)
     with col_prev:
         if st.button("←", key="prev_month", use_container_width=True):
@@ -984,6 +1027,7 @@ elif page == 'Calendar':
             else:
                 st.session_state.cal_month += 1
             st.rerun()
+    st.markdown('</div>', unsafe_allow_html=True)
 
     st.write("")
     cal_module.setfirstweekday(cal_module.MONDAY)
