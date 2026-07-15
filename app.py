@@ -18,9 +18,24 @@ if not st.session_state.authenticated:
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
     .stApp {
         background:#070b14;
-        background-image: radial-gradient(circle at 20% 20%, rgba(96,165,250,0.06), transparent 40%),
-                          radial-gradient(circle at 80% 80%, rgba(96,165,250,0.04), transparent 40%);
+        background-image: url('https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=1600&q=80');
+        background-size: cover;
+        background-position: center;
+        background-attachment: fixed;
         font-family:'Inter',sans-serif;
+    }
+    .stApp::before {
+        content: '';
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(7,11,20,0.82);
+        backdrop-filter: blur(6px);
+        -webkit-backdrop-filter: blur(6px);
+        z-index: 0;
+    }
+    .stApp > * {
+        position: relative;
+        z-index: 1;
     }
     div[data-testid="stForm"] { background:transparent; border:none; }
     div[data-testid="stFormSubmitButton"] button {
