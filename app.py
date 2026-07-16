@@ -1038,24 +1038,39 @@ elif page == 'Calendar':
         f'</div></div>',
         unsafe_allow_html=True)
 
-    st.markdown('<div style="height:0;overflow:hidden;position:absolute;">', unsafe_allow_html=True)
-    prev_c, next_c = st.columns(2)
-    with prev_c:
-        if st.button("prev", key="prev_month", use_container_width=True):
-            if st.session_state.cal_month == 1:
-                st.session_state.cal_month = 12; st.session_state.cal_year -= 1
-            else:
-                st.session_state.cal_month -= 1
-            st.rerun()
-    with next_c:
-        if st.button("next", key="next_month", use_container_width=True):
-            if st.session_state.cal_month == 12:
-                st.session_state.cal_month = 1; st.session_state.cal_year += 1
-            else:
-                st.session_state.cal_month += 1
-            st.rerun()
-    st.markdown('</div>', unsafe_allow_html=True)
+    # Handle month navigation via query params
+    params = st.query_params
+    if params.get("cal_action") == "prev":
+        if st.session_state.cal_month == 1:
+            st.session_state.cal_month = 12; st.session_state.cal_year -= 1
+        else:
+            st.session_state.cal_month -= 1
+        st.query_params.clear()
+        st.rerun()
+    if params.get("cal_action") == "next":
+        if st.session_state.cal_month == 12:
+            st.session_state.cal_month = 1; st.session_state.cal_year += 1
+        else:
+            st.session_state.cal_month += 1
+        st.query_params.clear()
+        st.rerun()
 
+    components.html(f"""
+<script>
+setTimeout(function() {{
+    var doc = window.parent.document;
+    var prev = doc.getElementById('cal-prev');
+    var next = doc.getElementById('cal-next');
+    if (prev) prev.addEventListener('click', function() {{
+        window.parent.location.search = '?cal_action=prev';
+    }});
+    if (next) next.addEventListener('click', function() {{
+        window.parent.location.search = '?cal_action=next';
+    }});
+}}, 500);
+</script>
+    """, height=0)
+    
     components.html(f"""
 <script>
 setTimeout(function() {{
