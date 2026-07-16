@@ -714,10 +714,19 @@ components.html("""
 <script>
 setTimeout(function() {
     var doc = window.parent.document;
-    doc.querySelectorAll('*').forEach(function(el) {
-        if (el.scrollTop > 0) el.scrollTop = 0;
+    var containers = [
+        doc.querySelector('.stMainBlockContainer'),
+        doc.querySelector('.block-container'),
+        doc.querySelector('[data-testid="stMainBlockContainer"]'),
+        doc.querySelector('[data-testid="block-container"]'),
+        doc.querySelector('section.main > div'),
+        doc.querySelector('.main > div'),
+        doc.querySelector('.stApp'),
+    ];
+    containers.forEach(function(el) {
+        if (el) el.scrollTop = 0;
     });
-}, 150);
+}, 100);
 </script>
 """, height=0)
 
