@@ -669,7 +669,7 @@ css = f"""
   .cal-week-r {{ font-size:1.2em; font-weight:700; margin-top:10px; color:#fff; }}
   .cal-day-trades {{ color:#5a6a88; font-size:0.64em; margin-top:3px; text-align:center; }}
   div[data-testid="stButton"] button {{
-    width:100%; min-height:88px; border-radius:16px;
+    width:100%; min-height:44px; border-radius:16px;
     font-family:'Inter',sans-serif; white-space:pre-line; line-height:1.4;
     transition:all 0.25s ease; font-weight:600;
     background:rgba({BG_TINT},0.06) !important;
@@ -678,7 +678,7 @@ css = f"""
   div[data-testid="stButton"] button:hover {{ transform:translateY(-2px); border-color:rgba({BG_TINT},0.4) !important; }}
   div[data-testid="column"]:first-child div[data-testid="stButton"] button,
   div[data-testid="column"]:last-child div[data-testid="stButton"] button {{
-    min-height:{NAV_H} !important; border-radius:20px !important; font-size:1.1em !important;
+    min-height:88px !important; border-radius:20px !important; font-size:1.1em !important;
   }}
   .trade-detail-card {{ background:rgba({BG_TINT},0.05); border:1px solid rgba({BG_TINT},0.15); border-radius:16px; padding:16px 20px; margin-bottom:10px; }}
   .eq-legend {{ display:flex; gap:24px; margin-bottom:12px; flex-wrap:wrap; }}
