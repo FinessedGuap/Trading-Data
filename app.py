@@ -688,11 +688,11 @@ css = f"""
   .checklist-item {{ display:flex; align-items:flex-start; gap:12px; padding:10px 0; border-bottom:1px solid rgba({BG_TINT},0.08); }}
   .checklist-dot {{ width:8px; height:8px; border-radius:50%; margin-top:5px; flex-shrink:0; }}
   .glass-panel div::-webkit-scrollbar {{ display:none; }}
+  div[data-testid="stVerticalBlock"] .cal-arrows div[data-testid="stButton"] button,
   .cal-arrows div[data-testid="stButton"] button {{
     min-height:56px !important; max-height:56px !important; height:56px !important;
-    border-radius:10px !important; font-size:1em !important;
-    padding:0 !important; margin:0 0 16px 0 !important;
-    line-height:56px !important;
+    width:100% !important; border-radius:10px !important; font-size:1em !important;
+    padding:0 !important; margin:0 !important; line-height:1 !important;
   }}
   section[data-testid="stSidebar"] div[data-testid="stButton"] button {{
     min-height:40px !important; background:rgba({BG_TINT},0.06) !important;
