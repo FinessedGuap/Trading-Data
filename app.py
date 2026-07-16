@@ -690,8 +690,8 @@ css = f"""
   .glass-panel div::-webkit-scrollbar {{ display:none; }}
   div[data-testid="stVerticalBlock"] .cal-arrows div[data-testid="stButton"] button,
   .cal-arrows div[data-testid="stButton"] button {{
-    min-height:56px !important; max-height:56px !important; height:56px !important;
-    width:100% !important; border-radius:10px !important; font-size:1em !important;
+    min-height:44px !important; max-height:44px !important; height:44px !important;
+    border-radius:10px !important; font-size:1em !important;
     padding:0 !important; margin:0 !important; line-height:1 !important;
   }}
   section[data-testid="stSidebar"] div[data-testid="stButton"] button {{
@@ -1154,6 +1154,7 @@ elif page == 'Calendar':
     month_sign2 = '+' if month_total_r > 0 else ''
     month_name = datetime(cal_year, cal_month, 1).strftime("%B %Y")
 
+    st.markdown('<div style="display:flex;align-items:center;gap:8px;margin-bottom:0;">', unsafe_allow_html=True)
     nav_left, nav_right = st.columns([7, 2])
     nav_left.markdown(
         f'<div style="background:rgba({BG_TINT},0.05);border:1px solid rgba({BG_TINT},0.15);border-radius:20px;height:44px;display:flex;align-items:center;padding:0 20px;margin-bottom:16px;">'
@@ -1180,6 +1181,7 @@ elif page == 'Calendar':
                     st.session_state.cal_month += 1
                 st.rerun()
         st.markdown('</div>', unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
 
     st.write("")
     cal_module.setfirstweekday(cal_module.MONDAY)
