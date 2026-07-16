@@ -713,12 +713,11 @@ st.markdown(css, unsafe_allow_html=True)
 components.html("""
 <script>
 setTimeout(function() {
-    var main = window.parent.document.querySelector('section.main');
-    if (!main) main = window.parent.document.querySelector('.main');
-    if (!main) main = window.parent.document.querySelector('[data-testid="stAppViewContainer"]');
-    if (main) main.scrollTo(0, 0);
-    window.parent.scrollTo(0, 0);
-}, 100);
+    var doc = window.parent.document;
+    doc.querySelectorAll('*').forEach(function(el) {
+        if (el.scrollTop > 0) el.scrollTop = 0;
+    });
+}, 150);
 </script>
 """, height=0)
 
