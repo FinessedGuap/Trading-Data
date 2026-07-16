@@ -590,8 +590,8 @@ css = f"""
     to {{ left: 150%; }}
   }}
   @keyframes growBar {{
-    from {{ transform: scaleX(0); transform-origin: left; }}
-    to {{ transform: scaleX(1); transform-origin: left; }}
+    from {{ clip-path: inset(0 100% 0 0); }}
+    to {{ clip-path: inset(0 0% 0 0); }}
   }}
   .main-content {{ animation: fadeUp 0.5s cubic-bezier(0.16,1,0.3,1); }}
   .glass-panel {{
@@ -943,7 +943,7 @@ setTimeout(function() {{
             f'<div style="display:grid;grid-template-columns:100px 1fr 70px 60px 40px;gap:16px;align-items:center;padding:10px 0;">'
             f'<span style="color:{ACCENT_SOFT};font-weight:600;">{s["session"]}</span>'
             f'<div style="background:rgba({BG_TINT},0.1);border-radius:8px;height:14px;overflow:hidden;">'
-            f'<div style="width:{bar_pct}%;height:100%;background:{bar_color};border-radius:8px;animation:growBar 0.8s cubic-bezier(0.16,1,0.3,1) {delay}ms both;"></div>'
+            f'<div style="width:{bar_pct}%;height:100%;background:{bar_color};border-radius:8px;animation:growBar 0.8s cubic-bezier(0.16,1,0.3,1) {delay}ms both;transform-origin:left;"></div>'
             f'</div>'
             f'<span style="color:#fff;font-weight:700;">{s["exp"]}</span>'
             f'<span style="color:{ACCENT_SOFT};">{s["wr"]}</span>'
