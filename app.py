@@ -111,6 +111,7 @@ BG_TINT = active_theme['BG_TINT']
 GOLD = '#f59e0b'; GOLD_SOFT = '#fcd34d'
 PURPLE = '#a78bfa'; PURPLE_SOFT = '#c4b5fd'
 NAV_H = '56px'
+RANK_COLORS = ['#fcd34d', '#7fb2f5', '#9ca3af']
 
 @st.cache_data(ttl=300)
 def get_all_trades():
@@ -480,17 +481,20 @@ def render_breakdown(df_in, col, title):
     data = breakdown_by_col(df_in, col)
     if not data:
         return
+    data = data[:3]
     st.markdown(f'<div style="color:{ACCENT_SOFT};font-size:0.7em;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin:14px 0 8px;">{title}</div>', unsafe_allow_html=True)
     max_exp = max(abs(d['exp']) for d in data) if data else 1
     if max_exp == 0: max_exp = 1
-    for d in data:
+    for rank, d in enumerate(data):
         bar_pct = round(abs(d['exp']) / max_exp * 100, 1)
         color = '#4ade80' if d['exp'] >= 0 else '#f87171'
-        lbl = d['label'][:30] + '…' if len(d['label']) > 30 else d['label']
+        lbl = d['label'][:28] + '…' if len(d['label']) > 28 else d['label']
+        rank_color = RANK_COLORS[rank] if rank < len(RANK_COLORS) else '#5a6a88'
         st.markdown(
-            f'<div style="display:grid;grid-template-columns:180px 1fr 55px 55px 30px;gap:10px;align-items:center;padding:7px 0;border-bottom:1px solid rgba({BG_TINT},0.06);">'
+            f'<div style="display:grid;grid-template-columns:24px 150px 1fr 55px 55px 30px;gap:8px;align-items:center;padding:7px 0;border-bottom:1px solid rgba({BG_TINT},0.06);">'
+            f'<span style="color:{rank_color};font-size:0.7em;font-weight:700;">#{rank+1}</span>'
             f'<span style="color:#ccc;font-size:0.82em;">{lbl}</span>'
-            f'<div style="width:{bar_pct}%;height:10px;overflow:hidden;border-radius:6px;"><div class="grow-bar" style="width:100%;height:10px;background:linear-gradient(90deg,{color}66,{color});border-radius:6px;animation:growBar 0.8s cubic-bezier(0.16,1,0.3,1) both;animation-play-state:paused;"></div></div>'
+            f'<div style="background:rgba({BG_TINT},0.08);border-radius:6px;height:10px;overflow:hidden;"><div style="width:{bar_pct}%;height:10px;background:linear-gradient(90deg,{color}66,{color});border-radius:6px;"></div></div>'
             f'<span style="color:{color};font-size:0.82em;font-weight:600;">{d["exp"]}R</span>'
             f'<span style="color:{ACCENT_SOFT};font-size:0.82em;">{d["wr"]}%</span>'
             f'<span style="color:#5a6a88;font-size:0.82em;">{d["n"]}</span>'
@@ -712,11 +716,15 @@ css = f"""
     border-radius:10px !important; font-size:1em !important;
     padding:0 !important; margin:0 !important;
   }}
+  .best-setup-row {{
+    display:flex; align-items:center; gap:12px; padding:10px 0;
+    border-bottom:1px solid rgba({BG_TINT},0.08);
+    animation: fadeUp 0.4s cubic-bezier(0.16,1,0.3,1) both;
+  }}
 </style>
 """
 st.markdown(css, unsafe_allow_html=True)
 
-# ============ SCROLL TO TOP ============
 components.html("""
 <script>
 (function() {
@@ -725,17 +733,14 @@ components.html("""
             var w = window.parent;
             var el = w.document.querySelector('[data-testid="stAppViewBlockContainer"]');
             if (!el) el = w.document.querySelector('[data-testid="stMainBlockContainer"]');
-            if (!el) el = w.document.querySelector('.stMainBlockContainer');
-            if (!el) el = w.document.querySelector('.appview-container');
             if (!el) el = w.document.querySelector('.main');
             if (el) el.scrollTop = 0;
             w.scrollTo({top: 0, behavior: 'instant'});
         } catch(e) {}
     }
     tryScroll();
-    setTimeout(tryScroll, 50);
-    setTimeout(tryScroll, 200);
-    setTimeout(tryScroll, 500);
+    setTimeout(tryScroll, 100);
+    setTimeout(tryScroll, 300);
 })();
 </script>
 """, height=0)
@@ -854,7 +859,7 @@ setTimeout(function() {{
                 barObserver.unobserve(entry.target);
             }}
         }});
-    }}, {{ threshold: 0.1, rootMargin: '0px 0px -20px 0px' }});
+    }}, {{ threshold: 0.1 }});
     bars.forEach(function(bar) {{
         var rect = bar.getBoundingClientRect();
         if (rect.top < window.parent.innerHeight) {{
@@ -960,8 +965,9 @@ setTimeout(function() {{
             f'<div style="display:grid;grid-template-columns:100px 1fr 70px 60px 40px;gap:16px;align-items:center;padding:10px 0;">'
             f'<span style="color:{ACCENT_SOFT};font-weight:600;">{s["session"]}</span>'
             f'<div style="background:rgba({BG_TINT},0.1);border-radius:8px;height:14px;overflow:hidden;">'
-            f'<div style="width:{bar_pct}%;height:100%;overflow:hidden;border-radius:8px;"><div class="grow-bar" style="width:100%;height:100%;background:{bar_color};border-radius:8px;animation:growBar 1.5s cubic-bezier(0.16,1,0.3,1) {delay}ms both;animation-play-state:paused;"></div></div>'
-            f'</div>'
+            f'<div style="width:{bar_pct}%;height:14px;overflow:hidden;border-radius:8px;">'
+            f'<div class="grow-bar" style="width:100%;height:14px;background:{bar_color};border-radius:8px;animation:growBar 1.5s cubic-bezier(0.16,1,0.3,1) {delay}ms both;animation-play-state:paused;"></div>'
+            f'</div></div>'
             f'<span style="color:#fff;font-weight:700;">{s["exp"]}</span>'
             f'<span style="color:{ACCENT_SOFT};">{s["wr"]}</span>'
             f'<span style="color:#5a6a88;">{s["n"]}</span>'
@@ -1274,7 +1280,7 @@ elif page == 'Calendar':
 # ============ PAGE: EDGE ANALYSIS ============
 elif page == 'Edge Analysis':
     st.markdown('<div style="font-size:1.6em;font-weight:700;color:#fff;margin-bottom:4px;">Edge Analysis</div>', unsafe_allow_html=True)
-    st.markdown('<div style="font-size:0.75em;color:#5a6a88;margin-bottom:24px;">EXP = avg R · WR = win rate % · N = trades · Min 2 trades to appear</div>', unsafe_allow_html=True)
+    st.markdown('<div style="font-size:0.75em;color:#5a6a88;margin-bottom:24px;">Top 3 per category · EXP = avg R · WR = win rate % · N = trades</div>', unsafe_allow_html=True)
 
     ea_cols = st.columns(2)
     with ea_cols[0]:
@@ -1350,6 +1356,7 @@ elif page == 'Best Setups':
             f'</div></div>', unsafe_allow_html=True)
 
     st.markdown(f'<div style="color:{ACCENT_SOFT};font-size:0.72em;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin:24px 0 14px;">Best of each variable</div>', unsafe_allow_html=True)
+
     setup_cols_list = [
         ('Entry Model', 'Entry Model'), ('Entry Model Timeframe', 'Timeframe'),
         ('3SL Window', '3SL Window'), ('Target', 'Target'),
@@ -1358,26 +1365,35 @@ elif page == 'Best Setups':
         ('Trade Quality Rating', 'Trade Quality'), ('Emotional State Before...', 'Emotional State'),
         ('News Proximity', 'News Proximity'), ('Conditions MTF/HTF', 'Market Conditions'),
     ]
-    col1, col2 = st.columns(2)
+
+    rows_html = ''
     for i, (col_name, label) in enumerate(setup_cols_list):
         best = get_best(df_main, col_name)
         if not best:
             continue
         color = '#4ade80' if best['exp'] >= 0 else '#f87171'
-        delay = i * 50
-        html = (
-            f'<div style="background:rgba({BG_TINT},0.05);border:1px solid rgba({BG_TINT},0.12);border-radius:12px;padding:14px;margin-bottom:10px;animation:fadeUp 0.5s cubic-bezier(0.16,1,0.3,1) {delay}ms both;">'
-            f'<div style="font-size:0.65em;color:#5a6a88;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">{label}</div>'
-            f'<div style="font-size:0.95em;font-weight:600;color:#ddd;margin-bottom:8px;">{best["label"]}</div>'
-            f'<div style="display:flex;gap:14px;">'
-            f'<span style="color:{color};font-size:0.8em;font-weight:700;">{best["exp"]}R avg</span>'
-            f'<span style="color:{ACCENT_SOFT};font-size:0.8em;">{best["wr"]}% WR</span>'
-            f'<span style="color:#5a6a88;font-size:0.8em;">{best["n"]} trades</span>'
-            f'</div></div>'
+        sign = '+' if best['exp'] >= 0 else ''
+        delay = i * 40
+        rows_html += (
+            f'<div class="best-setup-row" style="animation-delay:{delay}ms;">'
+            f'<span style="color:#5a6a88;font-size:0.72em;text-transform:uppercase;letter-spacing:0.5px;min-width:130px;">{label}</span>'
+            f'<span style="color:#fff;font-size:0.85em;font-weight:600;flex:1;">{best["label"]}</span>'
+            f'<span style="color:{color};font-size:0.82em;font-weight:700;min-width:50px;text-align:right;">{sign}{best["exp"]}R</span>'
+            f'<span style="color:{ACCENT_SOFT};font-size:0.78em;min-width:40px;text-align:right;">{best["wr"]}%</span>'
+            f'<span style="color:#3d4a63;font-size:0.75em;min-width:30px;text-align:right;">{best["n"]}t</span>'
+            f'</div>'
         )
-        if i % 2 == 0:
-            col1.markdown(html, unsafe_allow_html=True)
-        else:
-            col2.markdown(html, unsafe_allow_html=True)
+
+    if rows_html:
+        st.markdown(
+            f'<div class="glass-panel">'
+            f'<div style="display:flex;gap:12px;padding-bottom:8px;margin-bottom:4px;border-bottom:1px solid rgba({BG_TINT},0.1);">'
+            f'<span style="color:{ACCENT_SOFT};font-size:0.65em;font-weight:600;text-transform:uppercase;min-width:130px;">Variable</span>'
+            f'<span style="color:{ACCENT_SOFT};font-size:0.65em;font-weight:600;text-transform:uppercase;flex:1;">Best</span>'
+            f'<span style="color:{ACCENT_SOFT};font-size:0.65em;font-weight:600;text-transform:uppercase;min-width:50px;text-align:right;">Avg R</span>'
+            f'<span style="color:{ACCENT_SOFT};font-size:0.65em;font-weight:600;text-transform:uppercase;min-width:40px;text-align:right;">WR</span>'
+            f'<span style="color:{ACCENT_SOFT};font-size:0.65em;font-weight:600;text-transform:uppercase;min-width:30px;text-align:right;">N</span>'
+            f'</div>{rows_html}</div>',
+            unsafe_allow_html=True)
 
 st.markdown('</div>', unsafe_allow_html=True)
