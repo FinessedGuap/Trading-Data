@@ -1026,68 +1026,30 @@ elif page == 'Calendar':
     month_sign2 = '+' if month_total_r > 0 else ''
     month_name = datetime(cal_year, cal_month, 1).strftime("%B %Y")
 
-    st.markdown(
-        f'<div style="background:rgba({BG_TINT},0.05);border:1px solid rgba({BG_TINT},0.15);border-radius:20px;height:56px;display:flex;align-items:center;padding:0 8px 0 20px;margin-bottom:16px;">'
-        f'<div style="flex:1;">'
-        f'<div style="font-size:1.1em;font-weight:800;color:#fff;">{month_name}</div>'
-        f'<div style="font-size:0.75em;color:{ACCENT};margin-top:2px;font-weight:600;">{month_sign2}{round(month_total_r,2)}R total</div>'
-        f'</div>'
-        f'<div style="display:flex;gap:6px;flex-shrink:0;">'
-        f'<div id="cal-prev" style="width:36px;height:38px;border-radius:10px;background:rgba({BG_TINT},0.15);border:1px solid rgba({BG_TINT},0.3);display:flex;align-items:center;justify-content:center;font-size:1.2em;color:{ACCENT};cursor:pointer;">‹</div>'
-        f'<div id="cal-next" style="width:36px;height:38px;border-radius:10px;background:rgba({BG_TINT},0.15);border:1px solid rgba({BG_TINT},0.3);display:flex;align-items:center;justify-content:center;font-size:1.2em;color:{ACCENT};cursor:pointer;">›</div>'
-        f'</div></div>',
+    cal_left, cal_right = st.columns([7, 1])
+    cal_left.markdown(
+        f'<div style="background:rgba({BG_TINT},0.05);border:1px solid rgba({BG_TINT},0.15);border-radius:20px;height:56px;display:flex;align-items:center;padding:0 20px;margin-bottom:16px;">'
+        f'<div><div style="font-size:1.1em;font-weight:800;color:#fff;">{month_name}</div>'
+        f'<div style="font-size:0.65em;color:{ACCENT};margin-top:1px;">{month_sign2}{round(month_total_r,2)}R total</div></div>'
+        f'</div>',
         unsafe_allow_html=True)
-
-    # Handle month navigation via query params
-    params = st.query_params
-    if params.get("cal_action") == "prev":
-        if st.session_state.cal_month == 1:
-            st.session_state.cal_month = 12; st.session_state.cal_year -= 1
-        else:
-            st.session_state.cal_month -= 1
-        st.query_params.clear()
-        st.rerun()
-    if params.get("cal_action") == "next":
-        if st.session_state.cal_month == 12:
-            st.session_state.cal_month = 1; st.session_state.cal_year += 1
-        else:
-            st.session_state.cal_month += 1
-        st.query_params.clear()
-        st.rerun()
-
-    components.html(f"""
-<script>
-setTimeout(function() {{
-    var doc = window.parent.document;
-    var prev = doc.getElementById('cal-prev');
-    var next = doc.getElementById('cal-next');
-    if (prev) prev.addEventListener('click', function() {{
-        window.parent.location.search = '?cal_action=prev';
-    }});
-    if (next) next.addEventListener('click', function() {{
-        window.parent.location.search = '?cal_action=next';
-    }});
-}}, 500);
-</script>
-    """, height=0)
-    
-    components.html(f"""
-<script>
-setTimeout(function() {{
-    var doc = window.parent.document;
-    var prev = doc.getElementById('cal-prev');
-    var next = doc.getElementById('cal-next');
-    if (prev) prev.addEventListener('click', function() {{
-        var btns = doc.querySelectorAll('button');
-        btns.forEach(function(b) {{ if (b.textContent.trim() === 'prev') b.click(); }});
-    }});
-    if (next) next.addEventListener('click', function() {{
-        var btns = doc.querySelectorAll('button');
-        btns.forEach(function(b) {{ if (b.textContent.trim() === 'next') b.click(); }});
-    }});
-}}, 500);
-</script>
-    """, height=0)
+    arr_l, arr_r = cal_right.columns(2)
+    with arr_l:
+        if st.button("‹", key="prev_month", use_container_width=True):
+            if st.session_state.cal_month == 1:
+                st.session_state.cal_month = 12; st.session_state.cal_year -= 1
+            else:
+                st.session_state.cal_month -= 1
+            st.rerun()
+    with arr_r:
+        if st.button("›", key="next_month", use_container_width=True):
+            if st.session_state.cal_month == 12:
+                st.session_state.cal_month = 1; st.session_state.cal_year += 1
+            else:
+                st.session_state.cal_month += 1
+            st.rerun()
+            
+    st.write("")
     cal_module.setfirstweekday(cal_module.MONDAY)
     month_matrix = cal_module.monthcalendar(cal_year, cal_month)
     day_header_cols = st.columns(8)
