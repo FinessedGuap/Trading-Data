@@ -710,6 +710,11 @@ css = f"""
 </style>
 """
 st.markdown(css, unsafe_allow_html=True)
+components.html("""
+<script>
+window.parent.document.querySelector('section.main').scrollTo(0, 0);
+</script>
+""", height=0)
 
 # Scroll to top on page change
 components.html("""
