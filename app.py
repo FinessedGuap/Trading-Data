@@ -590,8 +590,8 @@ css = f"""
     to {{ left: 150%; }}
   }}
   @keyframes growBar {{
-    from {{ clip-path: inset(0 100% 0 0); }}
-    to {{ clip-path: inset(0 0% 0 0); }}
+    from {{ width: 0; }}
+    to {{ width: 100%; }}
   }}
   .main-content {{ animation: fadeUp 0.5s cubic-bezier(0.16,1,0.3,1); }}
   .glass-panel {{
