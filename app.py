@@ -846,6 +846,16 @@ setTimeout(function() {{
         }});
     }}, {{ threshold: 0.1, rootMargin: '0px 0px -40px 0px' }});
     targets.forEach(function(el) {{ observer.observe(el); }});
+    var bars = doc.querySelectorAll('.grow-bar');
+    var barObserver = new IntersectionObserver(function(entries) {{
+        entries.forEach(function(entry) {{
+            if (entry.isIntersecting) {{
+                entry.target.style.animationPlayState = 'running';
+                barObserver.unobserve(entry.target);
+            }}
+        }});
+    }}, {{ threshold: 0.1 }});
+    bars.forEach(function(bar) {{ barObserver.observe(bar); }});
 }}, 400);
 </script>
     """, height=0)
@@ -943,7 +953,7 @@ setTimeout(function() {{
             f'<div style="display:grid;grid-template-columns:100px 1fr 70px 60px 40px;gap:16px;align-items:center;padding:10px 0;">'
             f'<span style="color:{ACCENT_SOFT};font-weight:600;">{s["session"]}</span>'
             f'<div style="background:rgba({BG_TINT},0.1);border-radius:8px;height:14px;overflow:hidden;">'
-            f'<div style="width:{bar_pct}%;height:100%;overflow:hidden;border-radius:8px;"><div style="width:100%;height:100%;background:{bar_color};border-radius:8px;animation:growBar 1.5s cubic-bezier(0.16,1,0.3,1) {delay}ms both;"></div></div>'
+            f'<div style="width:{bar_pct}%;height:100%;overflow:hidden;border-radius:8px;"><div class="grow-bar" style="width:100%;height:100%;background:{bar_color};border-radius:8px;animation:growBar 1.5s cubic-bezier(0.16,1,0.3,1) {delay}ms both;animation-play-state:paused;"></div></div>'
             f'</div>'
             f'<span style="color:#fff;font-weight:700;">{s["exp"]}</span>'
             f'<span style="color:{ACCENT_SOFT};">{s["wr"]}</span>'
