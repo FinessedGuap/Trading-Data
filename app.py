@@ -688,6 +688,11 @@ css = f"""
   .checklist-item {{ display:flex; align-items:flex-start; gap:12px; padding:10px 0; border-bottom:1px solid rgba({BG_TINT},0.08); }}
   .checklist-dot {{ width:8px; height:8px; border-radius:50%; margin-top:5px; flex-shrink:0; }}
   .glass-panel div::-webkit-scrollbar {{ display:none; }}
+  .cal-arrows div[data-testid="stButton"] button {{
+    min-height:56px !important; height:56px !important;
+    border-radius:10px !important; font-size:1.3em !important;
+    padding:0 !important; margin-bottom:16px !important;
+  }}
   section[data-testid="stSidebar"] div[data-testid="stButton"] button {{
     min-height:40px !important; background:rgba({BG_TINT},0.06) !important;
     border:1px solid rgba({BG_TINT},0.15) !important; color:#fff !important;
@@ -1148,26 +1153,32 @@ elif page == 'Calendar':
     month_sign2 = '+' if month_total_r > 0 else ''
     month_name = datetime(cal_year, cal_month, 1).strftime("%B %Y")
 
-    nav_l, nav_mid, nav_r = st.columns([1, 8, 1])
-    if nav_l.button("‹", key="prev_month", use_container_width=True):
-        if st.session_state.cal_month == 1:
-            st.session_state.cal_month = 12; st.session_state.cal_year -= 1
-        else:
-            st.session_state.cal_month -= 1
-        st.rerun()
-    nav_mid.markdown(
+   nav_left, nav_right = st.columns([7, 2])
+    nav_left.markdown(
         f'<div style="background:rgba({BG_TINT},0.05);border:1px solid rgba({BG_TINT},0.15);border-radius:20px;height:56px;display:flex;align-items:center;padding:0 20px;margin-bottom:16px;">'
-        f'<div style="flex:1;">'
+        f'<div>'
         f'<div style="font-size:1.1em;font-weight:800;color:#fff;">{month_name}</div>'
         f'<div style="font-size:0.75em;color:{ACCENT};margin-top:2px;font-weight:600;">{month_sign2}{round(month_total_r,2)}R total</div>'
         f'</div></div>',
         unsafe_allow_html=True)
-    if nav_r.button("›", key="next_month", use_container_width=True):
-        if st.session_state.cal_month == 12:
-            st.session_state.cal_month = 1; st.session_state.cal_year += 1
-        else:
-            st.session_state.cal_month += 1
-        st.rerun()
+    with nav_right:
+        st.markdown('<div class="cal-arrows">', unsafe_allow_html=True)
+        arr_l, arr_r = st.columns(2)
+        with arr_l:
+            if st.button("‹", key="prev_month", use_container_width=True):
+                if st.session_state.cal_month == 1:
+                    st.session_state.cal_month = 12; st.session_state.cal_year -= 1
+                else:
+                    st.session_state.cal_month -= 1
+                st.rerun()
+        with arr_r:
+            if st.button("›", key="next_month", use_container_width=True):
+                if st.session_state.cal_month == 12:
+                    st.session_state.cal_month = 1; st.session_state.cal_year += 1
+                else:
+                    st.session_state.cal_month += 1
+                st.rerun()
+        st.markdown('</div>', unsafe_allow_html=True)
 
     st.write("")
     cal_module.setfirstweekday(cal_module.MONDAY)
