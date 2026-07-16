@@ -33,10 +33,7 @@ if not st.session_state.authenticated:
         -webkit-backdrop-filter: blur(6px);
         z-index: 0;
     }
-    .stApp > * {
-        position: relative;
-        z-index: 1;
-    }
+    .stApp > * { position: relative; z-index: 1; }
     div[data-testid="stForm"] { background:transparent; border:none; }
     div[data-testid="stFormSubmitButton"] button {
         background:linear-gradient(135deg, rgba(96,165,250,0.2), rgba(96,165,250,0.1)) !important;
@@ -44,12 +41,6 @@ if not st.session_state.authenticated:
         color:#fff !important; border-radius:12px !important;
         min-height:48px !important; font-weight:600 !important;
         font-size:0.95em !important; letter-spacing:0.5px !important;
-        transition:all 0.2s ease !important;
-    }
-    div[data-testid="stFormSubmitButton"] button:hover {
-        background:linear-gradient(135deg, rgba(96,165,250,0.3), rgba(96,165,250,0.15)) !important;
-        border-color:rgba(96,165,250,0.6) !important;
-        transform:translateY(-1px) !important;
     }
     div[data-testid="stTextInput"] input {
         background:rgba(96,165,250,0.06) !important;
@@ -61,21 +52,11 @@ if not st.session_state.authenticated:
         border-color:rgba(96,165,250,0.5) !important;
         box-shadow:0 0 0 3px rgba(96,165,250,0.1) !important;
     }
-    div[data-testid="stTextInput"] input::-webkit-credentials-auto-fill-button {
-        display: none !important;
-        visibility: hidden !important;
-    }
-    div[data-testid="stTextInput"] input::-webkit-contacts-auto-fill-button {
-        display: none !important;
-        visibility: hidden !important;
-    }
-    input[type="password"]::-ms-reveal,
-    input[type="password"]::-ms-clear {
-        display: none !important;
-    }
+    div[data-testid="stTextInput"] input::-webkit-credentials-auto-fill-button,
+    div[data-testid="stTextInput"] input::-webkit-contacts-auto-fill-button { display:none !important; }
+    input[type="password"]::-ms-reveal, input[type="password"]::-ms-clear { display:none !important; }
     </style>
     """, unsafe_allow_html=True)
-
     col1, col2, col3 = st.columns([1.5, 2, 1.5])
     with col2:
         st.markdown("""
@@ -85,17 +66,8 @@ if not st.session_state.authenticated:
             <div style="color:#5a6a88;font-size:0.85em;">Your personal trading journal</div>
         </div>
         """, unsafe_allow_html=True)
-
         with st.form("login_form"):
-           
-            pw = st.text_input(
-                "Password",
-                type="password",
-                label_visibility="collapsed",
-                placeholder="Enter your password",
-                autocomplete="off"
-            )
-            
+            pw = st.text_input("Password", type="password", label_visibility="collapsed", placeholder="Enter your password", autocomplete="off")
             st.markdown('<div style="margin-top:12px;"></div>', unsafe_allow_html=True)
             submitted = st.form_submit_button("Enter Dashboard", use_container_width=True)
             if submitted:
@@ -104,7 +76,6 @@ if not st.session_state.authenticated:
                     st.rerun()
                 else:
                     st.error("Incorrect password — try again")
-
         st.markdown('<div style="text-align:center;color:#3d4a63;font-size:0.72em;margin-top:20px;">Secured · Private · Your data only</div>', unsafe_allow_html=True)
     st.stop()
 
@@ -119,6 +90,12 @@ headers = {
 
 if 'theme' not in st.session_state:
     st.session_state.theme = 'Blue'
+if 'account_size' not in st.session_state:
+    st.session_state.account_size = 50000
+if 'num_accounts' not in st.session_state:
+    st.session_state.num_accounts = 1
+if 'risk_per_trade' not in st.session_state:
+    st.session_state.risk_per_trade = 500
 
 themes = {
     'Blue':    {'ACCENT': '#60a5fa', 'ACCENT_SOFT': '#7fb2f5', 'BG_TINT': '96,165,250'},
@@ -135,6 +112,7 @@ GOLD = '#f59e0b'; GOLD_SOFT = '#fcd34d'
 PURPLE = '#a78bfa'; PURPLE_SOFT = '#c4b5fd'
 NAV_H = '56px'
 
+@st.cache_data(ttl=300)
 def get_all_trades():
     all_results = []
     has_more = True
@@ -149,7 +127,6 @@ def get_all_trades():
         )
         data = response.json()
         if response.status_code != 200:
-            st.error(f"Notion error: {data}")
             break
         all_results.extend(data['results'])
         has_more = data['has_more']
@@ -520,61 +497,62 @@ def render_breakdown(df_in, col, title):
             f'</div>', unsafe_allow_html=True)
 
 # ============ LOAD DATA ============
-with st.spinner("Pulling fresh data from Notion..."):
-    raw_trades = get_all_trades()
-    rows = []
-    for trade in raw_trades:
-        props = trade['properties']
-        row = {}
-        for col_name, col_data in props.items():
-            if col_name == 'Entry Confluences':
-                val = extract_property(col_data)
-                row[col_name] = ', '.join(val) if isinstance(val, list) else val
-            else:
-                row[col_name] = extract_property_str(col_data)
-        rows.append(row)
+raw_trades = get_all_trades()
+rows = []
+for trade in raw_trades:
+    props = trade['properties']
+    row = {}
+    for col_name, col_data in props.items():
+        if col_name == 'Entry Confluences':
+            val = extract_property(col_data)
+            row[col_name] = ', '.join(val) if isinstance(val, list) else val
+        else:
+            row[col_name] = extract_property_str(col_data)
+    rows.append(row)
 
-    df = pd.DataFrame(rows)
-    df.columns = df.columns.str.strip()
-    df['Date'] = df['Date'].apply(safe_parse_date)
-    df['Date'] = pd.Series(df['Date'].tolist(), dtype='datetime64[ns]')
-    df['R_Result'] = df['R Result'].apply(parse_r_result)
+df = pd.DataFrame(rows)
+df.columns = df.columns.str.strip()
+df['Date'] = df['Date'].apply(safe_parse_date)
+df['Date'] = pd.Series(df['Date'].tolist(), dtype='datetime64[ns]')
+df['R_Result'] = df['R Result'].apply(parse_r_result)
 
-    if 'Time of Trade' in df.columns:
-        def parse_hour(t):
-            try:
-                t = str(t).strip()
-                if ':' in t:
-                    h = t.split(':')[0]
-                    hour = int(h)
-                    if 'PM' in str(t).upper() and hour != 12: hour += 12
-                    if 'AM' in str(t).upper() and hour == 12: hour = 0
-                    return f"{hour:02d}:00"
-            except: pass
-            return None
-        df['Hour'] = df['Time of Trade'].apply(parse_hour)
+if 'Time of Trade' in df.columns:
+    def parse_hour(t):
+        try:
+            t = str(t).strip()
+            if ':' in t:
+                h = t.split(':')[0]
+                hour = int(h)
+                if 'PM' in str(t).upper() and hour != 12: hour += 12
+                if 'AM' in str(t).upper() and hour == 12: hour = 0
+                return f"{hour:02d}:00"
+        except: pass
+        return None
+    df['Hour'] = df['Time of Trade'].apply(parse_hour)
 
-    df_main = df.copy()
-    df_main = df_main.sort_values('Date').reset_index(drop=True)
-    if 'Pair' in df_main.columns:
-        df_main['Pair'] = df_main['Pair'].str.strip()
+df_main = df.copy()
+df_main = df_main.sort_values('Date').reset_index(drop=True)
+if 'Pair' in df_main.columns:
+    df_main['Pair'] = df_main['Pair'].str.strip()
 
-    df_xau = df_main[df_main['Pair'] == 'XAUUSD'].copy() if 'Pair' in df_main.columns else pd.DataFrame()
-    df_nas = df_main[df_main['Pair'] == 'NASDAQ'].copy() if 'Pair' in df_main.columns else pd.DataFrame()
+df_xau = df_main[df_main['Pair'] == 'XAUUSD'].copy() if 'Pair' in df_main.columns else pd.DataFrame()
+df_nas = df_main[df_main['Pair'] == 'NASDAQ'].copy() if 'Pair' in df_main.columns else pd.DataFrame()
 
-    main_stats = calc_stats(df_main)
-    xau_stats = calc_stats(df_xau) if len(df_xau) > 0 else {}
-    nas_stats = calc_stats(df_nas) if len(df_nas) > 0 else {}
-    session_stats = calc_session_stats(df_main)
-    daily_r = calc_daily_r(df_main)
-    monthly_r = calc_monthly_r(df_main)
-    consistency_score, consistency_breakdown = calc_consistency_score(df_main, session_stats)
-    best_setup = find_best_setup(df_main)
-    green_checklist, red_checklist = generate_checklist(df_main, session_stats)
+# Funded trades only for P&L tracker
+df_funded = df_main[df_main.get('Type of Trade', pd.Series(dtype=str)).str.strip() == 'Funded'].copy() if 'Type of Trade' in df_main.columns else pd.DataFrame()
+
+main_stats = calc_stats(df_main)
+xau_stats = calc_stats(df_xau) if len(df_xau) > 0 else {}
+nas_stats = calc_stats(df_nas) if len(df_nas) > 0 else {}
+session_stats = calc_session_stats(df_main)
+daily_r = calc_daily_r(df_main)
+monthly_r = calc_monthly_r(df_main)
+consistency_score, consistency_breakdown = calc_consistency_score(df_main, session_stats)
+best_setup = find_best_setup(df_main)
+green_checklist, red_checklist = generate_checklist(df_main, session_stats)
 
 max_abs_exp = max([abs(s['exp']) for s in session_stats]) if session_stats else 1
 if max_abs_exp == 0: max_abs_exp = 1
-
 today = datetime.now()
 
 for key, val in [
@@ -631,17 +609,22 @@ css = f"""
     transition: all 0.25s ease; cursor: pointer;
   }}
   .stat-card:hover {{ transform:translateY(-2px); border-color:rgba({BG_TINT},0.4); }}
+  .pnl-card {{
+    animation: fadeUp 0.5s cubic-bezier(0.16,1,0.3,1);
+    animation-fill-mode: both;
+  }}
   .section-label {{
     animation: slideIn 0.4s cubic-bezier(0.16,1,0.3,1);
     animation-fill-mode: both;
+    font-size:0.72em; font-weight:700; letter-spacing:2.5px; text-transform:uppercase;
+    color:{ACCENT_SOFT}; margin:32px 0 16px; display:flex; align-items:center; gap:10px;
   }}
+  .section-label::after {{ content:''; flex:1; height:1px; background:linear-gradient(90deg, rgba({BG_TINT},0.2), transparent); }}
   .streak-box {{
     animation: fadeUp 0.4s cubic-bezier(0.16,1,0.3,1);
     animation-fill-mode: both;
   }}
-  .streak-box.active-streak {{
-    animation: pulseGlow 2s ease-in-out infinite !important;
-  }}
+  .streak-box.active-streak {{ animation: pulseGlow 2s ease-in-out infinite !important; }}
   .checklist-item {{
     animation: slideIn 0.4s cubic-bezier(0.16,1,0.3,1);
     animation-fill-mode: both;
@@ -659,11 +642,6 @@ css = f"""
     border-right:1px solid rgba({BG_TINT},0.12) !important;
   }}
   section[data-testid="stSidebar"] > div {{ padding-top:0 !important; }}
-  .section-label {{
-    font-size:0.72em; font-weight:700; letter-spacing:2.5px; text-transform:uppercase;
-    color:{ACCENT_SOFT}; margin:32px 0 16px; display:flex; align-items:center; gap:10px;
-  }}
-  .section-label::after {{ content:''; flex:1; height:1px; background:linear-gradient(90deg, rgba({BG_TINT},0.2), transparent); }}
   .stat-card {{
     background:rgba({BG_TINT},0.06); backdrop-filter:blur(20px);
     border:1px solid rgba({BG_TINT},0.2); border-radius:18px; padding:20px 14px;
@@ -723,25 +701,28 @@ css = f"""
     opacity:0 !important; padding:0 !important; margin:0 !important;
     border:none !important; background:transparent !important; overflow:hidden !important;
   }}
-  .cal-nav-hidden div[data-testid="stButton"] button {{
-    opacity:0 !important; height:0 !important; min-height:0 !important;
-    padding:0 !important; margin:0 !important; border:none !important;
-    pointer-events:all !important;
-  }}
 </style>
 """
 st.markdown(css, unsafe_allow_html=True)
 
+# Scroll to top on page change
+components.html("""
+<script>
+window.parent.document.querySelector('section.main').scrollTo(0, 0);
+</script>
+""", height=0)
+
 # ============ SIDEBAR ============
 with st.sidebar:
     st.markdown(f'<div style="font-size:1.1em;font-weight:700;color:#fff;padding:20px 16px 16px;border-bottom:1px solid rgba({BG_TINT},0.1);margin-bottom:8px;">Trading Data</div>', unsafe_allow_html=True)
-    pages = [('📊', 'Overview'), ('📈', 'Charts'), ('🗓️', 'Calendar'), ('🔍', 'Edge Analysis'), ('🏆', 'Best Setups')]
+    pages = [('📊', 'Overview'), ('💰', 'P&L Tracker'), ('📈', 'Charts'), ('🗓️', 'Calendar'), ('🔍', 'Edge Analysis'), ('🏆', 'Best Setups')]
     for icon, page_name in pages:
         if st.button(f"{icon}  {page_name}", key=f"nav_{page_name}", use_container_width=True):
             st.session_state.active_page = page_name
             st.rerun()
     st.markdown('<div style="margin-top:20px;"></div>', unsafe_allow_html=True)
     if st.button("↻ Refresh", key="refresh_btn", use_container_width=True):
+        st.cache_data.clear()
         st.rerun()
     if st.button("🔒 Logout", key="logout_btn", use_container_width=True):
         st.session_state.authenticated = False
@@ -815,7 +796,7 @@ setTimeout(function() {{
 }}, 200);
 setTimeout(function() {{
     var doc = window.parent.document;
-    var targets = doc.querySelectorAll('.glass-panel, .stat-card, .checklist-item, .trade-detail-card, .cal-week-summary, .streak-box');
+    var targets = doc.querySelectorAll('.glass-panel, .stat-card, .checklist-item, .trade-detail-card, .cal-week-summary, .streak-box, .pnl-card');
     targets.forEach(function(el) {{
         el.style.opacity = '0';
         el.style.transform = 'translateY(30px)';
@@ -946,6 +927,157 @@ setTimeout(function() {{
         f'<span style="color:{ACCENT_SOFT};font-size:0.7em;font-weight:600;">N</span>'
         f'</div>{session_rows_html}</div>', unsafe_allow_html=True)
 
+# ============ PAGE: P&L TRACKER ============
+elif page == 'P&L Tracker':
+    st.markdown('<div style="font-size:1.6em;font-weight:700;color:#fff;margin-bottom:4px;">P&L Tracker</div>', unsafe_allow_html=True)
+    st.markdown('<div style="font-size:0.75em;color:#5a6a88;margin-bottom:24px;">Funded trades only · Live account performance</div>', unsafe_allow_html=True)
+
+    # Settings
+    st.markdown(f'<div style="color:{ACCENT_SOFT};font-size:0.72em;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:14px;">Account Settings</div>', unsafe_allow_html=True)
+    set_cols = st.columns(3)
+    with set_cols[0]:
+        account_size = st.number_input("Account Size ($)", min_value=1000, max_value=10000000, value=st.session_state.account_size, step=1000, format="%d")
+        st.session_state.account_size = account_size
+    with set_cols[1]:
+        num_accounts = st.number_input("Number of Accounts", min_value=1, max_value=50, value=st.session_state.num_accounts, step=1)
+        st.session_state.num_accounts = num_accounts
+    with set_cols[2]:
+        risk_per_trade = st.number_input("Risk Per Trade ($)", min_value=1, max_value=100000, value=st.session_state.risk_per_trade, step=50)
+        st.session_state.risk_per_trade = risk_per_trade
+
+    total_capital = account_size * num_accounts
+    combined_risk = risk_per_trade * num_accounts
+
+    st.markdown(
+        f'<div style="font-size:0.72em;color:#5a6a88;margin-bottom:20px;padding:10px 14px;background:rgba({BG_TINT},0.05);border-radius:10px;border:1px solid rgba({BG_TINT},0.1);">'
+        f'Total capital: <span style="color:{ACCENT_SOFT};font-weight:600;">${total_capital:,}</span> &nbsp;·&nbsp; '
+        f'Combined 1R: <span style="color:{ACCENT_SOFT};font-weight:600;">${combined_risk:,}</span> &nbsp;·&nbsp; '
+        f'Funded trades only</div>',
+        unsafe_allow_html=True)
+
+    # Calculate P&L from funded trades only
+    if len(df_funded) > 0 and 'R_Result' in df_funded.columns:
+        df_funded_clean = df_funded.dropna(subset=['R_Result', 'Date']).copy()
+
+        # Monthly P&L
+        month_funded = df_funded_clean[
+            (df_funded_clean['Date'].dt.month == today.month) &
+            (df_funded_clean['Date'].dt.year == today.year)
+        ]
+        month_r = month_funded['R_Result'].sum()
+        month_pnl = round(month_r * combined_risk, 2)
+        month_pct = round(month_pnl / total_capital * 100, 2)
+
+        # Weekly P&L
+        week_start = today - pd.Timedelta(days=today.weekday())
+        week_funded = df_funded_clean[df_funded_clean['Date'].dt.date >= week_start.date()]
+        week_r = week_funded['R_Result'].sum()
+        week_pnl = round(week_r * combined_risk, 2)
+        week_pct = round(week_pnl / total_capital * 100, 2)
+
+        # Daily P&L
+        today_funded = df_funded_clean[df_funded_clean['Date'].dt.date == today.date()]
+        today_r = today_funded['R_Result'].sum()
+        today_pnl = round(today_r * combined_risk, 2)
+        today_pct = round(today_pnl / total_capital * 100, 2)
+
+        def fmt_pnl(val):
+            return f"+${val:,.2f}" if val >= 0 else f"-${abs(val):,.2f}"
+        def fmt_pct(val):
+            return f"+{val}%" if val >= 0 else f"{val}%"
+        def pnl_color(val):
+            return '#4ade80' if val >= 0 else '#f87171'
+
+        st.markdown(f'<div style="color:{ACCENT_SOFT};font-size:0.72em;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:14px;">Performance</div>', unsafe_allow_html=True)
+
+        pnl_data = [
+            ('This Month', month_pnl, month_pct, f"{round(month_r,2)}R", len(month_funded)),
+            ('This Week', week_pnl, week_pct, f"{round(week_r,2)}R", len(week_funded)),
+            ('Today', today_pnl, today_pct, f"{round(today_r,2)}R", len(today_funded)),
+        ]
+
+        pnl_cols = st.columns(3)
+        for i, (col, (period, pnl, pct, r_val, n_trades)) in enumerate(zip(pnl_cols, pnl_data)):
+            color = pnl_color(pnl)
+            delay = i * 100
+            col.markdown(
+                f'<div class="pnl-card" style="background:rgba({BG_TINT},0.06);border:1px solid rgba({BG_TINT},0.2);border-radius:18px;padding:20px 14px;text-align:center;animation-delay:{delay}ms;">'
+                f'<div style="font-size:0.62em;color:#5a6a88;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:10px;">{period}</div>'
+                f'<div style="font-size:1.5em;font-weight:700;color:{color};" id="pnl-{i}">{fmt_pnl(pnl)}</div>'
+                f'<div style="font-size:1em;font-weight:700;color:{color};margin-top:4px;" id="pct-{i}">{fmt_pct(pct)}</div>'
+                f'<div style="font-size:0.65em;color:#5a6a88;margin-top:8px;border-top:1px solid rgba({BG_TINT},0.1);padding-top:8px;">{r_val} &nbsp;·&nbsp; {n_trades} trades</div>'
+                f'</div>',
+                unsafe_allow_html=True)
+
+        # Counter animations for P&L
+        components.html(f"""
+<script>
+function countMoney(id, target, duration) {{
+    var el = window.parent.document.getElementById(id);
+    if (!el) return;
+    var startTime = null;
+    var prefix = target >= 0 ? '+$' : '-$';
+    var absTarget = Math.abs(target);
+    function step(ts) {{
+        if (!startTime) startTime = ts;
+        var progress = Math.min((ts - startTime) / duration, 1);
+        var ease = 1 - Math.pow(1 - progress, 3);
+        var val = absTarget * ease;
+        el.textContent = prefix + val.toLocaleString('en-US', {{minimumFractionDigits:2, maximumFractionDigits:2}});
+        if (progress < 1) requestAnimationFrame(step);
+    }}
+    requestAnimationFrame(step);
+}}
+function countPct(id, target, duration) {{
+    var el = window.parent.document.getElementById(id);
+    if (!el) return;
+    var startTime = null;
+    var prefix = target >= 0 ? '+' : '-';
+    var absTarget = Math.abs(target);
+    function step(ts) {{
+        if (!startTime) startTime = ts;
+        var progress = Math.min((ts - startTime) / duration, 1);
+        var ease = 1 - Math.pow(1 - progress, 3);
+        var val = absTarget * ease;
+        el.textContent = prefix + val.toFixed(2) + '%';
+        if (progress < 1) requestAnimationFrame(step);
+    }}
+    requestAnimationFrame(step);
+}}
+setTimeout(function() {{
+    countMoney('pnl-0', {month_pnl}, 1000);
+    countMoney('pnl-1', {week_pnl}, 1000);
+    countMoney('pnl-2', {today_pnl}, 1000);
+    countPct('pct-0', {month_pct}, 1000);
+    countPct('pct-1', {week_pct}, 1000);
+    countPct('pct-2', {today_pct}, 1000);
+}}, 300);
+</script>
+        """, height=0)
+
+        # All time funded stats
+        st.markdown(f'<div style="color:{ACCENT_SOFT};font-size:0.72em;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin:24px 0 14px;">All Time (Funded)</div>', unsafe_allow_html=True)
+        total_r_funded = df_funded_clean['R_Result'].sum()
+        total_pnl_funded = round(total_r_funded * combined_risk, 2)
+        total_pct_funded = round(total_pnl_funded / total_capital * 100, 2)
+        color_total = '#4ade80' if total_pnl_funded >= 0 else '#f87171'
+        sign_total = '+' if total_pnl_funded >= 0 else ''
+
+        at_cols = st.columns(4)
+        at_cols[0].markdown(f'<div class="pnl-card" style="background:rgba({BG_TINT},0.06);border:1px solid rgba({BG_TINT},0.2);border-radius:18px;padding:18px 14px;text-align:center;"><div style="font-size:0.6em;color:#5a6a88;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px;">Total P&L</div><div style="font-size:1.3em;font-weight:700;color:{color_total};">{sign_total}${abs(total_pnl_funded):,.2f}</div><div style="font-size:0.8em;color:{color_total};margin-top:3px;">{sign_total}{total_pct_funded}%</div></div>', unsafe_allow_html=True)
+        at_cols[1].markdown(f'<div class="pnl-card" style="background:rgba({BG_TINT},0.06);border:1px solid rgba({BG_TINT},0.2);border-radius:18px;padding:18px 14px;text-align:center;"><div style="font-size:0.6em;color:#5a6a88;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px;">Total R</div><div style="font-size:1.3em;font-weight:700;color:#fff;">{sign_total}{round(total_r_funded,2)}R</div></div>', unsafe_allow_html=True)
+        at_cols[2].markdown(f'<div class="pnl-card" style="background:rgba({BG_TINT},0.06);border:1px solid rgba({BG_TINT},0.2);border-radius:18px;padding:18px 14px;text-align:center;"><div style="font-size:0.6em;color:#5a6a88;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px;">Funded Trades</div><div style="font-size:1.3em;font-weight:700;color:#fff;">{len(df_funded_clean)}</div></div>', unsafe_allow_html=True)
+        at_cols[3].markdown(f'<div class="pnl-card" style="background:rgba({BG_TINT},0.06);border:1px solid rgba({BG_TINT},0.2);border-radius:18px;padding:18px 14px;text-align:center;"><div style="font-size:0.6em;color:#5a6a88;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px;">Total Capital</div><div style="font-size:1.3em;font-weight:700;color:{ACCENT_SOFT};">${total_capital:,}</div></div>', unsafe_allow_html=True)
+
+    else:
+        st.markdown(
+            f'<div class="glass-panel" style="text-align:center;padding:48px 24px;">'
+            f'<div style="font-size:1.4em;margin-bottom:12px;">💰</div>'
+            f'<div style="color:#fff;font-weight:600;margin-bottom:8px;">No funded trades yet</div>'
+            f'<div style="color:#5a6a88;font-size:0.85em;">Once you log trades with Type of Trade = "Funded" they\'ll appear here with full P&L and % tracking.</div>'
+            f'</div>',
+            unsafe_allow_html=True)
+
 # ============ PAGE: CHARTS ============
 elif page == 'Charts':
     st.markdown('<div style="font-size:1.6em;font-weight:700;color:#fff;margin-bottom:24px;">Charts</div>', unsafe_allow_html=True)
@@ -1026,29 +1158,27 @@ elif page == 'Calendar':
     month_sign2 = '+' if month_total_r > 0 else ''
     month_name = datetime(cal_year, cal_month, 1).strftime("%B %Y")
 
-    cal_left, cal_right = st.columns([7, 1])
-    cal_left.markdown(
+    nav_l, nav_mid, nav_r = st.columns([1, 8, 1])
+    if nav_l.button("‹", key="prev_month", use_container_width=True):
+        if st.session_state.cal_month == 1:
+            st.session_state.cal_month = 12; st.session_state.cal_year -= 1
+        else:
+            st.session_state.cal_month -= 1
+        st.rerun()
+    nav_mid.markdown(
         f'<div style="background:rgba({BG_TINT},0.05);border:1px solid rgba({BG_TINT},0.15);border-radius:20px;height:56px;display:flex;align-items:center;padding:0 20px;margin-bottom:16px;">'
-        f'<div><div style="font-size:1.1em;font-weight:800;color:#fff;">{month_name}</div>'
-        f'<div style="font-size:0.65em;color:{ACCENT};margin-top:1px;">{month_sign2}{round(month_total_r,2)}R total</div></div>'
-        f'</div>',
+        f'<div style="flex:1;">'
+        f'<div style="font-size:1.1em;font-weight:800;color:#fff;">{month_name}</div>'
+        f'<div style="font-size:0.75em;color:{ACCENT};margin-top:2px;font-weight:600;">{month_sign2}{round(month_total_r,2)}R total</div>'
+        f'</div></div>',
         unsafe_allow_html=True)
-    arr_l, arr_r = cal_right.columns(2)
-    with arr_l:
-        if st.button("‹", key="prev_month", use_container_width=True):
-            if st.session_state.cal_month == 1:
-                st.session_state.cal_month = 12; st.session_state.cal_year -= 1
-            else:
-                st.session_state.cal_month -= 1
-            st.rerun()
-    with arr_r:
-        if st.button("›", key="next_month", use_container_width=True):
-            if st.session_state.cal_month == 12:
-                st.session_state.cal_month = 1; st.session_state.cal_year += 1
-            else:
-                st.session_state.cal_month += 1
-            st.rerun()
-            
+    if nav_r.button("›", key="next_month", use_container_width=True):
+        if st.session_state.cal_month == 12:
+            st.session_state.cal_month = 1; st.session_state.cal_year += 1
+        else:
+            st.session_state.cal_month += 1
+        st.rerun()
+
     st.write("")
     cal_module.setfirstweekday(cal_module.MONDAY)
     month_matrix = cal_module.monthcalendar(cal_year, cal_month)
