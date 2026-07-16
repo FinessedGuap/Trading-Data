@@ -490,7 +490,7 @@ def render_breakdown(df_in, col, title):
         st.markdown(
             f'<div style="display:grid;grid-template-columns:180px 1fr 55px 55px 30px;gap:10px;align-items:center;padding:7px 0;border-bottom:1px solid rgba({BG_TINT},0.06);">'
             f'<span style="color:#ccc;font-size:0.82em;">{lbl}</span>'
-            f'<div style="background:rgba({BG_TINT},0.08);border-radius:6px;height:10px;overflow:hidden;"><div style="width:{bar_pct}%;height:100%;background:linear-gradient(90deg,{color}66,{color});border-radius:6px;"></div></div>'
+            f'<div style="background:rgba({BG_TINT},0.08);border-radius:6px;height:10px;overflow:hidden;"><div style="width:{bar_pct}%;height:100%;background:linear-gradient(90deg,{color}66,{color});border-radius:6px;animation:growBar 0.8s cubic-bezier(0.16,1,0.3,1) both;"></div></div>'
             f'<span style="color:{color};font-size:0.82em;font-weight:600;">{d["exp"]}R</span>'
             f'<span style="color:{ACCENT_SOFT};font-size:0.82em;">{d["wr"]}%</span>'
             f'<span style="color:#5a6a88;font-size:0.82em;">{d["n"]}</span>'
@@ -538,8 +538,10 @@ if 'Pair' in df_main.columns:
 df_xau = df_main[df_main['Pair'] == 'XAUUSD'].copy() if 'Pair' in df_main.columns else pd.DataFrame()
 df_nas = df_main[df_main['Pair'] == 'NASDAQ'].copy() if 'Pair' in df_main.columns else pd.DataFrame()
 
-# Funded trades only for P&L tracker
-df_funded = df_main[df_main.get('Type of Trade', pd.Series(dtype=str)).str.strip() == 'Funded'].copy() if 'Type of Trade' in df_main.columns else pd.DataFrame()
+if 'Type of Trade' in df_main.columns:
+    df_funded = df_main[df_main['Type of Trade'].str.strip() == 'Funded'].copy()
+else:
+    df_funded = pd.DataFrame()
 
 main_stats = calc_stats(df_main)
 xau_stats = calc_stats(df_xau) if len(df_xau) > 0 else {}
@@ -586,6 +588,10 @@ css = f"""
   @keyframes panelSweep {{
     from {{ left: -100%; }}
     to {{ left: 150%; }}
+  }}
+  @keyframes growBar {{
+    from {{ width: 0; }}
+    to {{ width: 100%; }}
   }}
   .main-content {{ animation: fadeUp 0.5s cubic-bezier(0.16,1,0.3,1); }}
   .glass-panel {{
@@ -688,12 +694,6 @@ css = f"""
   .checklist-item {{ display:flex; align-items:flex-start; gap:12px; padding:10px 0; border-bottom:1px solid rgba({BG_TINT},0.08); }}
   .checklist-dot {{ width:8px; height:8px; border-radius:50%; margin-top:5px; flex-shrink:0; }}
   .glass-panel div::-webkit-scrollbar {{ display:none; }}
-  div[data-testid="stVerticalBlock"] .cal-arrows div[data-testid="stButton"] button,
-  .cal-arrows div[data-testid="stButton"] button {{
-    min-height:44px !important; max-height:44px !important; height:44px !important;
-    border-radius:10px !important; font-size:1em !important;
-    padding:0 !important; margin:0 !important; line-height:1 !important;
-  }}
   section[data-testid="stSidebar"] div[data-testid="stButton"] button {{
     min-height:40px !important; background:rgba({BG_TINT},0.06) !important;
     border:1px solid rgba({BG_TINT},0.15) !important; color:#fff !important;
@@ -707,9 +707,42 @@ css = f"""
     opacity:0 !important; padding:0 !important; margin:0 !important;
     border:none !important; background:transparent !important; overflow:hidden !important;
   }}
+  .cal-arrows div[data-testid="stButton"] button {{
+    min-height:44px !important; max-height:44px !important; height:44px !important;
+    border-radius:10px !important; font-size:1em !important;
+    padding:0 !important; margin:0 !important;
+  }}
 </style>
 """
 st.markdown(css, unsafe_allow_html=True)
+
+# ============ SCROLL TO TOP ============
+components.html("""
+<script>
+(function() {
+    function scrollTop() {
+        try {
+            var win = window.parent;
+            var doc = win.document;
+            var els = [
+                doc.querySelector('[data-testid="stAppViewContainer"]'),
+                doc.querySelector('[data-testid="stMainBlockContainer"]'),
+                doc.querySelector('.main'),
+                doc.querySelector('section.main'),
+                doc.querySelector('.block-container'),
+                doc.documentElement,
+                doc.body
+            ];
+            els.forEach(function(el) { if (el) { el.scrollTop = 0; el.scrollLeft = 0; } });
+            win.scrollTo(0, 0);
+        } catch(e) {}
+    }
+    scrollTop();
+    setTimeout(scrollTop, 100);
+    setTimeout(scrollTop, 300);
+})();
+</script>
+""", height=0)
 
 # ============ SIDEBAR ============
 with st.sidebar:
@@ -739,15 +772,7 @@ with st.sidebar:
             st.rerun()
 
 page = st.session_state.active_page
-st.markdown('<div class="main-content"><div id="top"></div>', unsafe_allow_html=True)
-components.html("""
-<script>
-setTimeout(function() {
-    window.parent.location.hash = '';
-    window.parent.location.hash = 'top';
-}, 50);
-</script>
-""", height=0)
+st.markdown('<div class="main-content">', unsafe_allow_html=True)
 
 # ============ PAGE: OVERVIEW ============
 if page == 'Overview':
@@ -914,12 +939,16 @@ setTimeout(function() {{
 
     st.markdown('<div class="section-label">3SL Window</div>', unsafe_allow_html=True)
     session_rows_html = ""
-    for s in session_stats:
+    for idx_s, s in enumerate(session_stats):
         bar_pct = round(abs(s['exp']) / max_abs_exp * 100, 1)
+        bar_color = f'linear-gradient(90deg,rgba({BG_TINT},0.6),{ACCENT})' if s['exp'] >= 0 else 'linear-gradient(90deg,rgba(248,113,113,0.6),#f87171)'
+        delay = idx_s * 150
         session_rows_html += (
             f'<div style="display:grid;grid-template-columns:100px 1fr 70px 60px 40px;gap:16px;align-items:center;padding:10px 0;">'
             f'<span style="color:{ACCENT_SOFT};font-weight:600;">{s["session"]}</span>'
-            f'<div style="background:rgba({BG_TINT},0.1);border-radius:8px;height:14px;overflow:hidden;"><div style="width:{bar_pct}%;height:100%;background:linear-gradient(90deg,rgba({BG_TINT},0.6),{ACCENT});border-radius:8px;"></div></div>'
+            f'<div style="background:rgba({BG_TINT},0.1);border-radius:8px;height:14px;overflow:hidden;">'
+            f'<div style="width:{bar_pct}%;height:100%;background:{bar_color};border-radius:8px;animation:growBar 0.8s cubic-bezier(0.16,1,0.3,1) {delay}ms both;"></div>'
+            f'</div>'
             f'<span style="color:#fff;font-weight:700;">{s["exp"]}</span>'
             f'<span style="color:{ACCENT_SOFT};">{s["wr"]}</span>'
             f'<span style="color:#5a6a88;">{s["n"]}</span>'
@@ -936,9 +965,8 @@ setTimeout(function() {{
 
 # ============ PAGE: P&L TRACKER ============
 elif page == 'P&L Tracker':
-    st.markdown('<div style="font-size:1.6em;font-weight:700;color:#fff;margin-bottom:4px;">P&L Tracker</div>', unsafe_allow_html=True)
+    st.markdown('<div style="font-size:1.6em;font-weight:700;color:#fff;margin-bottom:24px;">P&L Tracker</div>', unsafe_allow_html=True)
 
-    # Settings
     set_cols = st.columns(3)
     with set_cols[0]:
         account_size = st.number_input("Account Size ($)", min_value=1000, max_value=10000000, value=st.session_state.account_size, step=1000, format="%d")
@@ -953,11 +981,9 @@ elif page == 'P&L Tracker':
     total_capital = account_size * num_accounts
     combined_risk = risk_per_trade * num_accounts
 
-    # Calculate P&L from funded trades only
     if len(df_funded) > 0 and 'R_Result' in df_funded.columns:
         df_funded_clean = df_funded.dropna(subset=['R_Result', 'Date']).copy()
 
-        # Monthly P&L
         month_funded = df_funded_clean[
             (df_funded_clean['Date'].dt.month == today.month) &
             (df_funded_clean['Date'].dt.year == today.year)
@@ -966,14 +992,12 @@ elif page == 'P&L Tracker':
         month_pnl = round(month_r * combined_risk, 2)
         month_pct = round(month_pnl / total_capital * 100, 2)
 
-        # Weekly P&L
         week_start = today - pd.Timedelta(days=today.weekday())
         week_funded = df_funded_clean[df_funded_clean['Date'].dt.date >= week_start.date()]
         week_r = week_funded['R_Result'].sum()
         week_pnl = round(week_r * combined_risk, 2)
         week_pct = round(week_pnl / total_capital * 100, 2)
 
-        # Daily P&L
         today_funded = df_funded_clean[df_funded_clean['Date'].dt.date == today.date()]
         today_r = today_funded['R_Result'].sum()
         today_pnl = round(today_r * combined_risk, 2)
@@ -1007,7 +1031,6 @@ elif page == 'P&L Tracker':
                 f'</div>',
                 unsafe_allow_html=True)
 
-        # Counter animations for P&L
         components.html(f"""
 <script>
 function countMoney(id, target, duration) {{
@@ -1053,7 +1076,6 @@ setTimeout(function() {{
 </script>
         """, height=0)
 
-        # All time funded stats
         st.markdown(f'<div style="color:{ACCENT_SOFT};font-size:0.72em;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin:24px 0 14px;">All Time (Funded)</div>', unsafe_allow_html=True)
         total_r_funded = df_funded_clean['R_Result'].sum()
         total_pnl_funded = round(total_r_funded * combined_risk, 2)
@@ -1155,7 +1177,6 @@ elif page == 'Calendar':
     month_sign2 = '+' if month_total_r > 0 else ''
     month_name = datetime(cal_year, cal_month, 1).strftime("%B %Y")
 
-    st.markdown('<div style="display:flex;align-items:center;gap:8px;margin-bottom:0;">', unsafe_allow_html=True)
     nav_left, nav_right = st.columns([7, 2])
     nav_left.markdown(
         f'<div style="background:rgba({BG_TINT},0.05);border:1px solid rgba({BG_TINT},0.15);border-radius:20px;height:44px;display:flex;align-items:center;padding:0 20px;margin-bottom:16px;">'
@@ -1182,7 +1203,6 @@ elif page == 'Calendar':
                     st.session_state.cal_month += 1
                 st.rerun()
         st.markdown('</div>', unsafe_allow_html=True)
-    st.markdown('</div>', unsafe_allow_html=True)
 
     st.write("")
     cal_module.setfirstweekday(cal_module.MONDAY)
