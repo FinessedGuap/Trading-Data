@@ -930,10 +930,8 @@ setTimeout(function() {{
 # ============ PAGE: P&L TRACKER ============
 elif page == 'P&L Tracker':
     st.markdown('<div style="font-size:1.6em;font-weight:700;color:#fff;margin-bottom:4px;">P&L Tracker</div>', unsafe_allow_html=True)
-    st.markdown('<div style="font-size:0.75em;color:#5a6a88;margin-bottom:24px;">Funded trades only · Live account performance</div>', unsafe_allow_html=True)
 
     # Settings
-    st.markdown(f'<div style="color:{ACCENT_SOFT};font-size:0.72em;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:14px;">Account Settings</div>', unsafe_allow_html=True)
     set_cols = st.columns(3)
     with set_cols[0]:
         account_size = st.number_input("Account Size ($)", min_value=1000, max_value=10000000, value=st.session_state.account_size, step=1000, format="%d")
@@ -947,13 +945,6 @@ elif page == 'P&L Tracker':
 
     total_capital = account_size * num_accounts
     combined_risk = risk_per_trade * num_accounts
-
-    st.markdown(
-        f'<div style="font-size:0.72em;color:#5a6a88;margin-bottom:20px;padding:10px 14px;background:rgba({BG_TINT},0.05);border-radius:10px;border:1px solid rgba({BG_TINT},0.1);">'
-        f'Total capital: <span style="color:{ACCENT_SOFT};font-weight:600;">${total_capital:,}</span> &nbsp;·&nbsp; '
-        f'Combined 1R: <span style="color:{ACCENT_SOFT};font-weight:600;">${combined_risk:,}</span> &nbsp;·&nbsp; '
-        f'Funded trades only</div>',
-        unsafe_allow_html=True)
 
     # Calculate P&L from funded trades only
     if len(df_funded) > 0 and 'R_Result' in df_funded.columns:
@@ -1073,7 +1064,7 @@ setTimeout(function() {{
         st.markdown(
             f'<div class="glass-panel" style="text-align:center;padding:48px 24px;">'
             f'<div style="font-size:1.4em;margin-bottom:12px;">💰</div>'
-            f'<div style="color:#fff;font-weight:600;margin-bottom:8px;">No funded trades yet</div>'
+            f'<div style="color:#fff;font-weight:600;margin-bottom:8px;">No trades yet</div>'
             f'<div style="color:#5a6a88;font-size:0.85em;">Once you log trades with Type of Trade = "Funded" they\'ll appear here with full P&L and % tracking.</div>'
             f'</div>',
             unsafe_allow_html=True)
