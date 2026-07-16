@@ -590,8 +590,8 @@ css = f"""
     to {{ left: 150%; }}
   }}
   @keyframes growBar {{
-    from {{ width: 0; }}
-    to {{ width: 100%; }}
+    from {{ transform: scaleX(0); transform-origin: left; }}
+    to {{ transform: scaleX(1); transform-origin: left; }}
   }}
   .main-content {{ animation: fadeUp 0.5s cubic-bezier(0.16,1,0.3,1); }}
   .glass-panel {{
@@ -720,26 +720,22 @@ st.markdown(css, unsafe_allow_html=True)
 components.html("""
 <script>
 (function() {
-    function scrollTop() {
+    function tryScroll() {
         try {
-            var win = window.parent;
-            var doc = win.document;
-            var els = [
-                doc.querySelector('[data-testid="stAppViewContainer"]'),
-                doc.querySelector('[data-testid="stMainBlockContainer"]'),
-                doc.querySelector('.main'),
-                doc.querySelector('section.main'),
-                doc.querySelector('.block-container'),
-                doc.documentElement,
-                doc.body
-            ];
-            els.forEach(function(el) { if (el) { el.scrollTop = 0; el.scrollLeft = 0; } });
-            win.scrollTo(0, 0);
+            var w = window.parent;
+            var el = w.document.querySelector('[data-testid="stAppViewBlockContainer"]');
+            if (!el) el = w.document.querySelector('[data-testid="stMainBlockContainer"]');
+            if (!el) el = w.document.querySelector('.stMainBlockContainer');
+            if (!el) el = w.document.querySelector('.appview-container');
+            if (!el) el = w.document.querySelector('.main');
+            if (el) el.scrollTop = 0;
+            w.scrollTo({top: 0, behavior: 'instant'});
         } catch(e) {}
     }
-    scrollTop();
-    setTimeout(scrollTop, 100);
-    setTimeout(scrollTop, 300);
+    tryScroll();
+    setTimeout(tryScroll, 50);
+    setTimeout(tryScroll, 200);
+    setTimeout(tryScroll, 500);
 })();
 </script>
 """, height=0)
