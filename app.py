@@ -710,15 +710,6 @@ css = f"""
 </style>
 """
 st.markdown(css, unsafe_allow_html=True)
-components.html("""
-<script>
-setTimeout(function() {
-    window.parent.scrollTo(0, 0);
-    window.parent.document.body.scrollTop = 0;
-    window.parent.document.documentElement.scrollTop = 0;
-}, 50);
-</script>
-""", height=0)
 
 # ============ SIDEBAR ============
 with st.sidebar:
@@ -748,7 +739,15 @@ with st.sidebar:
             st.rerun()
 
 page = st.session_state.active_page
-st.markdown('<div class="main-content">', unsafe_allow_html=True)
+st.markdown('<div class="main-content"><div id="top"></div>', unsafe_allow_html=True)
+components.html("""
+<script>
+setTimeout(function() {
+    window.parent.location.hash = '';
+    window.parent.location.hash = 'top';
+}, 50);
+</script>
+""", height=0)
 
 # ============ PAGE: OVERVIEW ============
 if page == 'Overview':
