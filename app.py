@@ -490,7 +490,7 @@ def render_breakdown(df_in, col, title):
         st.markdown(
             f'<div style="display:grid;grid-template-columns:180px 1fr 55px 55px 30px;gap:10px;align-items:center;padding:7px 0;border-bottom:1px solid rgba({BG_TINT},0.06);">'
             f'<span style="color:#ccc;font-size:0.82em;">{lbl}</span>'
-            f'<div style="background:rgba({BG_TINT},0.08);border-radius:6px;height:10px;overflow:hidden;"><div style="width:{bar_pct}%;height:100%;background:linear-gradient(90deg,{color}66,{color});border-radius:6px;animation:growBar 0.8s cubic-bezier(0.16,1,0.3,1) both;"></div></div>'
+            f'<div style="width:{bar_pct}%;height:100%;overflow:hidden;border-radius:6px;"><div class="grow-bar" style="width:100%;height:100%;background:linear-gradient(90deg,{color}66,{color});border-radius:6px;animation:growBar 0.8s cubic-bezier(0.16,1,0.3,1) both;animation-play-state:paused;"></div></div>'
             f'<span style="color:{color};font-size:0.82em;font-weight:600;">{d["exp"]}R</span>'
             f'<span style="color:{ACCENT_SOFT};font-size:0.82em;">{d["wr"]}%</span>'
             f'<span style="color:#5a6a88;font-size:0.82em;">{d["n"]}</span>'
