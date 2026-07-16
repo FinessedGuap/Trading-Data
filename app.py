@@ -713,27 +713,10 @@ st.markdown(css, unsafe_allow_html=True)
 components.html("""
 <script>
 setTimeout(function() {
-    var doc = window.parent.document;
-    var containers = [
-        doc.querySelector('.stMainBlockContainer'),
-        doc.querySelector('.block-container'),
-        doc.querySelector('[data-testid="stMainBlockContainer"]'),
-        doc.querySelector('[data-testid="block-container"]'),
-        doc.querySelector('section.main > div'),
-        doc.querySelector('.main > div'),
-        doc.querySelector('.stApp'),
-    ];
-    containers.forEach(function(el) {
-        if (el) el.scrollTop = 0;
-    });
-}, 100);
-</script>
-""", height=0)
-
-# Scroll to top on page change
-components.html("""
-<script>
-window.parent.document.querySelector('section.main').scrollTo(0, 0);
+    window.parent.scrollTo(0, 0);
+    window.parent.document.body.scrollTop = 0;
+    window.parent.document.documentElement.scrollTop = 0;
+}, 50);
 </script>
 """, height=0)
 
