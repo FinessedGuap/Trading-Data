@@ -1156,10 +1156,10 @@ elif page == 'Calendar':
 
     nav_left, nav_right = st.columns([7, 2])
     nav_left.markdown(
-        f'<div style="background:rgba({BG_TINT},0.05);border:1px solid rgba({BG_TINT},0.15);border-radius:20px;height:56px;display:flex;align-items:center;padding:0 20px;margin-bottom:16px;">'
-        f'<div>'
+        f'<div style="background:rgba({BG_TINT},0.05);border:1px solid rgba({BG_TINT},0.15);border-radius:20px;height:44px;display:flex;align-items:center;padding:0 20px;margin-bottom:16px;">'
+        f'<div style="display:flex;align-items:center;gap:10px;">'
         f'<div style="font-size:1.1em;font-weight:800;color:#fff;">{month_name}</div>'
-        f'<div style="font-size:0.75em;color:{ACCENT};margin-top:2px;font-weight:600;">{month_sign2}{round(month_total_r,2)}R total</div>'
+        f'<div style="font-size:0.75em;color:{ACCENT};font-weight:600;">{month_sign2}{round(month_total_r,2)}R</div>'
         f'</div></div>',
         unsafe_allow_html=True)
     with nav_right:
