@@ -854,8 +854,15 @@ setTimeout(function() {{
                 barObserver.unobserve(entry.target);
             }}
         }});
-    }}, {{ threshold: 0.1 }});
-    bars.forEach(function(bar) {{ barObserver.observe(bar); }});
+    }}, {{ threshold: 0.1, rootMargin: '0px 0px -20px 0px' }});
+    bars.forEach(function(bar) {{
+        var rect = bar.getBoundingClientRect();
+        if (rect.top < window.parent.innerHeight) {{
+            bar.style.animationPlayState = 'running';
+        }} else {{
+            barObserver.observe(bar);
+        }}
+    }});
 }}, 400);
 </script>
     """, height=0)
