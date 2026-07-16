@@ -1153,7 +1153,7 @@ elif page == 'Calendar':
     month_sign2 = '+' if month_total_r > 0 else ''
     month_name = datetime(cal_year, cal_month, 1).strftime("%B %Y")
 
-   nav_left, nav_right = st.columns([7, 2])
+    nav_left, nav_right = st.columns([7, 2])
     nav_left.markdown(
         f'<div style="background:rgba({BG_TINT},0.05);border:1px solid rgba({BG_TINT},0.15);border-radius:20px;height:56px;display:flex;align-items:center;padding:0 20px;margin-bottom:16px;">'
         f'<div>'
