@@ -938,7 +938,7 @@ setTimeout(function() {{
     for idx_s, s in enumerate(session_stats):
         bar_pct = round(abs(s['exp']) / max_abs_exp * 100, 1)
         bar_color = f'linear-gradient(90deg,rgba({BG_TINT},0.6),{ACCENT})' if s['exp'] >= 0 else 'linear-gradient(90deg,rgba(248,113,113,0.6),#f87171)'
-        delay = idx_s * 150
+        delay = idx_s * 400
         session_rows_html += (
             f'<div style="display:grid;grid-template-columns:100px 1fr 70px 60px 40px;gap:16px;align-items:center;padding:10px 0;">'
             f'<span style="color:{ACCENT_SOFT};font-weight:600;">{s["session"]}</span>'
