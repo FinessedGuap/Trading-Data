@@ -1065,7 +1065,6 @@ setTimeout(function() {{
             f'<div class="glass-panel" style="text-align:center;padding:48px 24px;">'
             f'<div style="font-size:1.4em;margin-bottom:12px;">💰</div>'
             f'<div style="color:#fff;font-weight:600;margin-bottom:8px;">No trades yet</div>'
-            f'<div style="color:#5a6a88;font-size:0.85em;">Once you log trades with Type of Trade = "Funded" they\'ll appear here with full P&L and % tracking.</div>'
             f'</div>',
             unsafe_allow_html=True)
 
