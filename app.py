@@ -766,7 +766,7 @@ components.html("""
 # ============ SIDEBAR ============
 with st.sidebar:
     st.markdown(f'<div style="font-size:1.1em;font-weight:700;color:{TEXT_PRIMARY};padding:20px 16px 16px;border-bottom:1px solid {BORDER};margin-bottom:8px;">Trading Data</div>', unsafe_allow_html=True)
-    pages = [('📊', 'Overview'), ('💰', 'P&L Tracker'), ('📈', 'Charts'), ('🗓️', 'Calendar'), ('🔍', 'Edge Analysis'), ('🏆', 'Best Setups')]
+   pages = [('⊞', 'Overview'), ('◎', 'P&L Tracker'), ('⟋', 'Charts'), ('▦', 'Calendar'), ('⊙', 'Edge Analysis'), ('◈', 'Best Setups')]
     for icon, page_name in pages:
         if st.button(f"{icon}  {page_name}", key=f"nav_{page_name}", use_container_width=True):
             st.session_state.active_page = page_name
