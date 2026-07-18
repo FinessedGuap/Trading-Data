@@ -117,7 +117,7 @@ themes = {
     'Blue':    {'ACCENT': '#60a5fa', 'ACCENT_SOFT': '#7fb2f5', 'BG_TINT': '96,165,250'},
     'Purple':  {'ACCENT': '#a78bfa', 'ACCENT_SOFT': '#c4b5fd', 'BG_TINT': '167,139,250'},
     'Green':   {'ACCENT': '#34d399', 'ACCENT_SOFT': '#6ee7b7', 'BG_TINT': '52,211,153'},
-    'Gold':    {'ACCENT': '#fcd34d', 'ACCENT_SOFT': '#fde68a', 'BG_TINT': '252,211,77'},
+    'Red':     {'ACCENT': '#f87171', 'ACCENT_SOFT': '#fca5a5', 'BG_TINT': '248,113,113'},
     'Neutral': {'ACCENT': '#9ca3af', 'ACCENT_SOFT': '#d1d5db', 'BG_TINT': '156,163,175'},
 }
 active_theme = themes.get(st.session_state.theme, themes['Blue'])
@@ -777,7 +777,7 @@ with st.sidebar:
         st.session_state.authenticated = False
         st.rerun()
     st.markdown(f'<div style="border-top:1px solid rgba({BG_TINT},0.1);padding-top:12px;margin-top:12px;"><div style="font-size:0.6em;color:#444;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">Theme</div></div>', unsafe_allow_html=True)
-    theme_options = {'Blue': '#60a5fa', 'Purple': '#a78bfa', 'Green': '#34d399', 'Gold': '#fcd34d', 'Neutral': '#9ca3af'}
+    theme_options = {'Blue': '#60a5fa', 'Purple': '#a78bfa', 'Green': '#34d399', 'Red': '#f87171', 'Neutral': '#9ca3af'}
     theme_cols = st.columns(5)
     for i, (name, hex_color) in enumerate(theme_options.items()):
         is_active = st.session_state.theme == name
