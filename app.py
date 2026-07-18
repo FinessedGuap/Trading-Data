@@ -57,6 +57,17 @@ if not st.session_state.authenticated:
         border-color:rgba(96,165,250,0.5) !important;
         box-shadow:0 0 0 3px rgba(96,165,250,0.1) !important;
     }
+    div[data-testid="stTextInput"] > div > div {
+        border:none !important;
+        background:transparent !important;
+        box-shadow:none !important;
+        padding:0 !important;
+    }
+    div[data-testid="stTextInput"] > div > div > div {
+        border:none !important;
+        background:transparent !important;
+        box-shadow:none !important;
+    }
     div[data-testid="stTextInput"] input::-webkit-credentials-auto-fill-button,
     div[data-testid="stTextInput"] input::-webkit-contacts-auto-fill-button { display:none !important; }
     input[type="password"]::-ms-reveal, input[type="password"]::-ms-clear { display:none !important; }
