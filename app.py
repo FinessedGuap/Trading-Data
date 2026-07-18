@@ -818,17 +818,12 @@ components.html("""
             var doc = window.parent.document;
             var el = doc.querySelector('section.stMain');
             if (el) el.scrollTop = 0;
-            doc.querySelector('.stMain') && (doc.querySelector('.stMain').scrollTop = 0);
-        } catch(e) {}
-        try {
-            window.parent.parent.document.querySelector('section.stMain') && 
-            (window.parent.parent.document.querySelector('section.stMain').scrollTop = 0);
         } catch(e) {}
     }
-    scroll();
     setTimeout(scroll, 100);
-    setTimeout(scroll, 300);
-    setTimeout(scroll, 600);
+    setTimeout(scroll, 400);
+    setTimeout(scroll, 800);
+    setTimeout(scroll, 1200);
 })();
 </script>
 """, height=0)
