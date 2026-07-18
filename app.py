@@ -728,6 +728,12 @@ css = f"""
     border:none !important; background:transparent !important; overflow:hidden !important;
     box-shadow:none !important;
   }}
+  #mode_toggle div[data-testid="stButton"] button,
+  div[data-testid="stButton"] button[kind="secondary"][data-testid="mode_toggle"] {{
+    border-radius:50% !important; width:40px !important; height:40px !important;
+    min-height:40px !important; max-width:40px !important; padding:0 !important;
+    font-size:1.1em !important;
+  }}
   .cal-arrows div[data-testid="stButton"] button {{
     min-height:44px !important; max-height:44px !important; height:44px !important;
     border-radius:10px !important; font-size:1em !important;
@@ -788,10 +794,13 @@ with st.sidebar:
     # Dark/Light toggle at bottom
     st.markdown('<div style="flex:1;"></div>', unsafe_allow_html=True)
     st.markdown(f'<div style="border-top:1px solid {BORDER};padding-top:12px;margin-top:16px;"></div>', unsafe_allow_html=True)
-    mode_label = "☀️  Light Mode" if IS_DARK else "🌙  Dark Mode"
-    if st.button(mode_label, key="mode_toggle", use_container_width=True):
-        st.session_state.dark_mode = not st.session_state.dark_mode
-        st.rerun()
+    mode_icon = "☀️" if IS_DARK else "🌙"
+    col_gap, col_btn = st.columns([3, 1])
+    col_gap.markdown(f'<div style="font-size:0.7em;color:{TEXT_MUTED};padding-top:10px;">{("Light Mode" if IS_DARK else "Dark Mode")}</div>', unsafe_allow_html=True)
+    with col_btn:
+        if st.button(mode_icon, key="mode_toggle", use_container_width=True):
+            st.session_state.dark_mode = not st.session_state.dark_mode
+            st.rerun()
 
 page = st.session_state.active_page
 st.markdown('<div class="main-content">', unsafe_allow_html=True)
