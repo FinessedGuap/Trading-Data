@@ -782,10 +782,14 @@ with st.sidebar:
     pages = [(svg_overview, 'Overview'), (svg_pnl, 'P&L Tracker'), (svg_charts, 'Charts'), (svg_calendar, 'Calendar'), (svg_edge, 'Edge Analysis'), (svg_best, 'Best Setups')]
     for icon, page_name in pages:
         is_active = st.session_state.active_page == page_name
-        label = f"› {page_name}" if is_active else f"{page_name}"
-        if st.button(label, key=f"nav_{page_name}", use_container_width=True):
-            st.session_state.active_page = page_name
-            st.rerun()
+        if is_active:
+            st.markdown(
+                f'<div style="background:rgba({BG_TINT},0.1);border-left:3px solid {ACCENT};border-radius:8px;padding:9px 14px;margin-bottom:4px;font-size:0.85em;font-weight:600;color:{ACCENT};">{page_name}</div>',
+                unsafe_allow_html=True)
+        else:
+            if st.button(page_name, key=f"nav_{page_name}", use_container_width=True):
+                st.session_state.active_page = page_name
+                st.rerun()
     st.markdown('<div style="margin-top:20px;"></div>', unsafe_allow_html=True)
     if st.button("↻ Refresh", key="refresh_btn", use_container_width=True):
         st.cache_data.clear()
