@@ -815,15 +815,21 @@ components.html("""
 (function() {
     function scroll() {
         try {
-            var doc = window.parent.document;
-            var el = doc.querySelector('section.stMain');
+            var el = window.parent.document.querySelector('section.stMain');
             if (el) el.scrollTop = 0;
         } catch(e) {}
     }
-    setTimeout(scroll, 100);
-    setTimeout(scroll, 400);
-    setTimeout(scroll, 800);
-    setTimeout(scroll, 1200);
+    scroll();
+    var observer = new MutationObserver(function() {
+        scroll();
+    });
+    try {
+        observer.observe(window.parent.document.body, {
+            childList: true,
+            subtree: true
+        });
+        setTimeout(function() { observer.disconnect(); }, 2000);
+    } catch(e) {}
 })();
 </script>
 """, height=0)
