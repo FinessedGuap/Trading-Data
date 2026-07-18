@@ -750,7 +750,10 @@ css = f"""
   .cal-arrows div[data-testid="stButton"] button {{
     min-height:44px !important; max-height:44px !important; height:44px !important;
     border-radius:10px !important; font-size:1em !important;
-    padding:0 !important; margin:0 !important;
+    padding:0 !important; margin:0 !important; margin-bottom:16px !important;
+  }}
+  .cal-arrows div[data-testid="stVerticalBlock"] {{
+    gap:0 !important; padding:0 !important;
   }}
 </style>
 """
@@ -1224,7 +1227,7 @@ elif page == 'Calendar':
         f'<div style="font-size:0.75em;color:{ACCENT};font-weight:600;">{month_sign2}{round(month_total_r,2)}R</div>'
         f'</div></div>', unsafe_allow_html=True)
     with nav_right:
-        st.markdown('<div class="cal-arrows">', unsafe_allow_html=True)
+        st.markdown('<div class="cal-arrows" style="margin-top:0;padding-top:0;">', unsafe_allow_html=True)
         arr_l, arr_r = st.columns(2)
         with arr_l:
             if st.button("‹", key="prev_month", use_container_width=True):
