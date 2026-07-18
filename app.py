@@ -48,6 +48,11 @@ if not st.session_state.authenticated:
         border-radius:12px !important; color:#fff !important;
         padding:12px 16px !important; font-size:0.95em !important;
     }
+    div[data-testid="stTextInput"] > div {
+        border:none !important; background:transparent !important;
+        box-shadow:none !important;
+    }
+    div[data-testid="stTextInput"] > label { display:none !important; }
     div[data-testid="stTextInput"] input:focus {
         border-color:rgba(96,165,250,0.5) !important;
         box-shadow:0 0 0 3px rgba(96,165,250,0.1) !important;
@@ -67,7 +72,7 @@ if not st.session_state.authenticated:
         </div>
         """, unsafe_allow_html=True)
         with st.form("login_form"):
-            pw = st.text_input("Password", type="password", label_visibility="collapsed", placeholder="Enter your password", autocomplete="off")
+            pw = st.text_input("Password", type="password", label_visibility="collapsed", placeholder="Enter your password", autocomplete="off", help="")
             st.markdown('<div style="margin-top:12px;"></div>', unsafe_allow_html=True)
             submitted = st.form_submit_button("Enter Dashboard", use_container_width=True)
             if submitted:
