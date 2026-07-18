@@ -813,25 +813,16 @@ st.markdown('<a name="top"></a>', unsafe_allow_html=True)
 components.html("""
 <script>
 (function() {
-    var attempts = 0;
     function scroll() {
-        attempts++;
-        var found = false;
         var doc = window.parent.document;
-        var scrollers = doc.querySelectorAll('[data-testid="stAppViewContainer"], [data-testid="stMainBlockContainer"], .main, .block-container, section.main');
-        scrollers.forEach(function(el) {
-            if (el.scrollHeight > el.clientHeight) {
-                el.scrollTo({top: 0, behavior: 'instant'});
-                found = true;
-            }
-        });
-        window.parent.scrollTo(0, 0);
-        if (!found && attempts < 10) setTimeout(scroll, 100);
+        var el = doc.querySelector('section.stMain');
+        if (el) {
+            el.scrollTop = 0;
+        }
     }
     scroll();
     setTimeout(scroll, 50);
     setTimeout(scroll, 200);
-    setTimeout(scroll, 500);
 })();
 </script>
 """, height=0)
