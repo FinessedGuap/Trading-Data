@@ -756,26 +756,6 @@ css = f"""
 """
 st.markdown(css, unsafe_allow_html=True)
 
-components.html("""
-<script>
-(function() {
-    function tryScroll() {
-        try {
-            var w = window.parent;
-            var el = w.document.querySelector('[data-testid="stAppViewBlockContainer"]');
-            if (!el) el = w.document.querySelector('[data-testid="stMainBlockContainer"]');
-            if (!el) el = w.document.querySelector('.main');
-            if (el) el.scrollTop = 0;
-            w.scrollTo({top: 0, behavior: 'instant'});
-        } catch(e) {}
-    }
-    tryScroll();
-    setTimeout(tryScroll, 100);
-    setTimeout(tryScroll, 300);
-})();
-</script>
-""", height=0)
-
 # ============ SIDEBAR ============
 with st.sidebar:
     st.markdown(f'<div style="font-size:1.1em;font-weight:700;color:{TEXT_PRIMARY};padding:20px 16px 16px;border-bottom:1px solid {BORDER};margin-bottom:8px;">Trading Data</div>', unsafe_allow_html=True)
@@ -829,7 +809,32 @@ with st.sidebar:
 
 page = st.session_state.active_page
 st.markdown('<div class="main-content">', unsafe_allow_html=True)
-
+st.markdown('<a name="top"></a>', unsafe_allow_html=True)
+components.html("""
+<script>
+(function() {
+    var attempts = 0;
+    function scroll() {
+        attempts++;
+        var found = false;
+        var doc = window.parent.document;
+        var scrollers = doc.querySelectorAll('[data-testid="stAppViewContainer"], [data-testid="stMainBlockContainer"], .main, .block-container, section.main');
+        scrollers.forEach(function(el) {
+            if (el.scrollHeight > el.clientHeight) {
+                el.scrollTo({top: 0, behavior: 'instant'});
+                found = true;
+            }
+        });
+        window.parent.scrollTo(0, 0);
+        if (!found && attempts < 10) setTimeout(scroll, 100);
+    }
+    scroll();
+    setTimeout(scroll, 50);
+    setTimeout(scroll, 200);
+    setTimeout(scroll, 500);
+})();
+</script>
+""", height=0)
 # ============ PAGE: OVERVIEW ============
 if page == 'Overview':
     st.markdown(f'<div style="font-size:1.6em;font-weight:700;color:{TEXT_PRIMARY};margin-bottom:4px;">Overview</div>', unsafe_allow_html=True)
