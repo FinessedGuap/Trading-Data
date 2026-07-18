@@ -814,15 +814,21 @@ components.html("""
 <script>
 (function() {
     function scroll() {
-        var doc = window.parent.document;
-        var el = doc.querySelector('section.stMain');
-        if (el) {
-            el.scrollTop = 0;
-        }
+        try {
+            var doc = window.parent.document;
+            var el = doc.querySelector('section.stMain');
+            if (el) el.scrollTop = 0;
+            doc.querySelector('.stMain') && (doc.querySelector('.stMain').scrollTop = 0);
+        } catch(e) {}
+        try {
+            window.parent.parent.document.querySelector('section.stMain') && 
+            (window.parent.parent.document.querySelector('section.stMain').scrollTop = 0);
+        } catch(e) {}
     }
     scroll();
-    setTimeout(scroll, 50);
-    setTimeout(scroll, 200);
+    setTimeout(scroll, 100);
+    setTimeout(scroll, 300);
+    setTimeout(scroll, 600);
 })();
 </script>
 """, height=0)
