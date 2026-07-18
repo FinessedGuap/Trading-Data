@@ -18,7 +18,7 @@ if not st.session_state.authenticated:
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
     .stApp {
         background:#070b14;
-        background-image: url('https://images.unsplash.com/photo-1544636331-e26879cd4d9b?w=1600&q=80');
+        background-image: url('https://images.unsplash.com/photo-1621135802920-133df287f89c?w=1600&q=80');
         background-size: cover;
         background-position: center;
         background-attachment: fixed;
