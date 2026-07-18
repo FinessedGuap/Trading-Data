@@ -781,7 +781,9 @@ with st.sidebar:
     svg_best = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>'
     pages = [(svg_overview, 'Overview'), (svg_pnl, 'P&L Tracker'), (svg_charts, 'Charts'), (svg_calendar, 'Calendar'), (svg_edge, 'Edge Analysis'), (svg_best, 'Best Setups')]
     for icon, page_name in pages:
-        if st.button(f"{page_name}", key=f"nav_{page_name}", use_container_width=True):
+        is_active = st.session_state.active_page == page_name
+        label = f"› {page_name}" if is_active else f"{page_name}"
+        if st.button(label, key=f"nav_{page_name}", use_container_width=True):
             st.session_state.active_page = page_name
             st.rerun()
     st.markdown('<div style="margin-top:20px;"></div>', unsafe_allow_html=True)
