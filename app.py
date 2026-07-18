@@ -729,6 +729,12 @@ css = f"""
   section[data-testid="stSidebar"] div[data-testid="stButton"] button:hover {{
     border-color:{ACCENT} !important;
   }}
+  section[data-testid="stSidebar"] div[data-testid="stMarkdownContainer"] {{
+    margin:0 !important; padding:0 !important;
+  }}
+  section[data-testid="stSidebar"] div[data-testid="stMarkdownContainer"] p {{
+    margin:0 !important; padding:0 !important;
+  }}
   section[data-testid="stSidebar"] div[data-testid="stButton"] button[data-testid="baseButton-secondary"] {{
     min-height:6px !important; max-height:6px !important; height:6px !important;
     opacity:0 !important; padding:0 !important; margin:0 !important;
