@@ -809,6 +809,29 @@ with st.sidebar:
 
 page = st.session_state.active_page
 st.markdown('<div class="main-content">', unsafe_allow_html=True)
+components.html("""
+<script>
+(function() {
+    function scroll() {
+        try {
+            var el = window.parent.document.querySelector('section.stMain');
+            if (el) el.scrollTop = 0;
+        } catch(e) {}
+    }
+    scroll();
+    var observer = new MutationObserver(function() {
+        scroll();
+    });
+    try {
+        observer.observe(window.parent.document.body, {
+            childList: true,
+            subtree: true
+        });
+        setTimeout(function() { observer.disconnect(); }, 2000);
+    } catch(e) {}
+})();
+</script>
+""", height=0)
 st.markdown('<a name="top"></a>', unsafe_allow_html=True)
 
 # ============ PAGE: OVERVIEW ============
