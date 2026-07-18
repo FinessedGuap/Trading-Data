@@ -713,17 +713,17 @@ css = f"""
   .checklist-item {{ display:flex; align-items:flex-start; gap:12px; padding:10px 0; border-bottom:1px solid {BORDER}; }}
   .checklist-dot {{ width:8px; height:8px; border-radius:50%; margin-top:5px; flex-shrink:0; }}
   .glass-panel div::-webkit-scrollbar {{ display:none; }}
-  section[data-testid="stSidebar"] div[data-testid="stButton"] button {{
+ section[data-testid="stSidebar"] div[data-testid="stButton"] button {{
     min-height:40px !important; background:{BG_CARD} !important;
     border:1px solid {BORDER} !important; color:{TEXT_PRIMARY} !important;
     border-radius:10px !important; font-size:0.85em !important;
     box-shadow:0 1px 4px {SHADOW} !important;
     text-align:left !important; padding-left:14px !important;
+    display:flex !important; align-items:center !important;
+    justify-content:flex-start !important;
   }}
-  section[data-testid="stSidebar"] div[data-testid="stButton"] button p {{
+  section[data-testid="stSidebar"] div[data-testid="stButton"] button * {{
     text-align:left !important;
-  }}
-  section[data-testid="stSidebar"] div[data-testid="stButton"] button > div {{
     justify-content:flex-start !important;
   }}
   section[data-testid="stSidebar"] div[data-testid="stButton"] button:hover {{
