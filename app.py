@@ -812,23 +812,15 @@ st.markdown('<div class="main-content">', unsafe_allow_html=True)
 components.html("""
 <script>
 (function() {
-    function scroll() {
+    var interval = setInterval(function() {
         try {
             var el = window.parent.document.querySelector('section.stMain');
-            if (el) el.scrollTop = 0;
+            if (el && el.scrollTop > 0) {
+                el.scrollTop = 0;
+            }
         } catch(e) {}
-    }
-    scroll();
-    var observer = new MutationObserver(function() {
-        scroll();
-    });
-    try {
-        observer.observe(window.parent.document.body, {
-            childList: true,
-            subtree: true
-        });
-        setTimeout(function() { observer.disconnect(); }, 2000);
-    } catch(e) {}
+    }, 50);
+    setTimeout(function() { clearInterval(interval); }, 3000);
 })();
 </script>
 """, height=0)
