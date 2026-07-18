@@ -718,6 +718,7 @@ css = f"""
     border:1px solid {BORDER} !important; color:{TEXT_PRIMARY} !important;
     border-radius:10px !important; font-size:0.85em !important;
     box-shadow:0 1px 4px {SHADOW} !important;
+    text-align:left !important; padding-left:14px !important;
   }}
   section[data-testid="stSidebar"] div[data-testid="stButton"] button:hover {{
     border-color:{ACCENT} !important;
