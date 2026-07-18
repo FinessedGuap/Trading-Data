@@ -720,6 +720,12 @@ css = f"""
     box-shadow:0 1px 4px {SHADOW} !important;
     text-align:left !important; padding-left:14px !important;
   }}
+  section[data-testid="stSidebar"] div[data-testid="stButton"] button p {{
+    text-align:left !important;
+  }}
+  section[data-testid="stSidebar"] div[data-testid="stButton"] button > div {{
+    justify-content:flex-start !important;
+  }}
   section[data-testid="stSidebar"] div[data-testid="stButton"] button:hover {{
     border-color:{ACCENT} !important;
   }}
