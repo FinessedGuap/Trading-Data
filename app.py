@@ -784,7 +784,7 @@ with st.sidebar:
         is_active = st.session_state.active_page == page_name
         if is_active:
             st.markdown(
-                f'<div style="background:rgba({BG_TINT},0.1);border-left:3px solid {ACCENT};border-radius:8px;padding:9px 14px;margin-bottom:4px;font-size:0.85em;font-weight:600;color:{ACCENT};">{page_name}</div>',
+                f'<div style="background:rgba({BG_TINT},0.1);border-left:3px solid {ACCENT};border-radius:8px;padding:9px 14px;margin:0;font-size:0.85em;font-weight:600;color:{ACCENT};line-height:1.6;">{page_name}</div>',
                 unsafe_allow_html=True)
         else:
             if st.button(page_name, key=f"nav_{page_name}", use_container_width=True):
