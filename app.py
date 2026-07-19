@@ -64,16 +64,14 @@ if not st.session_state.authenticated:
             <div style="color:rgba(255,255,255,0.25);font-size:0.82em;margin-bottom:32px;">Your personal trading journal</div>
         </div>
         """, unsafe_allow_html=True)
-        with st.form("login_form"):
-            pw = st.text_input("Password", type="password", label_visibility="collapsed", placeholder="Password", autocomplete="off", help="")
-            st.markdown('<div style="margin-top:8px;"></div>', unsafe_allow_html=True)
-            submitted = st.form_submit_button("Enter", use_container_width=True)
-            if submitted:
-                if pw == PASSWORD:
-                    st.session_state.authenticated = True
-                    st.rerun()
-                else:
-                    st.error("Incorrect password")
+       pw = st.text_input("Password", type="password", label_visibility="collapsed", placeholder="Password", autocomplete="off", help="")
+        st.markdown('<div style="margin-top:8px;"></div>', unsafe_allow_html=True)
+        if st.button("Enter", use_container_width=True):
+            if pw == PASSWORD:
+                st.session_state.authenticated = True
+                st.rerun()
+            else:
+                st.error("Incorrect password")
     st.stop()
 
 NOTION_TOKEN = st.secrets["NOTION_TOKEN"]
