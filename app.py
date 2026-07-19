@@ -1349,6 +1349,61 @@ elif page == 'Calendar':
             st.markdown(f'<div class="trade-detail-card"><span style="color:{pair_color};font-weight:700;font-size:1.1em;">{label}</span><span style="color:{TEXT_SECONDARY};"> &nbsp;·&nbsp; Trade #{trade_no} &nbsp;·&nbsp; <span style="color:{pair_color};">{pair}</span></span><span style="color:{TEXT_PRIMARY};font-weight:700;float:right;">{sign}{r_val}R</span></div>', unsafe_allow_html=True)
         if st.button("Close"):
             st.session_state.selected_day = None; st.rerun()
+            # ============ BEST DAY OF WEEK ============
+    st.markdown('<hr class="divider-line">', unsafe_allow_html=True)
+    st.markdown(f'<div style="color:{ACCENT_SOFT};font-size:0.72em;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:14px;">Best Day of the Week</div>', unsafe_allow_html=True)
+
+    if len(df_main) > 0 and 'Date' in df_main.columns:
+        df_dow = df_main.dropna(subset=['Date', 'R_Result']).copy()
+        df_dow['dow'] = df_dow['Date'].dt.day_name()
+        day_order = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
+        dow_stats = []
+        for day in day_order:
+            sub = df_dow[df_dow['dow'] == day]
+            r = sub['R_Result'].dropna()
+            n = len(r)
+            if n == 0:
+                continue
+            wins = int((r > 0).sum())
+            losses = int((r < 0).sum())
+            non_be = wins + losses
+            wr = round(wins / non_be * 100, 1) if non_be > 0 else 0
+            exp = round(r.sum() / n, 2)
+            dow_stats.append({'day': day, 'short': day[:3], 'exp': exp, 'wr': wr, 'n': n})
+
+        if dow_stats:
+            dow_stats_sorted = sorted(dow_stats, key=lambda x: x['exp'], reverse=True)
+            best_day = dow_stats_sorted[0]
+            best_color = '#4ade80' if best_day['exp'] >= 0 else '#f87171'
+            best_sign = '+' if best_day['exp'] >= 0 else ''
+
+            dow_cols = st.columns([1, 2])
+            with dow_cols[0]:
+                st.markdown(
+                    f'<div style="background:rgba(74,222,128,0.08);border:1px solid rgba(74,222,128,0.25);border-radius:14px;padding:16px;text-align:center;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;">'
+                    f'<div style="font-size:0.6em;color:#4ade80;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Best Day</div>'
+                    f'<div style="font-size:1.6em;font-weight:800;color:{TEXT_PRIMARY};margin-bottom:4px;">{best_day["day"]}</div>'
+                    f'<div style="font-size:1em;font-weight:700;color:{best_color};">{best_sign}{best_day["exp"]}R avg</div>'
+                    f'<div style="font-size:0.65em;color:{TEXT_SECONDARY};margin-top:4px;">{best_day["wr"]}% WR · {best_day["n"]} trades</div>'
+                    f'</div>', unsafe_allow_html=True)
+
+            with dow_cols[1]:
+                rows = ''
+                for i, d in enumerate(dow_stats_sorted):
+                    color = '#4ade80' if d['exp'] >= 0 else '#f87171'
+                    sign = '+' if d['exp'] >= 0 else ''
+                    rank_color = RANK_COLORS[i] if i < len(RANK_COLORS) else TEXT_MUTED
+                    rows += (
+                        f'<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid {BORDER};">'
+                        f'<span style="color:{rank_color};font-size:0.7em;font-weight:700;min-width:20px;">#{i+1}</span>'
+                        f'<span style="color:{TEXT_PRIMARY};font-size:0.82em;font-weight:600;flex:1;margin-left:8px;">{d["day"]}</span>'
+                        f'<span style="color:{color};font-size:0.82em;font-weight:700;min-width:50px;text-align:right;">{sign}{d["exp"]}R</span>'
+                        f'<span style="color:{ACCENT_SOFT};font-size:0.78em;min-width:40px;text-align:right;">{d["wr"]}%</span>'
+                        f'<span style="color:{TEXT_MUTED};font-size:0.75em;min-width:25px;text-align:right;">{d["n"]}t</span>'
+                        f'</div>')
+                st.markdown(
+                    f'<div style="background:rgba({BG_TINT},0.05);border:1px solid {BORDER};border-radius:14px;padding:14px;">'
+                    f'{rows}</div>', unsafe_allow_html=True)
 
 # ============ PAGE: EDGE ANALYSIS ============
 elif page == 'Edge Analysis':
