@@ -806,47 +806,47 @@ css = f"""
   }}
 
   /* Mobile content offset */
- @media (max-width: 768px) {{
-    /* Sidebar touch friendly */
-    section[data-testid="stSidebar"] div[data-testid="stButton"] button {{
-      min-height:52px !important; font-size:1em !important;
-      border-radius:12px !important; margin-bottom:2px !important;
-    }}
-    section[data-testid="stSidebar"] > div:first-child {{
-      padding-top:8px !important;
-    }}
+  @media (max-width: 768px) {{
+    .mob-nav {{ display: flex !important; }}
+    section[data-testid="stSidebar"] {{ display: none !important; }}
+    .main-content {{ margin-left: 68px !important; }}
+    section[data-testid="stMain"] > div {{ padding-left: 74px !important; padding-right: 12px !important; }}
 
     /* Banner 2x2 on mobile */
-    #overview-banner {{
-      display:grid !important;
-      grid-template-columns:1fr 1fr !important;
-      padding:14px !important;
+    .mob-banner-grid {{
+      display: grid !important;
+      grid-template-columns: 1fr 1fr !important;
+      gap: 0 !important;
     }}
-    .mob-banner-divider {{ display:none !important; }}
     .mob-banner-item {{
-      padding:10px !important;
+      border-right: none !important;
+      padding: 10px !important;
+    }}
+    .mob-banner-item:nth-child(1),
+    .mob-banner-item:nth-child(2) {{
+      border-bottom: 1px solid rgba({BG_TINT}, 0.1) !important;
+    }}
+    .mob-banner-item:nth-child(1),
+    .mob-banner-item:nth-child(3) {{
+      border-right: 1px solid rgba({BG_TINT}, 0.1) !important;
     }}
 
     /* Stat cards 2 col on mobile */
-    #desktop-stat-rows > div {{
-      grid-template-columns:1fr 1fr !important;
+    .mob-stat-grid {{
+      display: grid !important;
+      grid-template-columns: 1fr 1fr !important;
+      gap: 8px !important;
     }}
 
-    /* Calendar compact */
-    .cal-header {{ font-size:0.55em !important; padding:6px 0 !important; }}
-    .cal-week-r {{ font-size:0.9em !important; }}
+    /* Edge analysis single col on mobile */
+    .mob-ea-single {{ display: block !important; }}
+    .mob-ea-single > div {{ width: 100% !important; }}
 
-    /* Edge analysis single column */
-    div[data-testid="stHorizontalBlock"] > div[data-testid="stVerticalBlock"] {{
-      min-width:100% !important;
-    }}
+    /* Cal compact on mobile */
+    .cal-header {{ font-size: 0.55em !important; padding: 6px 0 !important; }}
 
-    /* Reduce padding */
-    .glass-panel {{ padding:14px !important; }}
-    section[data-testid="stMain"] > div {{
-      padding-left:8px !important;
-      padding-right:8px !important;
-    }}
+    /* Reduce padding on mobile */
+    .glass-panel {{ padding: 14px !important; }}
   }}
 </style>
 """
@@ -855,6 +855,23 @@ st.markdown(css, unsafe_allow_html=True)
 # ============ MOBILE NAV HTML ============
 page = st.session_state.active_page
 pages_list = ['Overview', 'P&L Tracker', 'Charts', 'Calendar', 'Edge Analysis', 'Best Setups']
+
+mob_nav_html = f'<div class="mob-nav">'
+mob_nav_html += f'<div style="font-size:0.45em;font-weight:700;color:{TEXT_MUTED};letter-spacing:1px;margin-bottom:8px;">TD</div>'
+for p in pages_list:
+    active_class = 'active' if page == p else ''
+    short = p.replace('P&L Tracker', 'P&L').replace('Edge Analysis', 'Edge').replace('Best Setups', 'Best')
+    mob_nav_html += (
+        f'<div class="mob-nav-item {active_class}" onclick="window.location.href=\'?page={p.replace(" ", "_")}\'">'
+        f'<span class="mob-nav-icon">{MOB_ICONS[p]}</span>'
+        f'<span class="mob-nav-label">{short}</span>'
+        f'</div>'
+    )
+mob_nav_html += f'<div class="mob-nav-divider"></div>'
+mob_nav_html += f'<div class="mob-nav-bottom">'
+mob_nav_html += f'<div class="mob-nav-item" onclick="window.location.reload()" style="color:{TEXT_SECONDARY}"><span class="mob-nav-icon">↻</span><span class="mob-nav-label">Refresh</span></div>'
+mob_nav_html += f'</div></div>'
+st.markdown(mob_nav_html, unsafe_allow_html=True)
 
 # Handle mobile nav clicks via query params
 query_params = st.query_params
