@@ -7,8 +7,7 @@ import calendar as cal_module
 import math
 
 from PIL import Image
-import os
-icon = Image.open(os.path.join(os.path.dirname(__file__), "td_logo.png"))
+icon = Image.open("/mount/src/trading-data/td_logo.png")
 st.set_page_config(page_title="Trading Data", page_icon=icon, layout="wide", initial_sidebar_state="collapsed")
 
 PASSWORD = st.secrets.get("DASHBOARD_PASSWORD", "trading123")
