@@ -670,7 +670,7 @@ with st.sidebar:
         active_t = st.session_state.theme == name
         bdr = '2px solid #fff' if active_t else f'2px solid transparent'
         tcols[i].markdown(f'<div style="width:20px;height:20px;border-radius:50%;background:{hex_c};border:{bdr};margin:auto;"></div>', unsafe_allow_html=True)
-        if tcols[i].button(" ", key=f"t_{name}", use_container_width=True):
+        if tcols[i].button(" ", key=f"theme_{name}", use_container_width=True):
             st.session_state.theme = name; st.rerun()
 
     st.markdown(f'<div style="border-top:1px solid {BORDER};padding-top:12px;margin-top:12px;"></div>', unsafe_allow_html=True)
@@ -694,7 +694,6 @@ if page == 'Overview':
     month_sign = '+' if this_month_r > 0 else ''
 
     st.markdown(f'<div style="font-size:1.5em;font-weight:700;color:{TEXT};margin-bottom:2px;">Overview</div>', unsafe_allow_html=True)
-    st.markdown(f'<div style="font-size:0.78em;color:{TEXT2};margin-bottom:24px;">{main_stats.get("total_trades","—")} trades logged</div>', unsafe_allow_html=True)
 
     # Clean banner — no borders
     st.markdown(
@@ -865,7 +864,6 @@ setTimeout(function() {{
 # ============ P&L TRACKER ============
 elif page == 'P&L Tracker':
     st.markdown(f'<div style="font-size:1.5em;font-weight:700;color:{TEXT};margin-bottom:2px;">P&L Tracker</div>', unsafe_allow_html=True)
-    st.markdown(f'<div style="font-size:0.78em;color:{TEXT2};margin-bottom:24px;">Funded trades only · Account size fixed at $50,000</div>', unsafe_allow_html=True)
 
     _, num_col, _ = st.columns([2,1,2])
     with num_col:
@@ -999,7 +997,7 @@ setTimeout(function(){{
             f'</div>', unsafe_allow_html=True)
 
     else:
-        st.markdown(f'<div class="v3-panel" style="text-align:center;padding:48px;"><div style="font-size:1.2em;margin-bottom:8px;">💰</div><div style="color:{TEXT2};">No funded trades yet</div></div>', unsafe_allow_html=True)
+       st.markdown(f'<div class="v3-panel" style="text-align:center;padding:48px;"><div style="color:{TEXT2};">No trades yet</div></div>', unsafe_allow_html=True)
 
 # ============ CHARTS ============
 elif page == 'Charts':
@@ -1188,7 +1186,6 @@ elif page == 'Calendar':
 # ============ EDGE ANALYSIS ============
 elif page == 'Edge Analysis':
     st.markdown(f'<div style="font-size:1.5em;font-weight:700;color:{TEXT};margin-bottom:4px;">Edge Analysis</div>', unsafe_allow_html=True)
-    st.markdown(f'<div style="font-size:0.75em;color:{TEXT2};margin-bottom:24px;">Top 3 per category · min 2 trades</div>', unsafe_allow_html=True)
 
     ea1, ea2 = st.columns(2)
     with ea1:
