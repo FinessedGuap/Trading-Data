@@ -1125,7 +1125,7 @@ setTimeout(function() {{
         pnl_progress = min(round(max(total_pnl_funded, 0) / goal_pnl * 100, 1), 100)
         wr_progress = min(round(current_wr / goal_wr * 100, 1), 100)
        # Calculate dollar drawdown from individual trade losses
-       df_dd = df_funded_clean.copy().sort_values('Date').reset_index(drop=True)
+        df_dd = df_funded_clean.copy().sort_values('Date').reset_index(drop=True)
         if 'Risk Management' in df_dd.columns:
             df_dd['risk_pct'] = pd.to_numeric(df_dd['Risk Management'].str.replace('%', '').str.strip(), errors='coerce').fillna(avg_risk_pct)
             df_dd['trade_pnl'] = df_dd['R_Result'] * df_dd['risk_pct'] / 100 * account_size * num_accounts
