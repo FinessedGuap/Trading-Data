@@ -1131,17 +1131,6 @@ setTimeout(function() {{
             df_dd['trade_pnl'] = df_dd['R_Result'] * df_dd['risk_pct'] / 100 * account_size * num_accounts
         else:
             df_dd['trade_pnl'] = df_dd['R_Result'] * combined_risk
-        equity = df_dd['trade_pnl'].cumsum()
-        current_equity = equity.iloc[-1]
-        if current_equity >= 0:
-            dd_val = 0
-        else:
-            peak = equity.cummax()
-            current_dd = current_equity - peak.iloc[-1]
-            dd_val = abs(current_dd) if current_dd < 0 else 0
-        dd_progress = min(round(dd_val / goal_dd * 100, 1), 100)
-        dd_color = '#f87171' if dd_progress >= 80 else ('#fbbf24' if dd_progress >= 50 else '#4ade80')
-        dd_label = '⚠ Getting close!' if dd_progress >= 80 else ('Halfway there' if dd_progress >= 50 else 'Safe')
         pnl_remaining = round(max(goal_pnl - max(total_pnl_funded, 0), 0), 2)
 
         goal_cols = st.columns(3)
@@ -1172,15 +1161,11 @@ setTimeout(function() {{
             f'<div style="font-size:0.62em;color:{TEXT_SECONDARY};text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Max Drawdown</div>'
             f'<div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:10px;">'
             f'<span style="font-size:1.2em;font-weight:700;color:{TEXT_PRIMARY};">-${dd_val:,.0f}</span>'
-            f'<span style="font-size:0.72em;color:{TEXT_SECONDARY};">/ ${goal_dd:,} limit</span></div>'
             f'<div style="background:rgba({BG_TINT},0.1);border-radius:6px;height:6px;overflow:hidden;">'
-            f'<div style="width:{dd_progress}%;height:100%;background:linear-gradient(90deg,rgba({BG_TINT},0.6),{ACCENT});border-radius:6px;"></div></div>'
-            f'<div style="color:{dd_color};font-size:0.65em;margin-top:6px;">{dd_progress}% used · {dd_label}</div>'
             f'</div>', unsafe_allow_html=True)
 
         pnl_dash = round(239 - (pnl_progress / 100) * 239)
         wr_dash = round(239 - (wr_progress / 100) * 239)
-        dd_dash = round(239 - (dd_progress / 100) * 239)
         st.markdown(
             f'<div style="background:rgba({BG_TINT},0.05);border:1px solid rgba({BG_TINT},0.15);border-radius:16px;padding:20px;display:flex;justify-content:space-around;align-items:center;margin-top:10px;">'
             f'<div style="text-align:center;"><div style="position:relative;width:90px;height:90px;margin:0 auto;">'
@@ -1201,9 +1186,7 @@ setTimeout(function() {{
             f'<svg viewBox="0 0 100 100" style="width:90px;height:90px;transform:rotate(-90deg);">'
             f'<circle cx="50" cy="50" r="38" fill="none" stroke="rgba({BG_TINT},0.1)" stroke-width="10"/>'
             f'<circle cx="50" cy="50" r="38" fill="none" stroke="{ACCENT}" stroke-width="10" stroke-dasharray="239" stroke-dashoffset="{dd_dash}" stroke-linecap="round"/></svg>'
-            f'<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:0.82em;font-weight:700;color:{TEXT_PRIMARY};">{dd_progress}%</div>'
             f'</div><div style="font-size:0.72em;font-weight:600;color:{TEXT_PRIMARY};margin-top:6px;">-${dd_val:,.0f}</div>'
-            f'<div style="font-size:0.58em;color:{TEXT_SECONDARY};">DD limit</div></div>'
             f'</div>', unsafe_allow_html=True)
 
     else:
