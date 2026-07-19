@@ -1038,9 +1038,9 @@ setTimeout(function() {{
 
     st.markdown(f'<div class="section-label">Performance</div>', unsafe_allow_html=True)
     overviews = [
-        {{'label': 'Overall', 'stats': main_stats, 'color': ACCENT_SOFT}},
-        {{'label': 'XAUUSD', 'stats': xau_stats, 'color': GOLD_SOFT}},
-        {{'label': 'NASDAQ', 'stats': nas_stats, 'color': PURPLE_SOFT}},
+        {'label': 'Overall', 'stats': main_stats, 'color': ACCENT_SOFT},
+        {'label': 'XAUUSD', 'stats': xau_stats, 'color': GOLD_SOFT},
+        {'label': 'NASDAQ', 'stats': nas_stats, 'color': PURPLE_SOFT},
     ]
     idx = st.session_state.overview_idx
     current = overviews[idx]
