@@ -1177,7 +1177,6 @@ setTimeout(function() {{
             f'<div style="text-align:center;"><div style="position:relative;width:90px;height:90px;margin:0 auto;">'
             f'<svg viewBox="0 0 100 100" style="width:90px;height:90px;transform:rotate(-90deg);">'
             f'<circle cx="50" cy="50" r="38" fill="none" stroke="rgba({BG_TINT},0.1)" stroke-width="10"/>'
-            f'</div><div style="font-size:0.72em;font-weight:600;color:{TEXT_PRIMARY};margin-top:6px;">-${dd_val:,.0f}</div>'
             f'</div>', unsafe_allow_html=True)
 
     else:
