@@ -1120,10 +1120,10 @@ setTimeout(function() {{
         goal_wr = 60
         goal_dd = 2000
 
+        funded_stats = calc_stats(df_funded_clean) if len(df_funded_clean) > 0 else {}
         current_wr = funded_stats.get('win_rate', 0)
         pnl_progress = min(round(max(total_pnl_funded, 0) / goal_pnl * 100, 1), 100)
         wr_progress = min(round(current_wr / goal_wr * 100, 1), 100)
-        funded_stats = calc_stats(df_funded_clean) if len(df_funded_clean) > 0 else {}
         dd_val = abs(funded_stats.get('max_drawdown', 0)) * account_size * num_accounts * (avg_risk_pct / 100)
         dd_progress = min(round(dd_val / goal_dd * 100, 1), 100)
         dd_color = '#f87171' if dd_progress >= 80 else ('#fbbf24' if dd_progress >= 50 else '#4ade80')
