@@ -945,7 +945,7 @@ setTimeout(function() {{
         color = 'rgba(74,222,128,0.8)' if r == 'W' else ('rgba(248,113,113,0.7)' if r == 'L' else f'rgba({BG_TINT},0.5)')
         text_color = '#000' if r == 'W' else '#fff'
         extra_class = 'active-streak' if is_last else ''
-        streak_html += f'<div class="streak-box {extra_class}" style="background:{color};color:{text_color};animation-delay:{idx_r*30}ms;flex-shrink:0;">{r}</div>'
+        streak_html += f'<div class="streak-box {extra_class}" style="background:{color};color:{text_color};animation-delay:{idx_r*80}ms;flex-shrink:0;">{r}</div>'
     streak_html += f'<div class="streak-box" style="border:1px dashed {BORDER};color:{TEXT_MUTED};flex-shrink:0;">?</div></div>'
     streak_html += f'<div style="font-size:0.72em;color:{TEXT_SECONDARY};"><span style="color:{cur_color};">Current streak: {cur} {cur_type}</span></div>'
     st.markdown(f'<div class="glass-panel">{streak_html}</div>', unsafe_allow_html=True)
