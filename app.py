@@ -1145,7 +1145,7 @@ setTimeout(function() {{
         at_cols[2].markdown(f'<div class="pnl-card" style="background:{BG_CARD};border:1px solid {BORDER2};border-radius:18px;padding:18px 14px;text-align:center;box-shadow:0 4px 16px {SHADOW};"><div style="font-size:0.6em;color:{TEXT_SECONDARY};text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px;">Funded Trades</div><div style="font-size:1.3em;font-weight:700;color:{TEXT_PRIMARY};">{len(df_funded_clean)}</div></div>', unsafe_allow_html=True)
         at_cols[3].markdown(f'<div class="pnl-card" style="background:{BG_CARD};border:1px solid {BORDER2};border-radius:18px;padding:18px 14px;text-align:center;box-shadow:0 4px 16px {SHADOW};"><div style="font-size:0.6em;color:{TEXT_SECONDARY};text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px;">Total Capital</div><div style="font-size:1.3em;font-weight:700;color:{ACCENT_SOFT};">${total_capital:,}</div></div>', unsafe_allow_html=True)
     else:       
-      # ============ PAGE: P&L TRACKER ============
+# ============ PAGE: P&L TRACKER ============
 elif page == 'P&L Tracker':
     st.markdown(f'<div style="font-size:1.6em;font-weight:700;color:{TEXT_PRIMARY};margin-bottom:24px;">P&L Tracker</div>', unsafe_allow_html=True)
 
