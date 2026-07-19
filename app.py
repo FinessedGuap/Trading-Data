@@ -129,12 +129,10 @@ NAV_H = '56px'
 RANK_COLORS = ['#fcd34d', '#7fb2f5', '#9ca3af']
 IS_DARK = st.session_state.dark_mode
 
-# ============ DARK/LIGHT COLOUR VARS ============
 if IS_DARK:
     BG_BASE = '#070b14'
     BG_CARD = f'rgba({BG_TINT},0.06)'
     BG_GLASS = f'rgba({BG_TINT},0.05)'
-    BG_GLASS2 = f'rgba({BG_TINT},0.08)'
     BORDER = f'rgba({BG_TINT},0.15)'
     BORDER2 = f'rgba({BG_TINT},0.2)'
     TEXT_PRIMARY = '#ffffff'
@@ -150,7 +148,6 @@ else:
     BG_BASE = '#f5f5f0'
     BG_CARD = '#ffffff'
     BG_GLASS = 'rgba(255,255,255,0.85)'
-    BG_GLASS2 = 'rgba(255,255,255,0.9)'
     BORDER = f'rgba({BG_TINT},0.2)'
     BORDER2 = f'rgba({BG_TINT},0.25)'
     TEXT_PRIMARY = '#111827'
@@ -713,7 +710,7 @@ css = f"""
   .checklist-item {{ display:flex; align-items:flex-start; gap:12px; padding:10px 0; border-bottom:1px solid {BORDER}; }}
   .checklist-dot {{ width:8px; height:8px; border-radius:50%; margin-top:5px; flex-shrink:0; }}
   .glass-panel div::-webkit-scrollbar {{ display:none; }}
- section[data-testid="stSidebar"] div[data-testid="stButton"] button {{
+  section[data-testid="stSidebar"] div[data-testid="stButton"] button {{
     min-height:40px !important; background:{BG_CARD} !important;
     border:1px solid {BORDER} !important; color:{TEXT_PRIMARY} !important;
     border-radius:10px !important; font-size:0.85em !important;
@@ -761,12 +758,8 @@ components.html("""
 (function() {
     function tryScroll() {
         try {
-            var w = window.parent;
-            var el = w.document.querySelector('[data-testid="stAppViewBlockContainer"]');
-            if (!el) el = w.document.querySelector('[data-testid="stMainBlockContainer"]');
-            if (!el) el = w.document.querySelector('.main');
+            var el = window.parent.document.querySelector('section.stMain');
             if (el) el.scrollTop = 0;
-            w.scrollTo({top: 0, behavior: 'instant'});
         } catch(e) {}
     }
     tryScroll();
@@ -779,13 +772,7 @@ components.html("""
 # ============ SIDEBAR ============
 with st.sidebar:
     st.markdown(f'<div style="font-size:1.1em;font-weight:700;color:{TEXT_PRIMARY};padding:20px 16px 16px;border-bottom:1px solid {BORDER};margin-bottom:8px;">Trading Data</div>', unsafe_allow_html=True)
-    svg_overview = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>'
-    svg_pnl = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M14.8 9A2 2 0 0 0 13 8h-2a2 2 0 0 0 0 4h2a2 2 0 0 1 0 4h-2a2 2 0 0 1-1.8-1"/><path d="M12 7v1m0 8v1"/></svg>'
-    svg_charts = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>'
-    svg_calendar = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>'
-    svg_edge = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>'
-    svg_best = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>'
-    pages = [(svg_overview, 'Overview'), (svg_pnl, 'P&L Tracker'), (svg_charts, 'Charts'), (svg_calendar, 'Calendar'), (svg_edge, 'Edge Analysis'), (svg_best, 'Best Setups')]
+    pages = [('', 'Overview'), ('', 'P&L Tracker'), ('', 'Charts'), ('', 'Calendar'), ('', 'Edge Analysis'), ('', 'Best Setups')]
     for icon, page_name in pages:
         is_active = st.session_state.active_page == page_name
         if is_active:
@@ -803,7 +790,6 @@ with st.sidebar:
     if st.button("🔒 Logout", key="logout_btn", use_container_width=True):
         st.session_state.authenticated = False
         st.rerun()
-
     st.markdown(f'<div style="border-top:1px solid {BORDER};padding-top:12px;margin-top:12px;"><div style="font-size:0.6em;color:{TEXT_MUTED};letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">Theme</div></div>', unsafe_allow_html=True)
     theme_options = {'Blue': '#60a5fa', 'Purple': '#a78bfa', 'Green': '#34d399', 'Red': '#f87171', 'Neutral': '#9ca3af'}
     theme_cols = st.columns(5)
@@ -815,9 +801,6 @@ with st.sidebar:
         if theme_cols[i].button(" ", key=f"theme_{name}", use_container_width=True):
             st.session_state.theme = name
             st.rerun()
-
-    # Dark/Light toggle at bottom
-    st.markdown('<div style="flex:1;"></div>', unsafe_allow_html=True)
     st.markdown(f'<div style="border-top:1px solid {BORDER};padding-top:12px;margin-top:16px;"></div>', unsafe_allow_html=True)
     mode_icon = "☀️" if IS_DARK else "🌙"
     col_gap, col_btn = st.columns([3, 1])
@@ -884,28 +867,6 @@ setTimeout(function() {{
 }}, 200);
 setTimeout(function() {{
     var doc = window.parent.document;
-    var targets = doc.querySelectorAll('.glass-panel, .stat-card, .checklist-item, .trade-detail-card, .cal-week-summary, .streak-box, .pnl-card');
-    targets.forEach(function(el) {{
-        el.style.opacity = '0';
-        el.style.transform = 'translateY(30px)';
-        el.style.transition = 'none';
-        el.style.animationName = 'none';
-    }});
-    var observer = new IntersectionObserver(function(entries) {{
-        entries.forEach(function(entry) {{
-            if (entry.isIntersecting) {{
-                var el = entry.target;
-                var delay = parseInt(el.style.animationDelay) || 0;
-                setTimeout(function() {{
-                    el.style.transition = 'opacity 0.5s cubic-bezier(0.16,1,0.3,1), transform 0.5s cubic-bezier(0.16,1,0.3,1)';
-                    el.style.opacity = '1';
-                    el.style.transform = 'translateY(0)';
-                }}, delay);
-                observer.unobserve(el);
-            }}
-        }});
-    }}, {{ threshold: 0.1, rootMargin: '0px 0px -40px 0px' }});
-    targets.forEach(function(el) {{ observer.observe(el); }});
     var bars = doc.querySelectorAll('.grow-bar');
     var barObserver = new IntersectionObserver(function(entries) {{
         entries.forEach(function(entry) {{
@@ -1002,7 +963,7 @@ setTimeout(function() {{
             border_col = ACCENT if is_current else BORDER
             header_color = ACCENT_SOFT if is_current else TEXT_SECONDARY
             col.markdown(
-                f'<div style="background:{bg};border:1px solid {border_col};border-radius:14px;padding:14px;text-align:center;animation:fadeUp 0.5s cubic-bezier(0.16,1,0.3,1) {i*80}ms both;box-shadow:{SHADOW} 0 2px 8px;">'
+                f'<div style="background:{bg};border:1px solid {border_col};border-radius:14px;padding:14px;text-align:center;animation:fadeUp 0.5s cubic-bezier(0.16,1,0.3,1) {i*80}ms both;">'
                 f'<div style="color:{header_color};font-size:0.65em;margin-bottom:6px;text-transform:uppercase;">{m}</div>'
                 f'<div style="color:{TEXT_PRIMARY};font-size:1.2em;font-weight:700;">{sign}{data["total_r"]}R</div>'
                 f'<div style="color:{TEXT_SECONDARY};font-size:0.65em;margin-top:4px;">{data["win_rate"]}% WR · {data["trades"]} trades</div>'
@@ -1035,116 +996,6 @@ setTimeout(function() {{
         f'<span style="color:{ACCENT_SOFT};font-size:0.7em;font-weight:600;">N</span>'
         f'</div>{session_rows_html}</div>', unsafe_allow_html=True)
 
-# ============ PAGE: P&L TRACKER ============
-elif page == 'P&L Tracker':
-    st.markdown(f'<div style="font-size:1.6em;font-weight:700;color:{TEXT_PRIMARY};margin-bottom:24px;">P&L Tracker</div>', unsafe_allow_html=True)
-
-    set_cols = st.columns(3)
-    with set_cols[0]:
-        account_size = st.number_input("Account Size ($)", min_value=1000, max_value=10000000, value=st.session_state.account_size, step=1000, format="%d")
-        st.session_state.account_size = account_size
-    with set_cols[1]:
-        num_accounts = st.number_input("Number of Accounts", min_value=1, max_value=50, value=st.session_state.num_accounts, step=1)
-        st.session_state.num_accounts = num_accounts
-    with set_cols[2]:
-        risk_per_trade = st.number_input("Risk Per Trade ($)", min_value=1, max_value=100000, value=st.session_state.risk_per_trade, step=50)
-        st.session_state.risk_per_trade = risk_per_trade
-
-    total_capital = account_size * num_accounts
-    combined_risk = risk_per_trade * num_accounts
-
-    if len(df_funded) > 0 and 'R_Result' in df_funded.columns:
-        df_funded_clean = df_funded.dropna(subset=['R_Result', 'Date']).copy()
-        month_funded = df_funded_clean[(df_funded_clean['Date'].dt.month == today.month) & (df_funded_clean['Date'].dt.year == today.year)]
-        month_r = month_funded['R_Result'].sum()
-        month_pnl = round(month_r * combined_risk, 2)
-        month_pct = round(month_pnl / total_capital * 100, 2)
-        week_start = today - pd.Timedelta(days=today.weekday())
-        week_funded = df_funded_clean[df_funded_clean['Date'].dt.date >= week_start.date()]
-        week_r = week_funded['R_Result'].sum()
-        week_pnl = round(week_r * combined_risk, 2)
-        week_pct = round(week_pnl / total_capital * 100, 2)
-        today_funded = df_funded_clean[df_funded_clean['Date'].dt.date == today.date()]
-        today_r = today_funded['R_Result'].sum()
-        today_pnl = round(today_r * combined_risk, 2)
-        today_pct = round(today_pnl / total_capital * 100, 2)
-
-        def fmt_pnl(val): return f"+${val:,.2f}" if val >= 0 else f"-${abs(val):,.2f}"
-        def fmt_pct(val): return f"+{val}%" if val >= 0 else f"{val}%"
-        def pnl_color(val): return '#4ade80' if val >= 0 else '#f87171'
-
-        st.markdown(f'<div style="color:{ACCENT_SOFT};font-size:0.72em;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:14px;">Performance</div>', unsafe_allow_html=True)
-        pnl_data = [
-            ('This Month', month_pnl, month_pct, f"{round(month_r,2)}R", len(month_funded)),
-            ('This Week', week_pnl, week_pct, f"{round(week_r,2)}R", len(week_funded)),
-            ('Today', today_pnl, today_pct, f"{round(today_r,2)}R", len(today_funded)),
-        ]
-        pnl_cols = st.columns(3)
-        for i, (col, (period, pnl, pct, r_val, n_trades)) in enumerate(zip(pnl_cols, pnl_data)):
-            color = pnl_color(pnl)
-            col.markdown(
-                f'<div class="pnl-card" style="background:{BG_CARD};border:1px solid {BORDER2};border-radius:18px;padding:20px 14px;text-align:center;animation-delay:{i*100}ms;box-shadow:0 4px 16px {SHADOW};">'
-                f'<div style="font-size:0.62em;color:{TEXT_SECONDARY};text-transform:uppercase;letter-spacing:0.8px;margin-bottom:10px;">{period}</div>'
-                f'<div style="font-size:1.5em;font-weight:700;color:{color};" id="pnl-{i}">{fmt_pnl(pnl)}</div>'
-                f'<div style="font-size:1em;font-weight:700;color:{color};margin-top:4px;" id="pct-{i}">{fmt_pct(pct)}</div>'
-                f'<div style="font-size:0.65em;color:{TEXT_SECONDARY};margin-top:8px;border-top:1px solid {BORDER};padding-top:8px;">{r_val} &nbsp;·&nbsp; {n_trades} trades</div>'
-                f'</div>', unsafe_allow_html=True)
-
-        components.html(f"""
-<script>
-function countMoney(id, target, duration) {{
-    var el = window.parent.document.getElementById(id);
-    if (!el) return;
-    var startTime = null;
-    var prefix = target >= 0 ? '+$' : '-$';
-    var absTarget = Math.abs(target);
-    function step(ts) {{
-        if (!startTime) startTime = ts;
-        var progress = Math.min((ts - startTime) / duration, 1);
-        var ease = 1 - Math.pow(1 - progress, 3);
-        el.textContent = prefix + (absTarget * ease).toLocaleString('en-US', {{minimumFractionDigits:2, maximumFractionDigits:2}});
-        if (progress < 1) requestAnimationFrame(step);
-    }}
-    requestAnimationFrame(step);
-}}
-function countPct(id, target, duration) {{
-    var el = window.parent.document.getElementById(id);
-    if (!el) return;
-    var startTime = null;
-    var prefix = target >= 0 ? '+' : '-';
-    var absTarget = Math.abs(target);
-    function step(ts) {{
-        if (!startTime) startTime = ts;
-        var progress = Math.min((ts - startTime) / duration, 1);
-        var ease = 1 - Math.pow(1 - progress, 3);
-        el.textContent = prefix + (absTarget * ease).toFixed(2) + '%';
-        if (progress < 1) requestAnimationFrame(step);
-    }}
-    requestAnimationFrame(step);
-}}
-setTimeout(function() {{
-    countMoney('pnl-0', {month_pnl}, 1000);
-    countMoney('pnl-1', {week_pnl}, 1000);
-    countMoney('pnl-2', {today_pnl}, 1000);
-    countPct('pct-0', {month_pct}, 1000);
-    countPct('pct-1', {week_pct}, 1000);
-    countPct('pct-2', {today_pct}, 1000);
-}}, 300);
-</script>
-        """, height=0)
-
-        st.markdown(f'<div style="color:{ACCENT_SOFT};font-size:0.72em;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin:24px 0 14px;">All Time (Funded)</div>', unsafe_allow_html=True)
-        total_r_funded = df_funded_clean['R_Result'].sum()
-        total_pnl_funded = round(total_r_funded * combined_risk, 2)
-        total_pct_funded = round(total_pnl_funded / total_capital * 100, 2)
-        color_total = '#4ade80' if total_pnl_funded >= 0 else '#f87171'
-        sign_total = '+' if total_pnl_funded >= 0 else ''
-        at_cols = st.columns(4)
-        at_cols[0].markdown(f'<div class="pnl-card" style="background:{BG_CARD};border:1px solid {BORDER2};border-radius:18px;padding:18px 14px;text-align:center;box-shadow:0 4px 16px {SHADOW};"><div style="font-size:0.6em;color:{TEXT_SECONDARY};text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px;">Total P&L</div><div style="font-size:1.3em;font-weight:700;color:{color_total};">{sign_total}${abs(total_pnl_funded):,.2f}</div><div style="font-size:0.8em;color:{color_total};margin-top:3px;">{sign_total}{total_pct_funded}%</div></div>', unsafe_allow_html=True)
-        at_cols[1].markdown(f'<div class="pnl-card" style="background:{BG_CARD};border:1px solid {BORDER2};border-radius:18px;padding:18px 14px;text-align:center;box-shadow:0 4px 16px {SHADOW};"><div style="font-size:0.6em;color:{TEXT_SECONDARY};text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px;">Total R</div><div style="font-size:1.3em;font-weight:700;color:{TEXT_PRIMARY};">{sign_total}{round(total_r_funded,2)}R</div></div>', unsafe_allow_html=True)
-        at_cols[2].markdown(f'<div class="pnl-card" style="background:{BG_CARD};border:1px solid {BORDER2};border-radius:18px;padding:18px 14px;text-align:center;box-shadow:0 4px 16px {SHADOW};"><div style="font-size:0.6em;color:{TEXT_SECONDARY};text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px;">Funded Trades</div><div style="font-size:1.3em;font-weight:700;color:{TEXT_PRIMARY};">{len(df_funded_clean)}</div></div>', unsafe_allow_html=True)
-        at_cols[3].markdown(f'<div class="pnl-card" style="background:{BG_CARD};border:1px solid {BORDER2};border-radius:18px;padding:18px 14px;text-align:center;box-shadow:0 4px 16px {SHADOW};"><div style="font-size:0.6em;color:{TEXT_SECONDARY};text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px;">Total Capital</div><div style="font-size:1.3em;font-weight:700;color:{ACCENT_SOFT};">${total_capital:,}</div></div>', unsafe_allow_html=True)
-    else:       
 # ============ PAGE: P&L TRACKER ============
 elif page == 'P&L Tracker':
     st.markdown(f'<div style="font-size:1.6em;font-weight:700;color:{TEXT_PRIMARY};margin-bottom:24px;">P&L Tracker</div>', unsafe_allow_html=True)
@@ -1335,6 +1186,7 @@ setTimeout(function() {{
 
     else:
         st.markdown(f'<div class="glass-panel" style="text-align:center;padding:48px 24px;"><div style="font-size:1.4em;margin-bottom:12px;">💰</div><div style="color:{TEXT_PRIMARY};font-weight:600;margin-bottom:8px;">No trades yet</div></div>', unsafe_allow_html=True)
+
 # ============ PAGE: CHARTS ============
 elif page == 'Charts':
     st.markdown(f'<div style="font-size:1.6em;font-weight:700;color:{TEXT_PRIMARY};margin-bottom:24px;">Charts</div>', unsafe_allow_html=True)
