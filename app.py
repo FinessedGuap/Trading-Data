@@ -593,16 +593,6 @@ for key, val in [
     if key not in st.session_state:
         st.session_state[key] = val
 
-# Mobile nav icons
-MOB_ICONS = {
-    'Overview': '⊞',
-    'P&L Tracker': '◎',
-    'Charts': '⟋',
-    'Calendar': '▦',
-    'Edge Analysis': '⊙',
-    'Best Setups': '◈',
-}
-
 css = f"""
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
@@ -759,128 +749,9 @@ css = f"""
     border-radius:10px !important; font-size:1em !important;
     padding:0 !important; margin:0 !important;
   }}
-
-  /* ============ MOBILE NAV ============ */
-  .mob-nav {{
-    display: none;
-    position: fixed;
-    left: 0; top: 0; bottom: 0;
-    width: 64px;
-    background: {SIDEBAR_BG};
-    border-right: 1px solid {SIDEBAR_BORDER};
-    flex-direction: column;
-    align-items: center;
-    padding: 16px 0;
-    gap: 4px;
-    z-index: 999;
-    backdrop-filter: blur(20px);
-  }}
-  .mob-nav-item {{
-    width: 48px; height: 48px;
-    border-radius: 12px;
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
-    gap: 2px; cursor: pointer;
-    transition: all 0.2s ease;
-    text-decoration: none;
-  }}
-  .mob-nav-item.active {{
-    background: rgba({BG_TINT}, 0.15);
-    border: 1px solid rgba({BG_TINT}, 0.3);
-  }}
-  .mob-nav-icon {{ font-size: 1.1em; line-height: 1; }}
-  .mob-nav-label {{ font-size: 0.38em; font-weight: 600; letter-spacing: 0.3px; }}
-  .mob-nav-item.active .mob-nav-icon,
-  .mob-nav-item.active .mob-nav-label {{ color: {ACCENT}; }}
-  .mob-nav-item:not(.active) .mob-nav-icon,
-  .mob-nav-item:not(.active) .mob-nav-label {{ color: {TEXT_SECONDARY}; }}
-  .mob-nav-divider {{
-    width: 32px; height: 1px;
-    background: {BORDER};
-    margin: 4px 0;
-  }}
-  .mob-nav-bottom {{
-    margin-top: auto;
-    display: flex; flex-direction: column;
-    align-items: center; gap: 4px;
-  }}
-
-  /* Mobile content offset */
-  @media (max-width: 768px) {{
-    .mob-nav {{ display: flex !important; }}
-    section[data-testid="stSidebar"] {{ display: none !important; }}
-    .main-content {{ margin-left: 68px !important; }}
-    section[data-testid="stMain"] > div {{ padding-left: 74px !important; padding-right: 12px !important; }}
-
-    /* Banner 2x2 on mobile */
-    .mob-banner-grid {{
-      display: grid !important;
-      grid-template-columns: 1fr 1fr !important;
-      gap: 0 !important;
-    }}
-    .mob-banner-item {{
-      border-right: none !important;
-      padding: 10px !important;
-    }}
-    .mob-banner-item:nth-child(1),
-    .mob-banner-item:nth-child(2) {{
-      border-bottom: 1px solid rgba({BG_TINT}, 0.1) !important;
-    }}
-    .mob-banner-item:nth-child(1),
-    .mob-banner-item:nth-child(3) {{
-      border-right: 1px solid rgba({BG_TINT}, 0.1) !important;
-    }}
-
-    /* Stat cards 2 col on mobile */
-    .mob-stat-grid {{
-      display: grid !important;
-      grid-template-columns: 1fr 1fr !important;
-      gap: 8px !important;
-    }}
-
-    /* Edge analysis single col on mobile */
-    .mob-ea-single {{ display: block !important; }}
-    .mob-ea-single > div {{ width: 100% !important; }}
-
-    /* Cal compact on mobile */
-    .cal-header {{ font-size: 0.55em !important; padding: 6px 0 !important; }}
-
-    /* Reduce padding on mobile */
-    .glass-panel {{ padding: 14px !important; }}
-  }}
 </style>
 """
 st.markdown(css, unsafe_allow_html=True)
-
-# ============ MOBILE NAV HTML ============
-page = st.session_state.active_page
-pages_list = ['Overview', 'P&L Tracker', 'Charts', 'Calendar', 'Edge Analysis', 'Best Setups']
-
-mob_nav_html = f'<div class="mob-nav">'
-mob_nav_html += f'<div style="font-size:0.45em;font-weight:700;color:{TEXT_MUTED};letter-spacing:1px;margin-bottom:8px;">TD</div>'
-for p in pages_list:
-    active_class = 'active' if page == p else ''
-    short = p.replace('P&L Tracker', 'P&L').replace('Edge Analysis', 'Edge').replace('Best Setups', 'Best')
-    mob_nav_html += (
-        f'<div class="mob-nav-item {active_class}" onclick="window.location.href=\'?page={p.replace(" ", "_")}\'">'
-        f'<span class="mob-nav-icon">{MOB_ICONS[p]}</span>'
-        f'<span class="mob-nav-label">{short}</span>'
-        f'</div>'
-    )
-mob_nav_html += f'<div class="mob-nav-divider"></div>'
-mob_nav_html += f'<div class="mob-nav-bottom">'
-mob_nav_html += f'<div class="mob-nav-item" onclick="window.location.reload()" style="color:{TEXT_SECONDARY}"><span class="mob-nav-icon">↻</span><span class="mob-nav-label">Refresh</span></div>'
-mob_nav_html += f'</div></div>'
-st.markdown(mob_nav_html, unsafe_allow_html=True)
-
-# Handle mobile nav clicks via query params
-query_params = st.query_params
-if 'page' in query_params:
-    page_param = query_params['page'].replace('_', ' ')
-    if page_param in pages_list and page_param != st.session_state.active_page:
-        st.session_state.active_page = page_param
-        st.query_params.clear()
-        st.rerun()
 
 components.html("""
 <script>
@@ -901,15 +772,16 @@ components.html("""
 # ============ SIDEBAR ============
 with st.sidebar:
     st.markdown(f'<div style="font-size:1.1em;font-weight:700;color:{TEXT_PRIMARY};padding:20px 16px 16px;border-bottom:1px solid {BORDER};margin-bottom:8px;">Trading Data</div>', unsafe_allow_html=True)
-    for p in pages_list:
-        is_active = st.session_state.active_page == p
+    pages = [('', 'Overview'), ('', 'P&L Tracker'), ('', 'Charts'), ('', 'Calendar'), ('', 'Edge Analysis'), ('', 'Best Setups')]
+    for icon, page_name in pages:
+        is_active = st.session_state.active_page == page_name
         if is_active:
             st.markdown(
-                f'<div style="background:rgba({BG_TINT},0.1);border-left:3px solid {ACCENT};border-radius:8px;padding:9px 14px;margin:0;font-size:0.85em;font-weight:600;color:{ACCENT};line-height:1.6;">{p}</div>',
+                f'<div style="background:rgba({BG_TINT},0.1);border-left:3px solid {ACCENT};border-radius:8px;padding:9px 14px;margin:0;font-size:0.85em;font-weight:600;color:{ACCENT};line-height:1.6;">{page_name}</div>',
                 unsafe_allow_html=True)
         else:
-            if st.button(p, key=f"nav_{p}", use_container_width=True):
-                st.session_state.active_page = p
+            if st.button(page_name, key=f"nav_{page_name}", use_container_width=True):
+                st.session_state.active_page = page_name
                 st.rerun()
     st.markdown('<div style="margin-top:20px;"></div>', unsafe_allow_html=True)
     if st.button("↻ Refresh", key="refresh_btn", use_container_width=True):
@@ -959,16 +831,15 @@ if page == 'Overview':
     diff_sign = '+' if diff >= 0 else ''
     month_sign = '+' if this_month_r > 0 else ''
 
-    # Banner — on mobile becomes 2x2 via CSS
     st.markdown(
-        f'<div class="glass-panel" style="display:flex;align-items:center;padding:18px 24px;flex-wrap:wrap;" id="overview-banner">'
-        f'<div class="mob-banner-item" style="text-align:center;flex:1;"><div style="font-size:1.6em;font-weight:700;color:{cur_color};">{cur}</div><div style="font-size:0.62em;color:{TEXT_SECONDARY};margin-top:3px;text-transform:uppercase;letter-spacing:0.5px;">{cur_label}</div></div>'
-        f'<div class="mob-banner-divider" style="width:1px;height:40px;background:{BORDER};"></div>'
-        f'<div class="mob-banner-item" style="text-align:center;flex:1;"><div style="font-size:1.6em;font-weight:700;color:{ACCENT};" id="banner-consistency">0%</div><div style="font-size:0.62em;color:{TEXT_SECONDARY};margin-top:3px;text-transform:uppercase;letter-spacing:0.5px;">Consistency</div></div>'
-        f'<div class="mob-banner-divider" style="width:1px;height:40px;background:{BORDER};"></div>'
-        f'<div class="mob-banner-item" style="text-align:center;flex:1;"><div style="font-size:1.6em;font-weight:700;color:{TEXT_PRIMARY};" id="banner-month">0R</div><div style="font-size:0.62em;color:{TEXT_SECONDARY};margin-top:3px;text-transform:uppercase;letter-spacing:0.5px;">This Month</div></div>'
-        f'<div class="mob-banner-divider" style="width:1px;height:40px;background:{BORDER};"></div>'
-        f'<div class="mob-banner-item" style="text-align:center;flex:1;"><div style="font-size:1.6em;font-weight:700;color:{diff_color};" id="banner-diff">0R</div><div style="font-size:0.62em;color:{TEXT_SECONDARY};margin-top:3px;text-transform:uppercase;letter-spacing:0.5px;">vs Last Month</div></div>'
+        f'<div class="glass-panel" style="display:flex;align-items:center;padding:18px 24px;">'
+        f'<div style="text-align:center;flex:1;"><div style="font-size:1.6em;font-weight:700;color:{cur_color};">{cur}</div><div style="font-size:0.62em;color:{TEXT_SECONDARY};margin-top:3px;text-transform:uppercase;letter-spacing:0.5px;">{cur_label}</div></div>'
+        f'<div style="width:1px;height:40px;background:{BORDER};"></div>'
+        f'<div style="text-align:center;flex:1;"><div style="font-size:1.6em;font-weight:700;color:{ACCENT};" id="banner-consistency">0%</div><div style="font-size:0.62em;color:{TEXT_SECONDARY};margin-top:3px;text-transform:uppercase;letter-spacing:0.5px;">Consistency</div></div>'
+        f'<div style="width:1px;height:40px;background:{BORDER};"></div>'
+        f'<div style="text-align:center;flex:1;"><div style="font-size:1.6em;font-weight:700;color:{TEXT_PRIMARY};" id="banner-month">0R</div><div style="font-size:0.62em;color:{TEXT_SECONDARY};margin-top:3px;text-transform:uppercase;letter-spacing:0.5px;">This Month</div></div>'
+        f'<div style="width:1px;height:40px;background:{BORDER};"></div>'
+        f'<div style="text-align:center;flex:1;"><div style="font-size:1.6em;font-weight:700;color:{diff_color};" id="banner-diff">0R</div><div style="font-size:0.62em;color:{TEXT_SECONDARY};margin-top:3px;text-transform:uppercase;letter-spacing:0.5px;">vs Last Month</div></div>'
         f'</div>',
         unsafe_allow_html=True)
 
@@ -1013,25 +884,6 @@ setTimeout(function() {{
             barObserver.observe(bar);
         }}
     }});
-
-    // Mobile banner: switch to 2x2 grid
-    var isMobile = window.parent.innerWidth <= 768;
-    if (isMobile) {{
-        var banner = doc.getElementById('overview-banner');
-        if (banner) {{
-            banner.style.display = 'grid';
-            banner.style.gridTemplateColumns = '1fr 1fr';
-            banner.style.padding = '14px';
-        }}
-        var dividers = doc.querySelectorAll('.mob-banner-divider');
-        dividers.forEach(function(d) {{ d.style.display = 'none'; }});
-        var items = doc.querySelectorAll('.mob-banner-item');
-        items.forEach(function(item, i) {{
-            item.style.padding = '10px';
-            if (i === 0 || i === 1) item.style.borderBottom = '1px solid rgba({BG_TINT},0.1)';
-            if (i === 0 || i === 2) item.style.borderRight = '1px solid rgba({BG_TINT},0.1)';
-        }});
-    }}
 }}, 400);
 </script>
     """, height=0)
@@ -1073,52 +925,17 @@ setTimeout(function() {{
         ('Losses', current['stats'].get('losses', '—')),
         ('Breakevens', current['stats'].get('breakevens', '—')),
     ]
-
-    # On mobile show 2-col grid, on desktop 7-col rows
-    all_stat_html = '<div class="mob-stat-grid" style="display:none;">'
-    for label, value in stat_data:
-        all_stat_html += (
-            f'<div class="stat-card" style="border-color:{current["color"]}44;">'
-            f'<div class="stat-value">{value}</div>'
-            f'<div class="stat-label" style="color:{current["color"]};">{label}</div>'
-            f'</div>')
-    all_stat_html += '</div>'
-    st.markdown(all_stat_html, unsafe_allow_html=True)
-
-    # Desktop rows (hidden on mobile via JS)
-    desktop_rows_html = '<div id="desktop-stat-rows">'
     for i in range(0, len(stat_data), 7):
         row_data = stat_data[i:i+7]
-        desktop_rows_html += f'<div style="display:grid;grid-template-columns:repeat({len(row_data)},1fr);gap:8px;margin-bottom:8px;">'
-        for j, (label, value) in enumerate(row_data):
+        cols = st.columns(len(row_data))
+        for j, (col, (label, value)) in enumerate(zip(cols, row_data)):
             delay = j * 25
-            desktop_rows_html += (
+            col.markdown(
                 f'<div class="stat-card" style="border-color:{current["color"]}44;animation-delay:{delay}ms;">'
                 f'<div class="stat-value">{value}</div>'
                 f'<div class="stat-label" style="color:{current["color"]};">{label}</div>'
-                f'</div>')
-        desktop_rows_html += '</div>'
-    desktop_rows_html += '</div>'
-    st.markdown(desktop_rows_html, unsafe_allow_html=True)
-
-    components.html(f"""
-<script>
-setTimeout(function() {{
-    var isMobile = window.parent.innerWidth <= 768;
-    var mob = window.parent.document.querySelector('.mob-stat-grid');
-    var desk = window.parent.document.getElementById('desktop-stat-rows');
-    if (mob && desk) {{
-        if (isMobile) {{
-            mob.style.display = 'grid';
-            desk.style.display = 'none';
-        }} else {{
-            mob.style.display = 'none';
-            desk.style.display = 'block';
-        }}
-    }}
-}}, 100);
-</script>
-    """, height=0)
+                f'</div>', unsafe_allow_html=True)
+        st.write("")
 
     st.markdown('<div class="section-label">Recent Trades</div>', unsafe_allow_html=True)
     trade_results = main_stats.get('trade_results', [])
@@ -1476,7 +1293,7 @@ elif page == 'Calendar':
     day_header_cols = st.columns(8)
     for i, d in enumerate(['Mo','Tu','We','Th','Fr','Sa','Su']):
         day_header_cols[i].markdown(f'<div class="cal-header">{d}</div>', unsafe_allow_html=True)
-    day_header_cols[7].markdown(f'<div class="cal-header">Wk</div>', unsafe_allow_html=True)
+    day_header_cols[7].markdown(f'<div class="cal-header">Week</div>', unsafe_allow_html=True)
 
     for week_num, week in enumerate(month_matrix):
         if week_num > 0: st.write("")
@@ -1484,7 +1301,7 @@ elif page == 'Calendar':
         week_total = week_trades = 0
         for i, day_num in enumerate(week):
             if day_num == 0:
-                week_cols[i].markdown('<div style="min-height:64px;"></div>', unsafe_allow_html=True)
+                week_cols[i].markdown('<div style="min-height:88px;"></div>', unsafe_allow_html=True)
             else:
                 day_date = datetime(cal_year, cal_month, day_num).date()
                 day_data = daily_r.get(day_date)
@@ -1492,24 +1309,24 @@ elif page == 'Calendar':
                     week_total += day_data['total_r']; week_trades += day_data['trades']
                     r_val = day_data['total_r']; sign = '+' if r_val > 0 else ''
                     if r_val >= 0:
-                        day_style = "background:rgba(74,222,128,0.08);border:1px solid rgba(74,222,128,0.25);"
+                        day_style = "background:rgba(74,222,128,0.08);border:1px solid rgba(74,222,128,0.25);box-shadow:0 4px 12px rgba(74,222,128,0.08);"
                         r_color = '#16a34a' if not IS_DARK else '#4ade80'
                         num_color = '#14532d' if not IS_DARK else '#eafff0'
                     else:
-                        day_style = "background:rgba(248,113,113,0.08);border:1px solid rgba(248,113,113,0.25);"
+                        day_style = "background:rgba(248,113,113,0.08);border:1px solid rgba(248,113,113,0.25);box-shadow:0 4px 12px rgba(248,113,113,0.08);"
                         r_color = '#dc2626' if not IS_DARK else '#f87171'
                         num_color = '#7f1d1d' if not IS_DARK else '#ffeaea'
                     delay = (week_num * 7 + i) * 35
                     week_cols[i].markdown(
-                        f'<div style="{day_style}border-radius:10px;min-height:64px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:4px;text-align:center;animation:fadeUp 0.5s cubic-bezier(0.16,1,0.3,1) {delay}ms both;">'
-                        f'<div style="color:{num_color};font-size:0.72em;font-weight:600;">{day_num}</div>'
-                        f'<div style="color:{r_color};font-size:0.75em;font-weight:700;margin-top:2px;">{sign}{r_val}R</div>'
-                        f'<div style="color:{TEXT_SECONDARY};font-size:0.55em;margin-top:1px;">{day_data["trades"]}t</div>'
+                        f'<div style="{day_style}backdrop-filter:blur(20px);border-radius:16px;min-height:88px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8px;text-align:center;animation:fadeUp 0.5s cubic-bezier(0.16,1,0.3,1) {delay}ms both;">'
+                        f'<div style="color:{num_color};font-size:0.82em;font-weight:600;">{day_num}</div>'
+                        f'<div style="color:{r_color};font-size:0.9em;font-weight:700;margin-top:4px;">{sign}{r_val}R</div>'
+                        f'<div style="color:{TEXT_SECONDARY};font-size:0.65em;margin-top:2px;">{day_data["trades"]} trades</div>'
                         f'</div>', unsafe_allow_html=True)
                 else:
-                    week_cols[i].markdown(f'<div style="min-height:64px;display:flex;align-items:center;justify-content:center;"><div class="cal-day-num" style="font-size:0.72em;">{day_num}</div></div>', unsafe_allow_html=True)
+                    week_cols[i].markdown(f'<div style="min-height:88px;display:flex;align-items:center;justify-content:center;"><div class="cal-day-num">{day_num}</div></div>', unsafe_allow_html=True)
         wk_sign = '+' if week_total > 0 else ''
-        week_cols[7].markdown(f'<div class="cal-week-summary" style="animation-delay:{week_num*80}ms;min-height:64px;padding:8px 4px;"><div class="cal-week-label" style="font-size:0.6em;">W{week_num+1}</div><div class="cal-week-r" style="font-size:0.9em;margin-top:6px;">{wk_sign}{round(week_total,2)}R</div></div>', unsafe_allow_html=True)
+        week_cols[7].markdown(f'<div class="cal-week-summary" style="animation-delay:{week_num*80}ms;"><div class="cal-week-label">Week {week_num+1}</div><div class="cal-week-r">{wk_sign}{round(week_total,2)}R</div><div class="cal-day-trades">{week_trades} trades</div></div>', unsafe_allow_html=True)
 
     if st.session_state.selected_day:
         st.markdown('<hr class="divider-line">', unsafe_allow_html=True)
@@ -1623,22 +1440,22 @@ elif page == 'Best Setups':
         sign = '+' if best['exp'] >= 0 else ''
         rows_html += (
             f'<div class="best-setup-row" style="animation-delay:{i*40}ms;">'
-            f'<span style="color:{TEXT_SECONDARY};font-size:0.72em;text-transform:uppercase;letter-spacing:0.5px;min-width:110px;">{label}</span>'
+            f'<span style="color:{TEXT_SECONDARY};font-size:0.72em;text-transform:uppercase;letter-spacing:0.5px;min-width:130px;">{label}</span>'
             f'<span style="color:{TEXT_PRIMARY};font-size:0.85em;font-weight:600;flex:1;">{best["label"]}</span>'
-            f'<span style="color:{color};font-size:0.82em;font-weight:700;min-width:46px;text-align:right;">{sign}{best["exp"]}R</span>'
-            f'<span style="color:{ACCENT_SOFT};font-size:0.78em;min-width:38px;text-align:right;">{best["wr"]}%</span>'
-            f'<span style="color:{TEXT_MUTED};font-size:0.75em;min-width:26px;text-align:right;">{best["n"]}t</span>'
+            f'<span style="color:{color};font-size:0.82em;font-weight:700;min-width:50px;text-align:right;">{sign}{best["exp"]}R</span>'
+            f'<span style="color:{ACCENT_SOFT};font-size:0.78em;min-width:40px;text-align:right;">{best["wr"]}%</span>'
+            f'<span style="color:{TEXT_MUTED};font-size:0.75em;min-width:30px;text-align:right;">{best["n"]}t</span>'
             f'</div>')
 
     if rows_html:
         st.markdown(
             f'<div class="glass-panel">'
             f'<div style="display:flex;gap:12px;padding-bottom:8px;margin-bottom:4px;border-bottom:1px solid {BORDER};">'
-            f'<span style="color:{ACCENT_SOFT};font-size:0.65em;font-weight:600;text-transform:uppercase;min-width:110px;">Variable</span>'
+            f'<span style="color:{ACCENT_SOFT};font-size:0.65em;font-weight:600;text-transform:uppercase;min-width:130px;">Variable</span>'
             f'<span style="color:{ACCENT_SOFT};font-size:0.65em;font-weight:600;text-transform:uppercase;flex:1;">Best</span>'
-            f'<span style="color:{ACCENT_SOFT};font-size:0.65em;font-weight:600;text-transform:uppercase;min-width:46px;text-align:right;">Avg R</span>'
-            f'<span style="color:{ACCENT_SOFT};font-size:0.65em;font-weight:600;text-transform:uppercase;min-width:38px;text-align:right;">WR</span>'
-            f'<span style="color:{ACCENT_SOFT};font-size:0.65em;font-weight:600;text-transform:uppercase;min-width:26px;text-align:right;">N</span>'
+            f'<span style="color:{ACCENT_SOFT};font-size:0.65em;font-weight:600;text-transform:uppercase;min-width:50px;text-align:right;">Avg R</span>'
+            f'<span style="color:{ACCENT_SOFT};font-size:0.65em;font-weight:600;text-transform:uppercase;min-width:40px;text-align:right;">WR</span>'
+            f'<span style="color:{ACCENT_SOFT};font-size:0.65em;font-weight:600;text-transform:uppercase;min-width:30px;text-align:right;">N</span>'
             f'</div>{rows_html}</div>', unsafe_allow_html=True)
 
 st.markdown('</div>', unsafe_allow_html=True)
