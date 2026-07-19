@@ -19,6 +19,9 @@ if not st.session_state.authenticated:
     header[data-testid="stHeader"] {{ display: none !important; }}
   #MainMenu {{ display: none !important; }}
   footer {{ display: none !important; }}
+  div[data-testid="stToolbar"] {{ display: none !important; }}
+  div[data-testid="stDecoration"] {{ display: none !important; }}
+  div[data-testid="stStatusWidget"] {{ display: none !important; }}
   .stApp {
     .stApp {
         background: #070b14;
