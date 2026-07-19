@@ -26,7 +26,7 @@ if not st.session_state.authenticated:
     .stApp {
         background: #070b14;
         background-image: url('https://images.unsplash.com/photo-1592198084033-aade902d1aae?w=1600&q=80');
-        background-size: cover; background-position: center; background-attachment: fixed;
+        background-size: cover; background-position: center;
         font-family: 'Inter', sans-serif;
     }
     .stApp::before {
