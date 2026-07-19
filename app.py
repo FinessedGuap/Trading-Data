@@ -996,19 +996,13 @@ setTimeout(function() {{
 elif page == 'P&L Tracker':
     st.markdown(f'<div style="font-size:1.6em;font-weight:700;color:{TEXT_PRIMARY};margin-bottom:24px;">P&L Tracker</div>', unsafe_allow_html=True)
 
-    set_cols = st.columns(3)
-    with set_cols[0]:
-        account_size = st.number_input("Account Size ($)", min_value=1000, max_value=10000000, value=st.session_state.account_size, step=1000, format="%d")
-        st.session_state.account_size = account_size
-    with set_cols[1]:
-        num_accounts = st.number_input("Number of Accounts", min_value=1, max_value=50, value=st.session_state.num_accounts, step=1)
+    account_size = 50000
+    col_gap, col_num, col_gap2 = st.columns([2, 1, 2])
+    with col_num:
+        num_accounts = st.number_input("Accounts", min_value=1, max_value=50, value=st.session_state.num_accounts, step=1)
         st.session_state.num_accounts = num_accounts
-    with set_cols[2]:
-        risk_per_trade = st.number_input("Risk Per Trade ($)", min_value=1, max_value=100000, value=st.session_state.risk_per_trade, step=50)
-        st.session_state.risk_per_trade = risk_per_trade
 
     total_capital = account_size * num_accounts
-    combined_risk = risk_per_trade * num_accounts
 
     if len(df_funded) > 0 and 'R_Result' in df_funded.columns:
         df_funded_clean = df_funded.dropna(subset=['R_Result', 'Date']).copy()
