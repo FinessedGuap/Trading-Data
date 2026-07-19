@@ -95,7 +95,7 @@ themes = {
     'Blue':    {'ACCENT': '#60a5fa', 'ACCENT_SOFT': '#93c5fd', 'RGB': '96,165,250'},
     'Purple':  {'ACCENT': '#a78bfa', 'ACCENT_SOFT': '#c4b5fd', 'RGB': '167,139,250'},
     'Green':   {'ACCENT': '#34d399', 'ACCENT_SOFT': '#6ee7b7', 'RGB': '52,211,153'},
-    'Red':     {'ACCENT': '#f87171', 'ACCENT_SOFT': '#fca5a5', 'RGB': '248,113,113'},
+    'Gold':    {'ACCENT': '#fcd34d', 'ACCENT_SOFT': '#fde68a', 'RGB': '252,211,77'},
     'Neutral': {'ACCENT': '#94a3b8', 'ACCENT_SOFT': '#cbd5e1', 'RGB': '148,163,184'},
 }
 T = themes.get(st.session_state.theme, themes['Neutral'])
@@ -664,7 +664,7 @@ with st.sidebar:
         st.session_state.authenticated = False; st.rerun()
 
     st.markdown(f'<div style="border-top:1px solid {BORDER};padding-top:12px;margin-top:16px;"><div style="font-size:0.58em;color:{TEXT3};letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px;">Theme</div></div>', unsafe_allow_html=True)
-    theme_opts = {'Blue':'#60a5fa','Purple':'#a78bfa','Green':'#34d399','Red':'#f87171','Neutral':'#94a3b8'}
+    theme_opts = {'Blue':'#60a5fa','Purple':'#a78bfa','Green':'#34d399','Gold':'#fcd34d','Neutral':'#94a3b8'}
     tcols = st.columns(5)
     for i,(name,hex_c) in enumerate(theme_opts.items()):
         active_t = st.session_state.theme == name
@@ -1237,8 +1237,7 @@ elif page == 'Edge Analysis':
 # ============ BEST SETUPS ============
 elif page == 'Best Setups':
     st.markdown(f'<div style="font-size:1.5em;font-weight:700;color:{TEXT};margin-bottom:4px;">Best Setups</div>', unsafe_allow_html=True)
-    st.markdown(f'<div style="font-size:0.75em;color:{TEXT2};margin-bottom:24px;">Highest probability combinations from all logged trades</div>', unsafe_allow_html=True)
-
+ 
     if best_setup:
         st.markdown(f'<div style="font-size:0.65em;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:{TEXT3};margin-bottom:12px;">Top Setup Finder</div>', unsafe_allow_html=True)
         tags = ''.join([f'<span style="background:rgba({RGB},0.1);border-radius:6px;padding:4px 10px;font-size:0.75em;color:{ACCENT};margin:3px;display:inline-block;animation:staggerIn 0.4s cubic-bezier(0.16,1,0.3,1) {i*50}ms both;">{b["label"]}</span>' for i,b in enumerate(best_setup['combos'])])
