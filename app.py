@@ -105,12 +105,8 @@ if 'theme' not in st.session_state:
     st.session_state.theme = 'Neutral'
 if 'dark_mode' not in st.session_state:
     st.session_state.dark_mode = True
-if 'account_size' not in st.session_state:
-    st.session_state.account_size = 50000
 if 'num_accounts' not in st.session_state:
     st.session_state.num_accounts = 1
-if 'risk_per_trade' not in st.session_state:
-    st.session_state.risk_per_trade = 500
 
 themes = {
     'Blue':    {'ACCENT': '#60a5fa', 'ACCENT_SOFT': '#7fb2f5', 'BG_TINT': '96,165,250'},
