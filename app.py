@@ -1004,6 +1004,15 @@ elif page == 'P&L Tracker':
 
     total_capital = account_size * num_accounts
 
+    # Calculate combined risk from Risk Management column
+    if 'Risk Management' in df_funded.columns:
+        avg_risk_pct = pd.to_numeric(df_funded['Risk Management'].str.replace('%', '').str.strip(), errors='coerce').mean()
+        if pd.isna(avg_risk_pct):
+            avg_risk_pct = 1.0
+    else:
+        avg_risk_pct = 1.0
+    combined_risk = (account_size * avg_risk_pct / 100) * num_accounts
+
     if len(df_funded) > 0 and 'R_Result' in df_funded.columns:
         df_funded_clean = df_funded.dropna(subset=['R_Result', 'Date']).copy()
         month_funded = df_funded_clean[(df_funded_clean['Date'].dt.month == today.month) & (df_funded_clean['Date'].dt.year == today.year)]
