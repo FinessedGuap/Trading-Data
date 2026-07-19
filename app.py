@@ -1124,7 +1124,15 @@ setTimeout(function() {{
         current_wr = funded_stats.get('win_rate', 0)
         pnl_progress = min(round(max(total_pnl_funded, 0) / goal_pnl * 100, 1), 100)
         wr_progress = min(round(current_wr / goal_wr * 100, 1), 100)
-        dd_val = abs(funded_stats.get('max_drawdown', 0)) * account_size * num_accounts * (avg_risk_pct / 100)
+       # Calculate dollar drawdown from individual trade losses
+        if 'Risk Management' in df_funded_clean.columns:
+            risk_pcts = pd.to_numeric(df_funded_clean['Risk Management'].str.replace('%', '').str.strip(), errors='coerce').fillna(1.0)
+            trade_pnls = df_funded_clean['R_Result'] * risk_pcts / 100 * account_size * num_accounts
+        else:
+            trade_pnls = df_funded_clean['R_Result'] * combined_risk
+        equity_curve = trade_pnls.cumsum()
+        peak = equity_curve.cummax()
+        dd_val = abs((equity_curve - peak).min())
         dd_progress = min(round(dd_val / goal_dd * 100, 1), 100)
         dd_color = '#f87171' if dd_progress >= 80 else ('#fbbf24' if dd_progress >= 50 else '#4ade80')
         dd_label = '⚠ Getting close!' if dd_progress >= 80 else ('Halfway there' if dd_progress >= 50 else 'Safe')
