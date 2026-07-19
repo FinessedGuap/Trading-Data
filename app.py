@@ -1117,7 +1117,7 @@ setTimeout(function() {{
         st.markdown(f'<div style="color:{ACCENT_SOFT};font-size:0.72em;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin:28px 0 14px;">Goals</div>', unsafe_allow_html=True)
 
         goal_pnl = 10000
-        goal_wr = 70
+        goal_wr = 60
         goal_dd = 2000
 
         current_wr = main_stats.get('win_rate', 0)
