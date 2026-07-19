@@ -1144,89 +1144,89 @@ setTimeout(function() {{
         at_cols[1].markdown(f'<div class="pnl-card" style="background:{BG_CARD};border:1px solid {BORDER2};border-radius:18px;padding:18px 14px;text-align:center;box-shadow:0 4px 16px {SHADOW};"><div style="font-size:0.6em;color:{TEXT_SECONDARY};text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px;">Total R</div><div style="font-size:1.3em;font-weight:700;color:{TEXT_PRIMARY};">{sign_total}{round(total_r_funded,2)}R</div></div>', unsafe_allow_html=True)
         at_cols[2].markdown(f'<div class="pnl-card" style="background:{BG_CARD};border:1px solid {BORDER2};border-radius:18px;padding:18px 14px;text-align:center;box-shadow:0 4px 16px {SHADOW};"><div style="font-size:0.6em;color:{TEXT_SECONDARY};text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px;">Funded Trades</div><div style="font-size:1.3em;font-weight:700;color:{TEXT_PRIMARY};">{len(df_funded_clean)}</div></div>', unsafe_allow_html=True)
         at_cols[3].markdown(f'<div class="pnl-card" style="background:{BG_CARD};border:1px solid {BORDER2};border-radius:18px;padding:18px 14px;text-align:center;box-shadow:0 4px 16px {SHADOW};"><div style="font-size:0.6em;color:{TEXT_SECONDARY};text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px;">Total Capital</div><div style="font-size:1.3em;font-weight:700;color:{ACCENT_SOFT};">${total_capital:,}</div></div>', unsafe_allow_html=True)
-    else:
-    # ============ GOALS ============
-        st.markdown(f'<div style="color:{ACCENT_SOFT};font-size:0.72em;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin:28px 0 14px;">Goals</div>', unsafe_allow_html=True)
-
-        goal_pnl = 10000
-        goal_wr = 70
-        goal_dd = 2000
-
-        pnl_progress = min(round(max(total_pnl_funded, 0) / goal_pnl * 100, 1), 100) if 'total_pnl_funded' in dir() else 0
-        wr_progress = min(round(xau_stats.get('win_rate', main_stats.get('win_rate', 0)) / goal_wr * 100, 1), 100) if main_stats else 0
-        current_wr = main_stats.get('win_rate', 0)
-        dd_val = abs(main_stats.get('max_drawdown', 0)) * combined_risk
-        dd_progress = min(round(dd_val / goal_dd * 100, 1), 100)
-        dd_color = '#f87171' if dd_progress >= 80 else ('#fbbf24' if dd_progress >= 50 else '#4ade80')
-        dd_label = '⚠ Getting close!' if dd_progress >= 80 else ('Halfway there' if dd_progress >= 50 else 'Safe')
-        pnl_remaining = round(goal_pnl - max(total_pnl_funded, 0), 2)
-
-        goal_cols = st.columns(3)
-        goal_cols[0].markdown(
-            f'<div style="background:rgba({BG_TINT},0.05);border:1px solid rgba({BG_TINT},0.2);border-radius:14px;padding:16px;">'
-            f'<div style="font-size:0.62em;color:{TEXT_SECONDARY};text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Monthly P&L Goal</div>'
-            f'<div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:10px;">'
-            f'<span style="font-size:1.2em;font-weight:700;color:{TEXT_PRIMARY};">${max(total_pnl_funded,0):,.0f}</span>'
-            f'<span style="font-size:0.72em;color:{TEXT_SECONDARY};">/ ${goal_pnl:,}</span></div>'
-            f'<div style="background:rgba({BG_TINT},0.1);border-radius:6px;height:6px;overflow:hidden;">'
-            f'<div style="width:{pnl_progress}%;height:100%;background:linear-gradient(90deg,rgba({BG_TINT},0.6),{ACCENT});border-radius:6px;"></div></div>'
-            f'<div style="color:{ACCENT};font-size:0.65em;margin-top:6px;">{pnl_progress}% · ${pnl_remaining:,.0f} to go</div>'
-            f'</div>', unsafe_allow_html=True)
-
-        goal_cols[1].markdown(
-            f'<div style="background:rgba({BG_TINT},0.05);border:1px solid rgba({BG_TINT},0.2);border-radius:14px;padding:16px;">'
-            f'<div style="font-size:0.62em;color:{TEXT_SECONDARY};text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Win Rate Goal</div>'
-            f'<div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:10px;">'
-            f'<span style="font-size:1.2em;font-weight:700;color:{TEXT_PRIMARY};">{current_wr}%</span>'
-            f'<span style="font-size:0.72em;color:{TEXT_SECONDARY};">/ {goal_wr}%</span></div>'
-            f'<div style="background:rgba({BG_TINT},0.1);border-radius:6px;height:6px;overflow:hidden;">'
-            f'<div style="width:{wr_progress}%;height:100%;background:linear-gradient(90deg,rgba({BG_TINT},0.6),{ACCENT});border-radius:6px;"></div></div>'
-            f'<div style="color:{ACCENT};font-size:0.65em;margin-top:6px;">{wr_progress}% there</div>'
-            f'</div>', unsafe_allow_html=True)
-
-        goal_cols[2].markdown(
-            f'<div style="background:rgba({BG_TINT},0.05);border:1px solid rgba({BG_TINT},0.2);border-radius:14px;padding:16px;">'
-            f'<div style="font-size:0.62em;color:{TEXT_SECONDARY};text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Max Drawdown</div>'
-            f'<div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:10px;">'
-            f'<span style="font-size:1.2em;font-weight:700;color:{TEXT_PRIMARY};">-${dd_val:,.0f}</span>'
-            f'<span style="font-size:0.72em;color:{TEXT_SECONDARY};">/ ${goal_dd:,} limit</span></div>'
-            f'<div style="background:rgba({BG_TINT},0.1);border-radius:6px;height:6px;overflow:hidden;">'
-            f'<div style="width:{dd_progress}%;height:100%;background:linear-gradient(90deg,rgba({BG_TINT},0.6),{ACCENT});border-radius:6px;"></div></div>'
-            f'<div style="color:{dd_color};font-size:0.65em;margin-top:6px;">{dd_progress}% used · {dd_label}</div>'
-            f'</div>', unsafe_allow_html=True)
-
-        # Rings
-        pnl_dash = round(239 - (pnl_progress / 100) * 239)
-        wr_dash = round(239 - (wr_progress / 100) * 239)
-        dd_dash = round(239 - (dd_progress / 100) * 239)
-        st.markdown(
-            f'<div style="background:rgba({BG_TINT},0.05);border:1px solid rgba({BG_TINT},0.15);border-radius:16px;padding:20px;display:flex;justify-content:space-around;align-items:center;margin-top:10px;">'
-            f'<div style="text-align:center;">'
-            f'<div style="position:relative;width:90px;height:90px;margin:0 auto;">'
-            f'<svg viewBox="0 0 100 100" style="width:90px;height:90px;transform:rotate(-90deg);">'
-            f'<circle cx="50" cy="50" r="38" fill="none" stroke="rgba({BG_TINT},0.1)" stroke-width="10"/>'
-            f'<circle cx="50" cy="50" r="38" fill="none" stroke="{ACCENT}" stroke-width="10" stroke-dasharray="239" stroke-dashoffset="{pnl_dash}" stroke-linecap="round"/></svg>'
-            f'<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:0.82em;font-weight:700;color:{TEXT_PRIMARY};">{pnl_progress}%</div>'
-            f'</div><div style="font-size:0.72em;font-weight:600;color:{TEXT_PRIMARY};margin-top:6px;">${max(total_pnl_funded,0):,.0f}</div>'
-            f'<div style="font-size:0.58em;color:{TEXT_SECONDARY};">of ${goal_pnl:,}</div></div>'
-            f'<div style="text-align:center;">'
-            f'<div style="position:relative;width:90px;height:90px;margin:0 auto;">'
-            f'<svg viewBox="0 0 100 100" style="width:90px;height:90px;transform:rotate(-90deg);">'
-            f'<circle cx="50" cy="50" r="38" fill="none" stroke="rgba({BG_TINT},0.1)" stroke-width="10"/>'
-            f'<circle cx="50" cy="50" r="38" fill="none" stroke="{ACCENT}" stroke-width="10" stroke-dasharray="239" stroke-dashoffset="{wr_dash}" stroke-linecap="round"/></svg>'
-            f'<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:0.82em;font-weight:700;color:{TEXT_PRIMARY};">{wr_progress}%</div>'
-            f'</div><div style="font-size:0.72em;font-weight:600;color:{TEXT_PRIMARY};margin-top:6px;">{current_wr}%</div>'
-            f'<div style="font-size:0.58em;color:{TEXT_SECONDARY};">WR goal</div></div>'
-            f'<div style="text-align:center;">'
-            f'<div style="position:relative;width:90px;height:90px;margin:0 auto;">'
-            f'<svg viewBox="0 0 100 100" style="width:90px;height:90px;transform:rotate(-90deg);">'
-            f'<circle cx="50" cy="50" r="38" fill="none" stroke="rgba({BG_TINT},0.1)" stroke-width="10"/>'
-            f'<circle cx="50" cy="50" r="38" fill="none" stroke="{ACCENT}" stroke-width="10" stroke-dasharray="239" stroke-dashoffset="{dd_dash}" stroke-linecap="round"/></svg>'
-            f'<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:0.82em;font-weight:700;color:{TEXT_PRIMARY};">{dd_progress}%</div>'
-            f'</div><div style="font-size:0.72em;font-weight:600;color:{TEXT_PRIMARY};margin-top:6px;">-${dd_val:,.0f}</div>'
-            f'<div style="font-size:0.58em;color:{TEXT_SECONDARY};">DD limit</div></div>'
-            f'</div>', unsafe_allow_html=True)
-        st.markdown(f'<div class="glass-panel" style="text-align:center;padding:48px 24px;"><div style="font-size:1.4em;margin-bottom:12px;">💰</div><div style="color:{TEXT_PRIMARY};font-weight:600;margin-bottom:8px;">No trades yet</div></div>', unsafe_allow_html=True)
+    else:       
+        # ============ GOALS ============
+            st.markdown(f'<div style="color:{ACCENT_SOFT};font-size:0.72em;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin:28px 0 14px;">Goals</div>', unsafe_allow_html=True)
+    
+            goal_pnl = 10000
+            goal_wr = 70
+            goal_dd = 2000
+    
+            pnl_progress = min(round(max(total_pnl_funded, 0) / goal_pnl * 100, 1), 100) if 'total_pnl_funded' in dir() else 0
+            wr_progress = min(round(xau_stats.get('win_rate', main_stats.get('win_rate', 0)) / goal_wr * 100, 1), 100) if main_stats else 0
+            current_wr = main_stats.get('win_rate', 0)
+            dd_val = abs(main_stats.get('max_drawdown', 0)) * combined_risk
+            dd_progress = min(round(dd_val / goal_dd * 100, 1), 100)
+            dd_color = '#f87171' if dd_progress >= 80 else ('#fbbf24' if dd_progress >= 50 else '#4ade80')
+            dd_label = '⚠ Getting close!' if dd_progress >= 80 else ('Halfway there' if dd_progress >= 50 else 'Safe')
+            pnl_remaining = round(goal_pnl - max(total_pnl_funded, 0), 2)
+    
+            goal_cols = st.columns(3)
+            goal_cols[0].markdown(
+                f'<div style="background:rgba({BG_TINT},0.05);border:1px solid rgba({BG_TINT},0.2);border-radius:14px;padding:16px;">'
+                f'<div style="font-size:0.62em;color:{TEXT_SECONDARY};text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Monthly P&L Goal</div>'
+                f'<div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:10px;">'
+                f'<span style="font-size:1.2em;font-weight:700;color:{TEXT_PRIMARY};">${max(total_pnl_funded,0):,.0f}</span>'
+                f'<span style="font-size:0.72em;color:{TEXT_SECONDARY};">/ ${goal_pnl:,}</span></div>'
+                f'<div style="background:rgba({BG_TINT},0.1);border-radius:6px;height:6px;overflow:hidden;">'
+                f'<div style="width:{pnl_progress}%;height:100%;background:linear-gradient(90deg,rgba({BG_TINT},0.6),{ACCENT});border-radius:6px;"></div></div>'
+                f'<div style="color:{ACCENT};font-size:0.65em;margin-top:6px;">{pnl_progress}% · ${pnl_remaining:,.0f} to go</div>'
+                f'</div>', unsafe_allow_html=True)
+    
+            goal_cols[1].markdown(
+                f'<div style="background:rgba({BG_TINT},0.05);border:1px solid rgba({BG_TINT},0.2);border-radius:14px;padding:16px;">'
+                f'<div style="font-size:0.62em;color:{TEXT_SECONDARY};text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Win Rate Goal</div>'
+                f'<div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:10px;">'
+                f'<span style="font-size:1.2em;font-weight:700;color:{TEXT_PRIMARY};">{current_wr}%</span>'
+                f'<span style="font-size:0.72em;color:{TEXT_SECONDARY};">/ {goal_wr}%</span></div>'
+                f'<div style="background:rgba({BG_TINT},0.1);border-radius:6px;height:6px;overflow:hidden;">'
+                f'<div style="width:{wr_progress}%;height:100%;background:linear-gradient(90deg,rgba({BG_TINT},0.6),{ACCENT});border-radius:6px;"></div></div>'
+                f'<div style="color:{ACCENT};font-size:0.65em;margin-top:6px;">{wr_progress}% there</div>'
+                f'</div>', unsafe_allow_html=True)
+    
+            goal_cols[2].markdown(
+                f'<div style="background:rgba({BG_TINT},0.05);border:1px solid rgba({BG_TINT},0.2);border-radius:14px;padding:16px;">'
+                f'<div style="font-size:0.62em;color:{TEXT_SECONDARY};text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Max Drawdown</div>'
+                f'<div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:10px;">'
+                f'<span style="font-size:1.2em;font-weight:700;color:{TEXT_PRIMARY};">-${dd_val:,.0f}</span>'
+                f'<span style="font-size:0.72em;color:{TEXT_SECONDARY};">/ ${goal_dd:,} limit</span></div>'
+                f'<div style="background:rgba({BG_TINT},0.1);border-radius:6px;height:6px;overflow:hidden;">'
+                f'<div style="width:{dd_progress}%;height:100%;background:linear-gradient(90deg,rgba({BG_TINT},0.6),{ACCENT});border-radius:6px;"></div></div>'
+                f'<div style="color:{dd_color};font-size:0.65em;margin-top:6px;">{dd_progress}% used · {dd_label}</div>'
+                f'</div>', unsafe_allow_html=True)
+    
+            # Rings
+            pnl_dash = round(239 - (pnl_progress / 100) * 239)
+            wr_dash = round(239 - (wr_progress / 100) * 239)
+            dd_dash = round(239 - (dd_progress / 100) * 239)
+            st.markdown(
+                f'<div style="background:rgba({BG_TINT},0.05);border:1px solid rgba({BG_TINT},0.15);border-radius:16px;padding:20px;display:flex;justify-content:space-around;align-items:center;margin-top:10px;">'
+                f'<div style="text-align:center;">'
+                f'<div style="position:relative;width:90px;height:90px;margin:0 auto;">'
+                f'<svg viewBox="0 0 100 100" style="width:90px;height:90px;transform:rotate(-90deg);">'
+                f'<circle cx="50" cy="50" r="38" fill="none" stroke="rgba({BG_TINT},0.1)" stroke-width="10"/>'
+                f'<circle cx="50" cy="50" r="38" fill="none" stroke="{ACCENT}" stroke-width="10" stroke-dasharray="239" stroke-dashoffset="{pnl_dash}" stroke-linecap="round"/></svg>'
+                f'<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:0.82em;font-weight:700;color:{TEXT_PRIMARY};">{pnl_progress}%</div>'
+                f'</div><div style="font-size:0.72em;font-weight:600;color:{TEXT_PRIMARY};margin-top:6px;">${max(total_pnl_funded,0):,.0f}</div>'
+                f'<div style="font-size:0.58em;color:{TEXT_SECONDARY};">of ${goal_pnl:,}</div></div>'
+                f'<div style="text-align:center;">'
+                f'<div style="position:relative;width:90px;height:90px;margin:0 auto;">'
+                f'<svg viewBox="0 0 100 100" style="width:90px;height:90px;transform:rotate(-90deg);">'
+                f'<circle cx="50" cy="50" r="38" fill="none" stroke="rgba({BG_TINT},0.1)" stroke-width="10"/>'
+                f'<circle cx="50" cy="50" r="38" fill="none" stroke="{ACCENT}" stroke-width="10" stroke-dasharray="239" stroke-dashoffset="{wr_dash}" stroke-linecap="round"/></svg>'
+                f'<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:0.82em;font-weight:700;color:{TEXT_PRIMARY};">{wr_progress}%</div>'
+                f'</div><div style="font-size:0.72em;font-weight:600;color:{TEXT_PRIMARY};margin-top:6px;">{current_wr}%</div>'
+                f'<div style="font-size:0.58em;color:{TEXT_SECONDARY};">WR goal</div></div>'
+                f'<div style="text-align:center;">'
+                f'<div style="position:relative;width:90px;height:90px;margin:0 auto;">'
+                f'<svg viewBox="0 0 100 100" style="width:90px;height:90px;transform:rotate(-90deg);">'
+                f'<circle cx="50" cy="50" r="38" fill="none" stroke="rgba({BG_TINT},0.1)" stroke-width="10"/>'
+                f'<circle cx="50" cy="50" r="38" fill="none" stroke="{ACCENT}" stroke-width="10" stroke-dasharray="239" stroke-dashoffset="{dd_dash}" stroke-linecap="round"/></svg>'
+                f'<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:0.82em;font-weight:700;color:{TEXT_PRIMARY};">{dd_progress}%</div>'
+                f'</div><div style="font-size:0.72em;font-weight:600;color:{TEXT_PRIMARY};margin-top:6px;">-${dd_val:,.0f}</div>'
+                f'<div style="font-size:0.58em;color:{TEXT_SECONDARY};">DD limit</div></div>'
+                f'</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="glass-panel" style="text-align:center;padding:48px 24px;"><div style="font-size:1.4em;margin-bottom:12px;">💰</div><div style="color:{TEXT_PRIMARY};font-weight:600;margin-bottom:8px;">No trades yet</div></div>', unsafe_allow_html=True)
 
 # ============ PAGE: CHARTS ============
 elif page == 'Charts':
