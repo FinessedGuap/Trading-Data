@@ -102,7 +102,7 @@ headers = {
 }
 
 if 'theme' not in st.session_state:
-    st.session_state.theme = 'Blue'
+    st.session_state.theme = 'Neutral'
 if 'dark_mode' not in st.session_state:
     st.session_state.dark_mode = True
 if 'account_size' not in st.session_state:
