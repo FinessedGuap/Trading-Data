@@ -1016,17 +1016,25 @@ elif page == 'P&L Tracker':
     if len(df_funded) > 0 and 'R_Result' in df_funded.columns:
         df_funded_clean = df_funded.dropna(subset=['R_Result', 'Date']).copy()
         month_funded = df_funded_clean[(df_funded_clean['Date'].dt.month == today.month) & (df_funded_clean['Date'].dt.year == today.year)]
+        def calc_pnl(df_subset):
+            if 'Risk Management' in df_subset.columns:
+                risk_pcts = pd.to_numeric(df_subset['Risk Management'].str.replace('%', '').str.strip(), errors='coerce').fillna(1.0)
+                pnl = (df_subset['R_Result'] * risk_pcts / 100 * account_size * num_accounts).sum()
+            else:
+                pnl = df_subset['R_Result'].sum() * combined_risk
+            return round(pnl, 2)
+
         month_r = month_funded['R_Result'].sum()
-        month_pnl = round(month_r * combined_risk, 2)
+        month_pnl = calc_pnl(month_funded)
         month_pct = round(month_pnl / total_capital * 100, 2)
         week_start = today - pd.Timedelta(days=today.weekday())
         week_funded = df_funded_clean[df_funded_clean['Date'].dt.date >= week_start.date()]
         week_r = week_funded['R_Result'].sum()
-        week_pnl = round(week_r * combined_risk, 2)
+        week_pnl = calc_pnl(week_funded)
         week_pct = round(week_pnl / total_capital * 100, 2)
         today_funded = df_funded_clean[df_funded_clean['Date'].dt.date == today.date()]
         today_r = today_funded['R_Result'].sum()
-        today_pnl = round(today_r * combined_risk, 2)
+        today_pnl = calc_pnl(today_funded)
         today_pct = round(today_pnl / total_capital * 100, 2)
 
         def fmt_pnl(val): return f"+${val:,.2f}" if val >= 0 else f"-${abs(val):,.2f}"
