@@ -16,6 +16,8 @@ if not st.session_state.authenticated:
     st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+    header[data-testid="stHeader"] {{ display: none !important; }}
+  .stApp {
     .stApp {
         background: #070b14;
         background-image: url('https://images.unsplash.com/photo-1592198084033-aade902d1aae?w=1600&q=80');
