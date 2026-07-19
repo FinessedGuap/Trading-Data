@@ -756,6 +756,26 @@ css = f"""
 """
 st.markdown(css, unsafe_allow_html=True)
 
+components.html("""
+<script>
+(function() {
+    function tryScroll() {
+        try {
+            var w = window.parent;
+            var el = w.document.querySelector('[data-testid="stAppViewBlockContainer"]');
+            if (!el) el = w.document.querySelector('[data-testid="stMainBlockContainer"]');
+            if (!el) el = w.document.querySelector('.main');
+            if (el) el.scrollTop = 0;
+            w.scrollTo({top: 0, behavior: 'instant'});
+        } catch(e) {}
+    }
+    tryScroll();
+    setTimeout(tryScroll, 100);
+    setTimeout(tryScroll, 300);
+})();
+</script>
+""", height=0)
+
 # ============ SIDEBAR ============
 with st.sidebar:
     st.markdown(f'<div style="font-size:1.1em;font-weight:700;color:{TEXT_PRIMARY};padding:20px 16px 16px;border-bottom:1px solid {BORDER};margin-bottom:8px;">Trading Data</div>', unsafe_allow_html=True)
@@ -809,22 +829,6 @@ with st.sidebar:
 
 page = st.session_state.active_page
 st.markdown('<div class="main-content">', unsafe_allow_html=True)
-components.html("""
-<script>
-(function() {
-    var interval = setInterval(function() {
-        try {
-            var el = window.parent.document.querySelector('section.stMain');
-            if (el && el.scrollTop > 0) {
-                el.scrollTop = 0;
-            }
-        } catch(e) {}
-    }, 50);
-    setTimeout(function() { clearInterval(interval); }, 3000);
-})();
-</script>
-""", height=0)
-st.markdown('<a name="top"></a>', unsafe_allow_html=True)
 
 # ============ PAGE: OVERVIEW ============
 if page == 'Overview':
