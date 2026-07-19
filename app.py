@@ -1156,14 +1156,6 @@ setTimeout(function() {{
             f'<div style="color:{ACCENT};font-size:0.65em;margin-top:6px;">{wr_progress}% there</div>'
             f'</div>', unsafe_allow_html=True)
 
-        goal_cols[2].markdown(
-            f'<div style="background:rgba({BG_TINT},0.05);border:1px solid rgba({BG_TINT},0.2);border-radius:14px;padding:16px;">'
-            f'<div style="font-size:0.62em;color:{TEXT_SECONDARY};text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Max Drawdown</div>'
-            f'<div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:10px;">'
-            f'<span style="font-size:1.2em;font-weight:700;color:{TEXT_PRIMARY};">-${dd_val:,.0f}</span>'
-            f'<div style="background:rgba({BG_TINT},0.1);border-radius:6px;height:6px;overflow:hidden;">'
-            f'</div>', unsafe_allow_html=True)
-
         pnl_dash = round(239 - (pnl_progress / 100) * 239)
         wr_dash = round(239 - (wr_progress / 100) * 239)
         st.markdown(
