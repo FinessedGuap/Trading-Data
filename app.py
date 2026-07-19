@@ -64,7 +64,7 @@ if not st.session_state.authenticated:
             <div style="color:rgba(255,255,255,0.25);font-size:0.82em;margin-bottom:32px;">Your personal trading journal</div>
         </div>
         """, unsafe_allow_html=True)
-       pw = st.text_input("Password", type="password", label_visibility="collapsed", placeholder="Password", autocomplete="off", help="")
+        pw = st.text_input("Password", type="password", label_visibility="collapsed", placeholder="Password", autocomplete="off", help="")
         st.markdown('<div style="margin-top:8px;"></div>', unsafe_allow_html=True)
         if st.button("Enter", use_container_width=True):
             if pw == PASSWORD:
