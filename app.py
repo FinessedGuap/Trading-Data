@@ -1128,14 +1128,14 @@ setTimeout(function() {{
        st.write(f"Trade P&Ls: {trade_pnls.tolist()}")
         st.write(f"Equity curve: {equity_curve.tolist()}")
         st.write(f"DD val: {dd_val}")
-        if 'Risk Management' in df_funded_clean.columns:
-            risk_pcts = pd.to_numeric(df_funded_clean['Risk Management'].str.replace('%', '').str.strip(), errors='coerce').fillna(1.0)
-            trade_pnls = df_funded_clean['R_Result'] * risk_pcts / 100 * account_size * num_accounts
+        df_dd = df_funded_clean.copy().reset_index(drop=True)
+        if 'Risk Management' in df_dd.columns:
+            df_dd['risk_pct'] = pd.to_numeric(df_dd['Risk Management'].str.replace('%', '').str.strip(), errors='coerce').fillna(avg_risk_pct)
+            df_dd['trade_pnl'] = df_dd['R_Result'] * df_dd['risk_pct'] / 100 * account_size * num_accounts
         else:
-            trade_pnls = df_funded_clean['R_Result'] * combined_risk
-        equity_curve = trade_pnls.cumsum()
-        peak = equity_curve.cummax()
-        dd_val = abs((equity_curve - peak).min())
+            df_dd['trade_pnl'] = df_dd['R_Result'] * combined_risk
+        losses_only = df_dd[df_dd['trade_pnl'] < 0]['trade_pnl'].sum()
+        dd_val = abs(losses_only) if losses_only < 0 else 0
         dd_progress = min(round(dd_val / goal_dd * 100, 1), 100)
         dd_color = '#f87171' if dd_progress >= 80 else ('#fbbf24' if dd_progress >= 50 else '#4ade80')
         dd_label = '⚠ Getting close!' if dd_progress >= 80 else ('Halfway there' if dd_progress >= 50 else 'Safe')
