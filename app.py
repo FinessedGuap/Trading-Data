@@ -6,9 +6,7 @@ from datetime import datetime
 import calendar as cal_module
 import math
 
-from PIL import Image
-icon = Image.open("/mount/src/trading-data/td_logo.png")
-st.set_page_config(page_title="Trading Data", page_icon=icon, layout="wide", initial_sidebar_state="collapsed")
+st.set_page_config(page_title="Trading Data", page_icon="📈", layout="wide", initial_sidebar_state="collapsed")
 
 PASSWORD = st.secrets.get("DASHBOARD_PASSWORD", "trading123")
 if 'authenticated' not in st.session_state:
