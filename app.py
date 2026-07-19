@@ -17,6 +17,8 @@ if not st.session_state.authenticated:
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
     header[data-testid="stHeader"] {{ display: none !important; }}
+  #MainMenu {{ display: none !important; }}
+  footer {{ display: none !important; }}
   .stApp {
     .stApp {
         background: #070b14;
