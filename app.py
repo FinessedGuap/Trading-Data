@@ -693,7 +693,7 @@ if page == 'Overview':
     diff_sign = '+' if diff >= 0 else ''
     month_sign = '+' if this_month_r > 0 else ''
 
-    st.markdown(f'<div style="font-size:1.5em;font-weight:700;color:{TEXT};margin-bottom:2px;">Overview</div>', unsafe_allow_html=True)
+   st.markdown(f'<div style="font-size:1.5em;font-weight:700;color:{TEXT};margin-bottom:20px;">Overview</div>', unsafe_allow_html=True)
 
     # Clean banner — no borders
     st.markdown(
