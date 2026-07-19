@@ -825,12 +825,13 @@ setTimeout(function() {{
         for i,(col,m) in enumerate(zip(mcols,months)):
             d = monthly_r[m]; sign = '+' if d['total_r']>0 else ''
             is_cur = m==this_month_key
+            current_badge = f'<div style="color:{ACCENT_SOFT};font-size:0.58em;margin-top:3px;">Current</div>' if is_cur else ''
             col.markdown(
                 f'<div style="background:{"rgba("+RGB+",0.08)" if is_cur else BG2};border-radius:12px;padding:14px;text-align:center;{"border:1px solid rgba("+RGB+",0.2);" if is_cur else ""}animation:staggerIn 0.5s cubic-bezier(0.16,1,0.3,1) {i*60}ms both;">'
                 f'<div style="color:{ACCENT_SOFT if is_cur else TEXT2};font-size:0.6em;margin-bottom:6px;text-transform:uppercase;">{m}</div>'
                 f'<div style="color:{TEXT};font-size:1.15em;font-weight:700;">{sign}{d["total_r"]}R</div>'
                 f'<div style="color:{TEXT2};font-size:0.6em;margin-top:4px;">{d["win_rate"]}% · {d["trades"]}t</div>'
-                f'{"<div style=\\"color:"+ACCENT_SOFT+";font-size:0.58em;margin-top:3px;\\">Current</div>" if is_cur else ""}'
+                f'{current_badge}'
                 f'</div>', unsafe_allow_html=True)
 
     # 3SL Window
