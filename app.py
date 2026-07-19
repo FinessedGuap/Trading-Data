@@ -1152,7 +1152,7 @@ setTimeout(function() {{
         goal_wr = 70
         goal_dd = 2000
 
-        pnl_progress = min(round(max(total_pnl_funded, 0) / goal_pnl * 100, 1), 100)
+        pnl_progress = min(round(max(total_pnl_funded, 0) / goal_pnl * 100, 1), 100) if 'total_pnl_funded' in dir() else 0
         wr_progress = min(round(xau_stats.get('win_rate', main_stats.get('win_rate', 0)) / goal_wr * 100, 1), 100) if main_stats else 0
         current_wr = main_stats.get('win_rate', 0)
         dd_val = abs(main_stats.get('max_drawdown', 0)) * combined_risk
