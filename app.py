@@ -1103,7 +1103,7 @@ setTimeout(function() {{
 
         st.markdown(f'<div style="color:{ACCENT_SOFT};font-size:0.72em;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin:24px 0 14px;">All Time (Funded)</div>', unsafe_allow_html=True)
         total_r_funded = df_funded_clean['R_Result'].sum()
-        total_pnl_funded = round(total_r_funded * combined_risk, 2)
+        total_pnl_funded = calc_pnl(df_funded_clean)
         total_pct_funded = round(total_pnl_funded / total_capital * 100, 2)
         color_total = '#4ade80' if total_pnl_funded >= 0 else '#f87171'
         sign_total = '+' if total_pnl_funded >= 0 else ''
