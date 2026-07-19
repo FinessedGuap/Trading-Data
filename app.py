@@ -1133,7 +1133,7 @@ setTimeout(function() {{
             df_dd['trade_pnl'] = df_dd['R_Result'] * combined_risk
         pnl_remaining = round(max(goal_pnl - max(total_pnl_funded, 0), 0), 2)
 
-        goal_cols = st.columns(3)
+        goal_cols = st.columns(2)
         goal_cols[0].markdown(
             f'<div style="background:rgba({BG_TINT},0.05);border:1px solid rgba({BG_TINT},0.2);border-radius:14px;padding:16px;">'
             f'<div style="font-size:0.62em;color:{TEXT_SECONDARY};text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Monthly P&L Goal</div>'
