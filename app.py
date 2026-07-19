@@ -1131,8 +1131,14 @@ setTimeout(function() {{
             df_dd['trade_pnl'] = df_dd['R_Result'] * df_dd['risk_pct'] / 100 * account_size * num_accounts
         else:
             df_dd['trade_pnl'] = df_dd['R_Result'] * combined_risk
-        losses_only = df_dd[df_dd['trade_pnl'] < 0]['trade_pnl'].sum()
-        dd_val = abs(losses_only) if losses_only < 0 else 0
+        equity = df_dd['trade_pnl'].cumsum()
+        current_equity = equity.iloc[-1]
+        if current_equity >= 0:
+            dd_val = 0
+        else:
+            peak = equity.cummax()
+            current_dd = current_equity - peak.iloc[-1]
+            dd_val = abs(current_dd) if current_dd < 0 else 0
         dd_progress = min(round(dd_val / goal_dd * 100, 1), 100)
         dd_color = '#f87171' if dd_progress >= 80 else ('#fbbf24' if dd_progress >= 50 else '#4ade80')
         dd_label = '⚠ Getting close!' if dd_progress >= 80 else ('Halfway there' if dd_progress >= 50 else 'Safe')
