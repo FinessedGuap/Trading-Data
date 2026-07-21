@@ -915,12 +915,11 @@ elif page=='Coach':
     st.markdown(f'<div style="font-size:1.5em;font-weight:700;color:{TEXT};margin-bottom:20px;">Coach</div>',unsafe_allow_html=True)
     num_accounts=st.session_state.num_accounts
 
-    # Load persistent memory on first load
+   # Load persistent memory on first load
     saved_profile, saved_character = load_coach_memory()
-    st.write(f"Memory load: profile={bool(saved_profile)}, character={bool(saved_character)}")
-    if saved_profile and not st.session_state.coach_profile:
+    if saved_profile:
         st.session_state.coach_profile = saved_profile
-    if saved_character and not st.session_state.coach_character:
+    if saved_character:
         st.session_state.coach_character = saved_character
    
     # Coach header
