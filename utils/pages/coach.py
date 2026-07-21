@@ -150,21 +150,36 @@ def render(df_main, c, today, num_accounts, account_size, anthropic_api_key, not
             st.error("Add your ANTHROPIC_API_KEY to Streamlit secrets to enable Coach.")
         else:
             with st.spinner("Coach is reviewing your week..."):
-                try:
-                    result = call_coach_api(df_lw, st.session_state.coach_profile, num_accounts, account_size, anthropic_api_key, df_main)
-                    if result:
-                        st.session_state.coach_debrief = result
-                        if result.get('updated_profile'):
-                            st.session_state.coach_profile = result['updated_profile']
-                        if result.get('trader_character'):
-                            st.session_state.coach_character = result['trader_character']
-                        save_coach_memory(headers, coach_memory_page_id, st.session_state.coach_profile, st.session_state.coach_character)
-                        st.rerun()
-                    else:
-                        st.error("Coach couldn't connect. Check your API key.")
-                except Exception as e:
-                    st.error(f"Error: {str(e)}")
-
+                    try:
+                        result = call_coach_api(df_lw, st.session_state.coach_profile, num_accounts, account_size, anthropic_api_key, df_main)
+                        if result:
+                            st.session_state.coach_debrief = result
+                            if result.get('updated_profile'):
+                                st.session_state.coach_profile = result['updated_profile']
+                            if result.get('trader_character'):
+                                st.session_state.coach_character = result['trader_character']
+                            save_coach_memory(headers, coach_memory_page_id, st.session_state.coach_profile, st.session_state.coach_character)
+                            st.rerun()
+                        else:
+                            st.markdown(
+                                f'<div style="background:rgba(167,139,250,0.04);border:1px solid rgba(167,139,250,0.15);border-radius:14px;padding:20px;text-align:center;margin-top:12px;">'
+                                f'<div style="font-size:1.2em;margin-bottom:8px;">⚡</div>'
+                                f'<div style="font-size:0.88em;font-weight:600;color:rgba(167,139,250,0.9);margin-bottom:6px;">Coach is unavailable right now</div>'
+                                f'<div style="font-size:0.7em;color:{TEXT2};line-height:1.6;">Couldn\'t get a response. Check your ANTHROPIC_API_KEY in Streamlit secrets.</div>'
+                                f'</div>', unsafe_allow_html=True)
+                    except requests.exceptions.Timeout:
+                        st.markdown(
+                            f'<div style="background:rgba(248,113,113,0.04);border:1px solid rgba(248,113,113,0.15);border-radius:14px;padding:20px;text-align:center;margin-top:12px;">'
+                            f'<div style="font-size:0.88em;font-weight:600;color:#f87171;margin-bottom:6px;">Connection timed out</div>'
+                            f'<div style="font-size:0.7em;color:{TEXT2};">Coach took too long to respond. Try again in a moment.</div>'
+                            f'</div>', unsafe_allow_html=True)
+                    except Exception as e:
+                        st.markdown(
+                            f'<div style="background:rgba(248,113,113,0.04);border:1px solid rgba(248,113,113,0.15);border-radius:14px;padding:20px;text-align:center;margin-top:12px;">'
+                            f'<div style="font-size:0.88em;font-weight:600;color:#f87171;margin-bottom:6px;">Something went wrong</div>'
+                            f'<div style="font-size:0.7em;color:{TEXT2};">{str(e)}</div>'
+                            f'</div>', unsafe_allow_html=True)
+                        
     cached = st.session_state.coach_debrief
     if cached:
         grade = cached.get('grade', '—')
