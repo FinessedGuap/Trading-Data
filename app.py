@@ -405,7 +405,17 @@ Respond ONLY in this exact JSON format with no other text:
   "updated_profile": "Updated 4-6 sentence trader profile of Kaea based on ALL data. Be specific about tendencies, strengths, leaks, psychological patterns. This is passed to Coach next week.",
   "grade": "A+/A/B+/B/C+/C/D/F",
   "grade_reason": "One honest sentence explaining the grade",
-  "trader_character": "2-3 sentence description of what type of trader Kaea is as a person and character. Not just stats — their personality, their tendencies, their mental game. Written like a scout report. e.g. 'Kaea is a high-conviction trader who trades best when patient but self-destructs under pressure. Has a natural eye for structure but emotions override the plan too often. The potential is elite — the discipline is still catching up.'"
+  "grade_reason": "One honest sentence explaining the grade",
+  "trader_character": {{
+    "title": "Pick the single best archetype title for Kaea from this exact list based on their trading data this week: The Phantom, The Oracle, The Legend (S Tier - only if truly elite, multiple perfect weeks), The Sniper, The Ghost, The Assassin, The Architect (A Tier - disciplined, precise, consistent), The Strategist, The Commander, The Grinder, The Titan (B Tier - solid, developing), The Maverick, The Prodigy, The Survivor (C Tier - potential but inconsistent), The Wild Card, The Apprentice, The Berserker (D Tier - struggling), The Warmonger (F Tier - only if truly reckless). Be honest - don't give S or A tier if not earned.",
+    "tier": "S, A, B, C, D, or F",
+    "desc": "One short punchy sentence describing Kaea as this character. Playful but honest. Max 12 words.",
+    "stats": {{
+      "patience": 0,
+      "discipline": 0,
+      "edge": 0
+    }}
+  }}
 }}"""
 
     response = requests.post(
@@ -1070,7 +1080,9 @@ elif page=='Coach':
         # Clear button
         st.markdown(f'<div style="margin-top:16px;"></div>', unsafe_allow_html=True)
         if st.button("↺  Clear & Re-run", key="clear_debrief", use_container_width=False):
-            st.session_state.coach_debrief=None; st.rerun()
+            st.session_state.coach_debrief=None
+            st.session_state.coach_character=None
+            st.rerun()
 
     elif total_v>0 and not cached:
         st.markdown(
