@@ -1098,9 +1098,9 @@ elif page=='Coach':
 <head>
 <style>
 @keyframes revealTitle {{
-    0% {{ opacity:0; letter-spacing:20px; transform:scale(0.88); }}
-    60% {{ opacity:1; letter-spacing:6px; transform:scale(1.04); }}
-    100% {{ opacity:1; letter-spacing:4px; transform:scale(1); }}
+    0% {{ opacity:0; letter-spacing:20{'px'}; transform:scale(0.88); }}
+    60% {{ opacity:1; letter-spacing:6{'px'}; transform:scale(1.04); }}
+    100% {{ opacity:1; letter-spacing:4{'px'}; transform:scale(1); }}
 }}
 @keyframes scanLine {{
     from {{ top:0; opacity:0.8; }}
