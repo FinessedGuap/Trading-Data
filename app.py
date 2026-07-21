@@ -85,6 +85,7 @@ if 'cal_year' not in st.session_state: st.session_state.cal_year = datetime.now(
 if 'selected_day' not in st.session_state: st.session_state.selected_day = None
 if 'coach_debrief' not in st.session_state: st.session_state.coach_debrief = None
 if 'coach_profile' not in st.session_state: st.session_state.coach_profile = None
+if 'coach_character' not in st.session_state: st.session_state.coach_character = None
 
 ACCOUNT_SIZE = 50000
 
@@ -403,7 +404,8 @@ Respond ONLY in this exact JSON format with no other text:
   "action_plan": "One specific concrete action Kaea must implement next week based on this week's data",
   "updated_profile": "Updated 4-6 sentence trader profile of Kaea based on ALL data. Be specific about tendencies, strengths, leaks, psychological patterns. This is passed to Coach next week.",
   "grade": "A+/A/B+/B/C+/C/D/F",
-  "grade_reason": "One honest sentence explaining the grade"
+  "grade_reason": "One honest sentence explaining the grade",
+  "trader_character": "2-3 sentence description of what type of trader Kaea is as a person and character. Not just stats — their personality, their tendencies, their mental game. Written like a scout report. e.g. 'Kaea is a high-conviction trader who trades best when patient but self-destructs under pressure. Has a natural eye for structure but emotions override the plan too often. The potential is elite — the discipline is still catching up.'"
 }}"""
 
     response = requests.post(
@@ -977,6 +979,7 @@ elif page=='Coach':
                     if result:
                         st.session_state.coach_debrief=result
                         if result.get('updated_profile'): st.session_state.coach_profile=result['updated_profile']
+                        if result.get('trader_character'): st.session_state.coach_character=result['trader_character']
                         st.rerun()
                     else:
                         st.error("Coach couldn't connect. Check your API key in Streamlit secrets.")
@@ -1047,13 +1050,23 @@ elif page=='Coach':
                     f'<div style="font-size:0.85em;color:{TEXT};line-height:1.7;">⚠ {rf}</div>'
                     f'</div>', unsafe_allow_html=True)
 
+       # Trader character
+        character = st.session_state.coach_character
+        if character:
+            st.markdown(f'<div style="font-size:0.65em;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:{TEXT3};margin:20px 0 10px;">Your Trader Character</div>', unsafe_allow_html=True)
+            st.markdown(
+                f'<div class="coach-card" style="background:{BG2};border-radius:16px;padding:20px 24px;border-left:3px solid {ACCENT_SOFT};animation-delay:0.3s;">'
+                f'<div style="font-size:0.88em;color:{TEXT};line-height:1.85;font-style:italic;">"{character}"</div>'
+                f'<div style="font-size:0.6em;color:{TEXT2};margin-top:12px;text-transform:uppercase;letter-spacing:1px;">Updated after each debrief</div>'
+                f'</div>', unsafe_allow_html=True)
+
         # Trader profile
         profile=st.session_state.coach_profile
         if profile:
             st.markdown(f'<div style="margin-top:20px;"></div>', unsafe_allow_html=True)
             with st.expander("Your Trader Profile — updated this week"):
                 st.markdown(f'<div style="font-size:0.85em;color:{TEXT2};line-height:1.85;padding:8px 0;">{profile}</div>', unsafe_allow_html=True)
-
+                
         # Clear button
         st.markdown(f'<div style="margin-top:16px;"></div>', unsafe_allow_html=True)
         if st.button("↺  Clear & Re-run", key="clear_debrief", use_container_width=False):
