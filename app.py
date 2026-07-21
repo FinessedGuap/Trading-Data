@@ -314,6 +314,48 @@ def render_breakdown(df_in,col,title):
             f'</div>',unsafe_allow_html=True)
 
 # ============ COACH FUNCTIONS ============
+COACH_MEMORY_PAGE_ID = "3a4c0c4c46ff8044b44ee780f7a0c6d8"
+
+def save_coach_memory(profile, character):
+    try:
+        # Search for existing memory block
+        response = requests.get(
+            f"https://api.notion.com/v1/blocks/{COACH_MEMORY_PAGE_ID}/children",
+            headers=headers
+        )
+        if response.status_code == 200:
+            blocks = response.json().get('results', [])
+            # Delete existing blocks
+            for block in blocks:
+                requests.delete(f"https://api.notion.com/v1/blocks/{block['id']}", headers=headers)
+        
+        # Save new memory as JSON in a code block
+        memory = {'profile': profile, 'character': character, 'updated': datetime.now().isoformat()}
+        memory_str = json.dumps(memory)
+        
+        requests.patch(
+            f"https://api.notion.com/v1/blocks/{COACH_MEMORY_PAGE_ID}/children",
+            headers=headers,
+            json={"children": [{"object": "block", "type": "code", "code": {"rich_text": [{"type": "text", "text": {"content": memory_str}}], "language": "json"}}]}
+        )
+        return True
+    except: return False
+
+def load_coach_memory():
+    try:
+        response = requests.get(
+            f"https://api.notion.com/v1/blocks/{COACH_MEMORY_PAGE_ID}/children",
+            headers=headers
+        )
+        if response.status_code != 200: return None, None
+        blocks = response.json().get('results', [])
+        for block in blocks:
+            if block['type'] == 'code':
+                text = block['code']['rich_text'][0]['text']['content']
+                memory = json.loads(text)
+                return memory.get('profile'), memory.get('character')
+        return None, None
+    except: return None, None
 def build_trade_summary(df_week,num_accounts):
     if len(df_week)==0: return "No trades logged this week."
     lines=[]
@@ -873,6 +915,15 @@ elif page=='Coach':
     st.markdown(f'<div style="font-size:1.5em;font-weight:700;color:{TEXT};margin-bottom:20px;">Coach</div>',unsafe_allow_html=True)
     num_accounts=st.session_state.num_accounts
 
+    # Load persistent memory on first load
+    if 'coach_memory_loaded' not in st.session_state:
+        saved_profile, saved_character = load_coach_memory()
+        if saved_profile and not st.session_state.coach_profile:
+            st.session_state.coach_profile = saved_profile
+        if saved_character and not st.session_state.coach_character:
+            st.session_state.coach_character = saved_character
+        st.session_state.coach_memory_loaded = True
+   
     # Coach header
     st.markdown(
         f'<div class="coach-card" style="background:{BG2};border-radius:20px;padding:24px;margin-bottom:20px;display:flex;align-items:center;gap:20px;">'
@@ -955,6 +1006,7 @@ elif page=='Coach':
                         st.session_state.coach_debrief=result
                         if result.get('updated_profile'): st.session_state.coach_profile=result['updated_profile']
                         if result.get('trader_character'): st.session_state.coach_character=result['trader_character']
+                        save_coach_memory(st.session_state.coach_profile, st.session_state.coach_character)
                         st.rerun()
                     else:
                         st.error("Coach couldn't connect. Check your API key.")
