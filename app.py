@@ -923,6 +923,7 @@ elif page=='Coach':
         if saved_character and not st.session_state.coach_character:
             st.session_state.coach_character = saved_character
         st.session_state.coach_memory_loaded = True
+        st.write(f"Memory load result: profile={bool(saved_profile)}, character={bool(saved_character)}")
    
     # Coach header
     st.markdown(
