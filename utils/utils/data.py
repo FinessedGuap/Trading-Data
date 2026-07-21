@@ -25,7 +25,7 @@ def get_all_trades(notion_token, database_id):
             if start_cursor:
                 payload["start_cursor"] = start_cursor
             r = requests.post(
-                f"https://api.notion.com/v1/databases/INVALID_ID/query",
+               f"https://api.notion.com/v1/databases/{database_id}/query",
                 headers=headers, json=payload, timeout=10
             )
             data = r.json()
