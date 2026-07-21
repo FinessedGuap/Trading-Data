@@ -916,7 +916,7 @@ elif page=='Coach':
     num_accounts=st.session_state.num_accounts
 
     # Load persistent memory on first load
-   saved_profile, saved_character = load_coach_memory()
+    saved_profile, saved_character = load_coach_memory()
     st.write(f"Memory load: profile={bool(saved_profile)}, character={bool(saved_character)}")
     if saved_profile and not st.session_state.coach_profile:
         st.session_state.coach_profile = saved_profile
