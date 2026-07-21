@@ -87,21 +87,51 @@ today = datetime.now()
 df_main = load_and_process(NOTION_TOKEN, DATABASE_ID)
 
 import pandas as pd
-df_xau = df_main[df_main['Pair'] == 'XAUUSD'].copy() if 'Pair' in df_main.columns else pd.DataFrame()
-df_nas = df_main[df_main['Pair'] == 'NASDAQ'].copy() if 'Pair' in df_main.columns else pd.DataFrame()
-df_funded = df_main[df_main['Type of Trade'].str.strip() == 'Funded'].copy() if 'Type of Trade' in df_main.columns else pd.DataFrame()
 
-# ============ CALCULATE ALL STATS ONCE ============
-main_stats = calc_stats(df_main)
-xau_stats = calc_stats(df_xau) if len(df_xau) > 0 else {}
-nas_stats = calc_stats(df_nas) if len(df_nas) > 0 else {}
-session_stats = calc_session_stats(df_main)
-daily_r = calc_daily_r(df_main)
-monthly_r = calc_monthly_r(df_main)
-dow_stats = calc_dow_stats(df_main)
-consistency_score, consistency_breakdown = calc_consistency_score(df_main, session_stats)
-best_setup = find_best_setup(df_main)
-green_checklist, red_checklist = generate_checklist(df_main, session_stats)
+# ============ CALCULATE ALL STATS ONCE & CACHE ============
+@st.cache_data(ttl=300)
+def compute_all_stats(notion_token, database_id):
+    df = load_and_process(notion_token, database_id)
+    df_x = df[df['Pair'] == 'XAUUSD'].copy() if 'Pair' in df.columns else pd.DataFrame()
+    df_n = df[df['Pair'] == 'NASDAQ'].copy() if 'Pair' in df.columns else pd.DataFrame()
+    df_f = df[df['Type of Trade'].str.strip() == 'Funded'].copy() if 'Type of Trade' in df.columns else pd.DataFrame()
+    ss = calc_session_stats(df)
+    return {
+        'df_main': df,
+        'df_xau': df_x,
+        'df_nas': df_n,
+        'df_funded': df_f,
+        'main_stats': calc_stats(df),
+        'xau_stats': calc_stats(df_x) if len(df_x) > 0 else {},
+        'nas_stats': calc_stats(df_n) if len(df_n) > 0 else {},
+        'session_stats': ss,
+        'daily_r': calc_daily_r(df),
+        'monthly_r': calc_monthly_r(df),
+        'dow_stats': calc_dow_stats(df),
+        'consistency_score': calc_consistency_score(df, ss)[0],
+        'consistency_breakdown': calc_consistency_score(df, ss)[1],
+        'best_setup': find_best_setup(df),
+        'green_checklist': generate_checklist(df, ss)[0],
+        'red_checklist': generate_checklist(df, ss)[1],
+    }
+
+data = compute_all_stats(NOTION_TOKEN, DATABASE_ID)
+df_main = data['df_main']
+df_xau = data['df_xau']
+df_nas = data['df_nas']
+df_funded = data['df_funded']
+main_stats = data['main_stats']
+xau_stats = data['xau_stats']
+nas_stats = data['nas_stats']
+session_stats = data['session_stats']
+daily_r = data['daily_r']
+monthly_r = data['monthly_r']
+dow_stats = data['dow_stats']
+consistency_score = data['consistency_score']
+consistency_breakdown = data['consistency_breakdown']
+best_setup = data['best_setup']
+green_checklist = data['green_checklist']
+red_checklist = data['red_checklist']
 
 # ============ CSS ============
 st.markdown(get_css(c), unsafe_allow_html=True)
