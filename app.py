@@ -916,14 +916,12 @@ elif page=='Coach':
     num_accounts=st.session_state.num_accounts
 
     # Load persistent memory on first load
-    if 'coach_memory_loaded' not in st.session_state:
-        saved_profile, saved_character = load_coach_memory()
-        if saved_profile and not st.session_state.coach_profile:
-            st.session_state.coach_profile = saved_profile
-        if saved_character and not st.session_state.coach_character:
-            st.session_state.coach_character = saved_character
-        st.session_state.coach_memory_loaded = True
-        st.write(f"Memory load result: profile={bool(saved_profile)}, character={bool(saved_character)}")
+   saved_profile, saved_character = load_coach_memory()
+    st.write(f"Memory load: profile={bool(saved_profile)}, character={bool(saved_character)}")
+    if saved_profile and not st.session_state.coach_profile:
+        st.session_state.coach_profile = saved_profile
+    if saved_character and not st.session_state.coach_character:
+        st.session_state.coach_character = saved_character
    
     # Coach header
     st.markdown(
