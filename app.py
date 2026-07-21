@@ -1121,10 +1121,10 @@ elif page=='Coach':
                 border-radius:20px; padding:32px 28px; text-align:center;
                 animation:charGlow 3s ease-in-out infinite;
             }}
-            .char-scan {{
+           .char-scan {{
                 position:absolute; left:0; right:0; height:1px;
                 background:linear-gradient(90deg,transparent,{char_color},transparent);
-                animation:scanLine 1.5s ease 0.2s forwards;
+                animation:none;
             }}
             .char-tier-badge {{
                 display:inline-flex; align-items:center; gap:6px;
@@ -1133,6 +1133,7 @@ elif page=='Coach':
                 font-size:0.55em; font-weight:700; color:{char_color};
                 letter-spacing:2px; text-transform:uppercase;
                 animation:tierBadge 0.6s cubic-bezier(0.16,1,0.3,1) 0.1s both;
+                animation-play-state:paused;
                 margin-bottom:16px;
             }}
             .char-title {{
@@ -1141,21 +1142,25 @@ elif page=='Coach':
                 -webkit-background-clip:text; -webkit-text-fill-color:transparent;
                 letter-spacing:4px; text-transform:uppercase;
                 animation:revealTitle 1.4s cubic-bezier(0.16,1,0.3,1) 0.3s both;
+                animation-play-state:paused;
             }}
             .char-divider {{
                 width:48px; height:2px; background:{char_color};
                 margin:16px auto; opacity:0.4;
                 animation:charFadeUp 0.5s ease 1.2s both;
+                animation-play-state:paused;
             }}
             .char-desc {{
                 font-size:0.82em; color:rgba(255,255,255,0.4);
                 font-style:italic; line-height:1.7;
                 animation:charFadeUp 0.8s ease 1.3s both;
+                animation-play-state:paused;
                 max-width:340px; margin:0 auto;
             }}
             .char-stats {{
                 display:flex; justify-content:center; gap:24px; margin-top:20px;
                 animation:charFadeUp 0.6s ease 1.6s both;
+                animation-play-state:paused;
             }}
             .char-stat {{ text-align:center; }}
             .char-stat-label {{ font-size:0.48em; color:rgba(255,255,255,0.2); text-transform:uppercase; letter-spacing:1px; margin-bottom:5px; }}
@@ -1183,13 +1188,31 @@ elif page=='Coach':
                     </div>
                 </div>
             </div>
+<script>
+            setTimeout(function() {{
+                var card = window.parent.document.querySelector('.char-card');
+                if (!card) return;
+                var obs = new IntersectionObserver(function(entries) {{
+                    entries.forEach(function(e) {{
+                        if (e.isIntersecting) {{
+                            var scan = card.querySelector('.char-scan');
+                            if (scan) scan.style.animation = 'scanLine 1.5s ease 0.2s forwards';
+                            var animated = card.querySelectorAll('.char-tier-badge,.char-title,.char-divider,.char-desc,.char-stats');
+                            animated.forEach(function(el, i) {{ el.style.animationPlayState = 'running'; }});
+                            obs.unobserve(e.target);
+                        }}
+                    }});
+                }}, {{threshold: 0.3}});
+                obs.observe(card);
+            }}, 300);
+            </script>
             """, unsafe_allow_html=True)
 
         # Trader profile
         profile=st.session_state.coach_profile
         if profile:
             st.markdown(f'<div style="margin-top:20px;"></div>', unsafe_allow_html=True)
-            with st.expander("Your Trader Profile — updated this week"):
+            with st.expander("Your Trader Profile"):
                 st.markdown(f'<div style="font-size:0.85em;color:{TEXT2};line-height:1.85;padding:8px 0;">{profile}</div>', unsafe_allow_html=True)
                 
         # Clear button
