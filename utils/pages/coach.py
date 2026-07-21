@@ -71,44 +71,6 @@ def render(df_main, c, today, num_accounts, account_size, anthropic_api_key, not
     wr_v = round(wins_v / (wins_v + losses_v) * 100, 1) if (wins_v + losses_v) > 0 else 0
     avg_rr_v = round(df_lw['R_Result'].mean(), 2) if total_v > 0 else 0
 
-    # Week stats banner
-    st.markdown(
-        f'<div class="coach-card" style="background:{BG2};border-radius:16px;padding:20px 24px;margin-bottom:16px;display:grid;grid-template-columns:repeat(3,1fr);gap:0;animation-delay:0.1s;">'
-        f'<div style="text-align:center;border-right:1px solid {BORDER};"><div style="font-size:1.6em;font-weight:800;color:{TEXT};">{total_v}</div><div style="font-size:0.58em;color:{TEXT2};margin-top:4px;text-transform:uppercase;letter-spacing:0.8px;">Trades</div></div>'
-        f'<div style="text-align:center;border-right:1px solid {BORDER};"><div style="font-size:1.6em;font-weight:800;color:{TEXT};">{wr_v}%</div><div style="font-size:0.58em;color:{TEXT2};margin-top:4px;text-transform:uppercase;letter-spacing:0.8px;">Win Rate</div></div>'
-        f'<div style="text-align:center;"><div style="font-size:1.6em;font-weight:800;color:{TEXT};">{avg_rr_v}R</div><div style="font-size:0.58em;color:{TEXT2};margin-top:4px;text-transform:uppercase;letter-spacing:0.8px;">Avg RR</div></div>'
-        f'</div>', unsafe_allow_html=True)
-
-    # Best/worst trade
-    if total_v > 0:
-        bt = df_lw.loc[df_lw['R_Result'].idxmax()]
-        wt = df_lw.loc[df_lw['R_Result'].idxmin()]
-        tw1, tw2 = st.columns(2)
-        with tw1:
-            bt_r = bt.get('R_Result', 0)
-            bt_pair = bt.get('Pair', '?')
-            bt_session = bt.get('3SL Window', '?')
-            bt_date = bt['Date'].strftime('%b %d') if pd.notna(bt['Date']) else '?'
-            st.markdown(
-                f'<div class="coach-card" style="background:rgba(74,222,128,0.04);border:1px solid rgba(74,222,128,0.12);border-radius:14px;padding:16px;animation-delay:0.2s;">'
-                f'<div style="font-size:0.58em;color:#4ade80;font-weight:600;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">↑ Best Trade</div>'
-                f'<div style="font-size:0.88em;font-weight:600;color:{TEXT};">{bt_pair} · {bt_session}</div>'
-                f'<div style="font-size:0.7em;color:{TEXT2};margin-top:3px;">{bt_date}</div>'
-                f'<div style="font-size:1.05em;font-weight:700;color:#4ade80;margin-top:8px;">+{bt_r}R</div>'
-                f'</div>', unsafe_allow_html=True)
-        with tw2:
-            wt_r = wt.get('R_Result', 0)
-            wt_pair = wt.get('Pair', '?')
-            wt_session = wt.get('3SL Window', '?')
-            wt_date = wt['Date'].strftime('%b %d') if pd.notna(wt['Date']) else '?'
-            st.markdown(
-                f'<div class="coach-card" style="background:rgba(248,113,113,0.04);border:1px solid rgba(248,113,113,0.12);border-radius:14px;padding:16px;animation-delay:0.25s;">'
-                f'<div style="font-size:0.58em;color:#f87171;font-weight:600;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">↓ Worst Trade</div>'
-                f'<div style="font-size:0.88em;font-weight:600;color:{TEXT};">{wt_pair} · {wt_session}</div>'
-                f'<div style="font-size:0.7em;color:{TEXT2};margin-top:3px;">{wt_date}</div>'
-                f'<div style="font-size:1.05em;font-weight:700;color:#f87171;margin-top:8px;">{wt_r}R</div>'
-                f'</div>', unsafe_allow_html=True)
-
     # Mid-week check-in
     st.markdown(f'<div style="margin-top:20px;"></div>', unsafe_allow_html=True)
     if len(df_tw) > 0:
@@ -242,11 +204,6 @@ def render(df_main, c, today, num_accounts, account_size, anthropic_api_key, not
             st.session_state.coach_debrief = None
             st.rerun()
 
-    elif total_v > 0 and not cached:
-        st.markdown(
-            f'<div style="background:{BG2};border-radius:14px;padding:24px;text-align:center;margin-top:12px;">'
-            f'<div style="font-size:0.92em;color:{TEXT};font-weight:600;margin-bottom:6px;">Last week: {total_v} trades · {wr_v}% WR</div>'
-            f'</div>', unsafe_allow_html=True)
     else:
         st.markdown(
             f'<div style="background:{BG2};border-radius:14px;padding:32px;text-align:center;margin-top:12px;">'
