@@ -376,7 +376,7 @@ def build_trade_summary(df_week,num_accounts):
         lines.append(line)
     return '\n'.join(lines)
 
-def call_coach_api(df_week,profile,num_accounts):
+def call_coach_api(df_week,profile,num_accounts,df_all=None):
     week_pnl_val=0
     if len(df_week)>0:
         if 'Risk Management' in df_week.columns:
@@ -391,10 +391,24 @@ def call_coach_api(df_week,profile,num_accounts):
     trade_summary=build_trade_summary(df_week,num_accounts)
     profile_ctx=f"EXISTING TRADER PROFILE:\n{profile}" if profile else "No prior profile. This is Kaea's first week of analysis."
 
+    # Build all-time summary
+    alltime_ctx=""
+    if df_all is not None and len(df_all)>0:
+        at_r=df_all['R_Result'].dropna()
+        at_wins=int((at_r>0).sum()); at_losses=int((at_r<0).sum()); at_nb=at_wins+at_losses
+        at_wr=round(at_wins/at_nb*100,1) if at_nb>0 else 0
+        at_total_r=round(at_r.sum(),2); at_avg=round(at_r.mean(),2)
+        at_best=round(at_r.max(),2); at_worst=round(at_r.min(),2)
+        first_date=df_all['Date'].dropna().min().strftime('%b %d %Y') if len(df_all)>0 else '?'
+        alltime_ctx=f"""
+ALL-TIME HISTORY (from {first_date}):
+- Total trades: {len(at_r)} | Win rate: {at_wr}% | Total R: {at_total_r}R | Avg R: {at_avg} | Best: {at_best}R | Worst: {at_worst}R | Wins: {at_wins} | Losses: {at_losses}
+"""
+
     prompt=f"""You are Coach, a brutally honest AI trading coach. Your trader's name is Kaea.
 
 {profile_ctx}
-
+{alltime_ctx}
 THIS WEEK'S TRADES:
 {trade_summary}
 
@@ -915,7 +929,7 @@ elif page=='Coach':
     st.markdown(f'<div style="font-size:1.5em;font-weight:700;color:{TEXT};margin-bottom:20px;">Coach</div>',unsafe_allow_html=True)
     num_accounts=st.session_state.num_accounts
 
-    # Load persistent memory from Notion every time
+    # Load persistent memory from Notion
     saved_profile, saved_character = load_coach_memory()
     if saved_profile:
         st.session_state.coach_profile = saved_profile
@@ -957,8 +971,6 @@ elif page=='Coach':
     total_v=len(df_lw)
     wr_v=round(wins_v/(wins_v+losses_v)*100,1) if (wins_v+losses_v)>0 else 0
     avg_rr_v=round(df_lw['R_Result'].mean(),2) if len(df_lw)>0 else 0
-    sign_pnl='+' if week_pnl_v>=0 else ''
-    pnl_col='#4ade80' if week_pnl_v>=0 else '#f87171'
 
     # Week stats banner
     st.markdown(
@@ -999,7 +1011,7 @@ elif page=='Coach':
         else:
             with st.spinner("Coach is reviewing your week..."):
                 try:
-                    result=call_coach_api(df_lw,st.session_state.coach_profile,num_accounts)
+                    result=call_coach_api(df_lw,st.session_state.coach_profile,num_accounts,df_main)
                     if result:
                         st.session_state.coach_debrief=result
                         if result.get('updated_profile'): st.session_state.coach_profile=result['updated_profile']
@@ -1079,15 +1091,13 @@ elif page=='Coach':
         tier_labels={'S':'S Tier · Elite','A':'A Tier · Disciplined','B':'B Tier · Developing','C':'C Tier · Potential','D':'D Tier · Struggling','F':'F Tier · Reset Required'}
         char_color=tier_colors.get(tier,'#94a3b8')
         tier_label=tier_labels.get(tier,'Unknown')
+
         st.markdown(f'<div style="font-size:0.65em;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:{TEXT3};margin:24px 0 12px;">Trader Character</div>',unsafe_allow_html=True)
         char_html=(
             "<!DOCTYPE html><html><head>"
             "<style>"
             "@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');"
-            "@keyframes revealTitle{"
-            "0%{opacity:0;letter-spacing:20px;transform:scale(0.88);}"
-            "60%{opacity:1;letter-spacing:6px;transform:scale(1.04);}"
-            "100%{opacity:1;letter-spacing:4px;transform:scale(1);}}"
+            "@keyframes revealTitle{0%{opacity:0;letter-spacing:20px;transform:scale(0.88);}60%{opacity:1;letter-spacing:6px;transform:scale(1.04);}100%{opacity:1;letter-spacing:4px;transform:scale(1);}}"
             "@keyframes scanLine{from{top:0;opacity:0.8;}to{top:100%;opacity:0;}}"
             "@keyframes tierBadge{from{opacity:0;transform:scale(0.7);}to{opacity:1;transform:scale(1);}}"
             "@keyframes charFadeUp{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}"
@@ -1134,9 +1144,40 @@ elif page=='Coach':
         )
         components.html(char_html,height=280)
 
+        # Tier list collapsible
+        with st.expander("Tier Rankings"):
+            tier_data=[
+                ('S','#fcd34d','Elite · Rare unlock',['The Phantom','The Oracle','The Legend']),
+                ('A','#a78bfa','Disciplined · Precise',['The Sniper','The Ghost','The Assassin','The Architect']),
+                ('B','#60a5fa','Developing · Solid',['The Maverick','The Commander','The Grinder','The Titan']),
+                ('C','#4ade80','Potential · Inconsistent',['The Prodigy','The Survivor']),
+                ('D','#f59e0b','Struggling',['The Wild Card','The Apprentice','The Berserker']),
+                ('F','#f87171','Reset required',['The Warmonger']),
+            ]
+            for t_tier,t_color,t_desc,t_names in tier_data:
+                is_active=t_tier==tier
+                names_html=''
+                for n in t_names:
+                    is_cur=n==title
+                    if is_cur:
+                        names_html+=f'<span style="color:{t_color};font-weight:700;">{n}</span>'
+                    else:
+                        names_html+=f'<span style="color:rgba(255,255,255,0.3);">{n}</span>'
+                    names_html+=' · '
+                names_html=names_html.rstrip(' · ')
+                you_badge=f'<span style="font-size:0.5em;color:{t_color};font-weight:700;background:rgba(255,255,255,0.06);border-radius:4px;padding:2px 6px;margin-left:8px;">You</span>' if is_active else ''
+                st.markdown(
+                    f'<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid {BORDER};{"background:rgba(255,255,255,0.02);border-radius:6px;padding:10px 8px;" if is_active else ""}">'
+                    f'<div style="width:4px;height:24px;border-radius:2px;background:{t_color};{"box-shadow:0 0 8px "+t_color+";" if is_active else ""}flex-shrink:0;"></div>'
+                    f'<div style="font-size:0.75em;font-weight:800;color:{t_color};min-width:20px;">{t_tier}</div>'
+                    f'<div style="font-size:0.62em;flex:1;">{names_html}</div>'
+                    f'{you_badge}'
+                    f'</div>',unsafe_allow_html=True)
+
+    # Trader profile
     profile=st.session_state.coach_profile
     if profile:
-        st.markdown(f'<div style="margin-top:20px;"></div>',unsafe_allow_html=True)
+        st.markdown(f'<div style="margin-top:12px;"></div>',unsafe_allow_html=True)
         with st.expander("Your Trader Profile"):
             st.markdown(f'<div style="font-size:0.85em;color:{TEXT2};line-height:1.85;padding:8px 0;">{profile}</div>',unsafe_allow_html=True)
 
