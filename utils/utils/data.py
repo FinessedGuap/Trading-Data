@@ -19,21 +19,30 @@ def get_all_trades(notion_token, database_id):
     all_results = []
     has_more = True
     start_cursor = None
-    while has_more:
-        payload = {}
-        if start_cursor:
-            payload["start_cursor"] = start_cursor
-        r = requests.post(
-            f"https://api.notion.com/v1/databases/{database_id}/query",
-            headers=headers, json=payload
-        )
-        data = r.json()
-        if r.status_code != 200:
-            break
-        all_results.extend(data['results'])
-        has_more = data['has_more']
-        start_cursor = data.get('next_cursor')
-    return all_results
+    try:
+        while has_more:
+            payload = {}
+            if start_cursor:
+                payload["start_cursor"] = start_cursor
+            r = requests.post(
+                f"https://api.notion.com/v1/databases/{database_id}/query",
+                headers=headers, json=payload, timeout=10
+            )
+            data = r.json()
+            if r.status_code == 401:
+                raise Exception("Invalid Notion token — check your NOTION_TOKEN secret")
+            if r.status_code == 404:
+                raise Exception("Database not found — check your DATABASE_ID secret")
+            if r.status_code != 200:
+                raise Exception(f"Notion API error {r.status_code}")
+            all_results.extend(data['results'])
+            has_more = data['has_more']
+            start_cursor = data.get('next_cursor')
+        return all_results
+    except requests.exceptions.Timeout:
+        raise Exception("Notion connection timed out — check your internet connection")
+    except requests.exceptions.ConnectionError:
+        raise Exception("Can't reach Notion — check your internet connection")
 
 
 def extract_property(prop):
@@ -84,41 +93,46 @@ def parse_date(x):
 
 @st.cache_data(ttl=300)
 def load_and_process(notion_token, database_id):
-    raw = get_all_trades(notion_token, database_id)
-    rows = []
-    for trade in raw:
-        props = trade['properties']
-        row = {}
-        for cn, cd in props.items():
-            if cn == 'Entry Confluences':
-                val = extract_property(cd)
-                row[cn] = ', '.join(val) if isinstance(val, list) else val
-            else:
-                row[cn] = extract_str(cd)
-        rows.append(row)
-    df = pd.DataFrame(rows)
-    df.columns = df.columns.str.strip()
-    df['Date'] = df['Date'].apply(parse_date)
-    df['Date'] = pd.Series(df['Date'].tolist(), dtype='datetime64[ns]')
-    df['R_Result'] = df['R Result'].apply(parse_r)
-    if 'Time of Trade' in df.columns:
-        def ph(t):
-            try:
-                t = str(t).strip()
-                if ':' in t:
-                    h = int(t.split(':')[0])
-                    if 'PM' in t.upper() and h != 12: h += 12
-                    if 'AM' in t.upper() and h == 12: h = 0
-                    return f"{h:02d}:00"
-            except:
-                pass
-            return None
-        df['Hour'] = df['Time of Trade'].apply(ph)
-    df = df.sort_values('Date').reset_index(drop=True)
-    if 'Pair' in df.columns:
-        df['Pair'] = df['Pair'].str.strip()
-    return df
-
+    try:
+        raw = get_all_trades(notion_token, database_id)
+        if not raw:
+            return pd.DataFrame(), "empty"
+        rows = []
+        for trade in raw:
+            props = trade['properties']
+            row = {}
+            for cn, cd in props.items():
+                if cn == 'Entry Confluences':
+                    val = extract_property(cd)
+                    row[cn] = ', '.join(val) if isinstance(val, list) else val
+                else:
+                    row[cn] = extract_str(cd)
+            rows.append(row)
+        df = pd.DataFrame(rows)
+        df.columns = df.columns.str.strip()
+        df['Date'] = df['Date'].apply(parse_date)
+        df['Date'] = pd.Series(df['Date'].tolist(), dtype='datetime64[ns]')
+        df['R_Result'] = df['R Result'].apply(parse_r)
+        if 'Time of Trade' in df.columns:
+            def ph(t):
+                try:
+                    t = str(t).strip()
+                    if ':' in t:
+                        h = int(t.split(':')[0])
+                        if 'PM' in t.upper() and h != 12: h += 12
+                        if 'AM' in t.upper() and h == 12: h = 0
+                        return f"{h:02d}:00"
+                except:
+                    pass
+                return None
+            df['Hour'] = df['Time of Trade'].apply(ph)
+        df = df.sort_values('Date').reset_index(drop=True)
+        if 'Pair' in df.columns:
+            df['Pair'] = df['Pair'].str.strip()
+        return df, "ok"
+    except Exception as e:
+        return pd.DataFrame(), f"error:{str(e)}"
+        
 
 def save_coach_memory(headers, page_id, profile, character):
     try:
