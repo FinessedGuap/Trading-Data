@@ -407,7 +407,7 @@ Respond ONLY in this exact JSON format with no other text:
 }}"""
     response=requests.post("https://api.anthropic.com/v1/messages",
         headers={"Content-Type":"application/json","x-api-key":ANTHROPIC_API_KEY,"anthropic-version":"2023-06-01"},
-        json={"model":"claude-sonnet-4-6","max_tokens":1500,"messages":[{"role":"user","content":prompt}]},timeout=30)
+        json={"model":"claude-sonnet-4-6","max_tokens":1500,"messages":[{"role":"user","content":prompt}]},timeout=60)
     if response.status_code!=200: return None
     data=response.json(); text=data['content'][0]['text'].strip()
     if '```' in text:
