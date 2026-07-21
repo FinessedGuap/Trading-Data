@@ -115,7 +115,66 @@ def compute_all_stats(notion_token, database_id):
         'red_checklist': generate_checklist(df, ss)[1],
     }
 
-data = compute_all_stats(NOTION_TOKEN, DATABASE_ID)
+@st.cache_data(ttl=300)
+def compute_all_stats(notion_token, database_id):
+    df, status = load_and_process(notion_token, database_id)
+    if status != "ok" or len(df) == 0:
+        return None, status
+    df_x = df[df['Pair'] == 'XAUUSD'].copy() if 'Pair' in df.columns else pd.DataFrame()
+    df_n = df[df['Pair'] == 'NASDAQ'].copy() if 'Pair' in df.columns else pd.DataFrame()
+    df_f = df[df['Type of Trade'].str.strip() == 'Funded'].copy() if 'Type of Trade' in df.columns else pd.DataFrame()
+    ss = calc_session_stats(df)
+    cs, cb = calc_consistency_score(df, ss)
+    gc, rc = generate_checklist(df, ss)
+    return {
+        'df_main': df,
+        'df_xau': df_x,
+        'df_nas': df_n,
+        'df_funded': df_f,
+        'main_stats': calc_stats(df),
+        'xau_stats': calc_stats(df_x) if len(df_x) > 0 else {},
+        'nas_stats': calc_stats(df_n) if len(df_n) > 0 else {},
+        'session_stats': ss,
+        'daily_r': calc_daily_r(df),
+        'monthly_r': calc_monthly_r(df),
+        'dow_stats': calc_dow_stats(df),
+        'consistency_score': cs,
+        'consistency_breakdown': cb,
+        'best_setup': find_best_setup(df),
+        'green_checklist': gc,
+        'red_checklist': rc,
+    }, "ok"
+
+data, data_status = compute_all_stats(NOTION_TOKEN, DATABASE_ID)
+
+# Handle errors before rendering anything
+if data_status == "empty" or data is None:
+    BG2 = 'rgba(255,255,255,0.03)'
+    TEXT = '#ffffff'
+    TEXT2 = 'rgba(255,255,255,0.45)'
+    ACCENT = '#94a3b8'
+
+    if data_status == "empty":
+        st.markdown(
+            f'<div style="background:{BG2};border-radius:16px;padding:40px 24px;text-align:center;margin:40px auto;max-width:480px;">'
+            f'<div style="font-size:2em;margin-bottom:12px;">📊</div>'
+            f'<div style="font-size:0.92em;font-weight:600;color:{TEXT};margin-bottom:6px;">No trades logged yet</div>'
+            f'<div style="font-size:0.72em;color:{TEXT2};line-height:1.6;max-width:320px;margin:0 auto;">Start logging trades in your Notion database and they\'ll appear here automatically. Hit Refresh once you\'ve added some.</div>'
+            f'</div>', unsafe_allow_html=True)
+    else:
+        error_msg = data_status.replace("error:", "") if data_status.startswith("error:") else "Unknown error"
+        st.markdown(
+            f'<div style="background:rgba(248,113,113,0.04);border:1px solid rgba(248,113,113,0.15);border-radius:16px;padding:24px;display:flex;align-items:flex-start;gap:16px;margin:40px auto;max-width:480px;">'
+            f'<div style="width:40px;height:40px;border-radius:10px;background:rgba(248,113,113,0.08);border:1px solid rgba(248,113,113,0.15);display:flex;align-items:center;justify-content:center;font-size:1.1em;flex-shrink:0;">🔌</div>'
+            f'<div>'
+            f'<div style="font-size:0.88em;font-weight:600;color:#f87171;margin-bottom:4px;">Can\'t reach Notion</div>'
+            f'<div style="font-size:0.72em;color:{TEXT2};line-height:1.5;margin-bottom:10px;">{error_msg}</div>'
+            f'</div></div>', unsafe_allow_html=True)
+        if st.button("↻ Try again"):
+            st.cache_data.clear()
+            st.rerun()
+    st.stop()
+
 df_main = data['df_main']
 df_xau = data['df_xau']
 df_nas = data['df_nas']
