@@ -989,14 +989,14 @@ elif page=='Coach':
             bt_date=bt['Date'].strftime('%b %d') if pd.notna(bt['Date']) else '?'
             try: rp=float(str(bt.get('Risk Management','1')).replace('%','').strip()); bt_pnl=round(bt_r*rp/100*ACCOUNT_SIZE*num_accounts,2)
             except: bt_pnl=0
-            st.markdown(f'<div class="coach-card" style="background:rgba(74,222,128,0.04);border:1px solid rgba(74,222,128,0.12);border-radius:14px;padding:16px;animation-delay:0.2s;"><div style="font-size:0.58em;color:#4ade80;font-weight:600;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">↑ Best Trade</div><div style="font-size:0.88em;font-weight:600;color:{TEXT};">{bt_pair} · {bt_session}</div><div style="font-size:0.7em;color:{TEXT2};margin-top:3px;">{bt_date}</div><div style="font-size:1.05em;font-weight:700;color:#4ade80;margin-top:8px;">+${bt_pnl:,.2f} · +{bt_r}R</div></div>',unsafe_allow_html=True)
+           st.markdown(f'<div class="coach-card" style="background:rgba(74,222,128,0.04);border:1px solid rgba(74,222,128,0.12);border-radius:14px;padding:16px;animation-delay:0.2s;"><div style="font-size:0.58em;color:#4ade80;font-weight:600;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">↑ Best Trade</div><div style="font-size:0.88em;font-weight:600;color:{TEXT};">{bt_pair} · {bt_session}</div><div style="font-size:0.7em;color:{TEXT2};margin-top:3px;">{bt_date}</div><div style="font-size:1.05em;font-weight:700;color:#4ade80;margin-top:8px;">+{bt_r}R</div></div>',unsafe_allow_html=True)
         with tw2:
             wt_r=wt.get('R_Result',0); wt_pair=wt.get('Pair','?'); wt_session=wt.get('3SL Window','?')
             wt_date=wt['Date'].strftime('%b %d') if pd.notna(wt['Date']) else '?'
             try: rp=float(str(wt.get('Risk Management','1')).replace('%','').strip()); wt_pnl=round(wt_r*rp/100*ACCOUNT_SIZE*num_accounts,2)
             except: wt_pnl=0
-            st.markdown(f'<div class="coach-card" style="background:rgba(248,113,113,0.04);border:1px solid rgba(248,113,113,0.12);border-radius:14px;padding:16px;animation-delay:0.25s;"><div style="font-size:0.58em;color:#f87171;font-weight:600;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">↓ Worst Trade</div><div style="font-size:0.88em;font-weight:600;color:{TEXT};">{wt_pair} · {wt_session}</div><div style="font-size:0.7em;color:{TEXT2};margin-top:3px;">{wt_date}</div><div style="font-size:1.05em;font-weight:700;color:#f87171;margin-top:8px;">${wt_pnl:,.2f} · {wt_r}R</div></div>',unsafe_allow_html=True)
-
+           st.markdown(f'<div class="coach-card" style="background:rgba(248,113,113,0.04);border:1px solid rgba(248,113,113,0.12);border-radius:14px;padding:16px;animation-delay:0.25s;"><div style="font-size:0.58em;color:#f87171;font-weight:600;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">↓ Worst Trade</div><div style="font-size:0.88em;font-weight:600;color:{TEXT};">{wt_pair} · {wt_session}</div><div style="font-size:0.7em;color:{TEXT2};margin-top:3px;">{wt_date}</div><div style="font-size:1.05em;font-weight:700;color:#f87171;margin-top:8px;">{wt_r}R</div></div>',unsafe_allow_html=True)
+    
     st.markdown(f'<div style="margin-top:20px;"></div>',unsafe_allow_html=True)
 
     run_col,_=st.columns([1,3])
