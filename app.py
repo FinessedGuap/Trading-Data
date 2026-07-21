@@ -935,10 +935,9 @@ elif page=='Coach':
 
     # Week stats banner
     st.markdown(
-        f'<div class="coach-card" style="background:{BG2};border-radius:16px;padding:20px 24px;margin-bottom:16px;display:grid;grid-template-columns:repeat(4,1fr);gap:0;animation-delay:0.1s;">'
+        f'<div class="coach-card" style="background:{BG2};border-radius:16px;padding:20px 24px;margin-bottom:16px;display:grid;grid-template-columns:repeat(3,1fr);gap:0;animation-delay:0.1s;">'
         f'<div style="text-align:center;border-right:1px solid {BORDER};"><div style="font-size:1.6em;font-weight:800;color:{TEXT};">{total_v}</div><div style="font-size:0.58em;color:{TEXT2};margin-top:4px;text-transform:uppercase;letter-spacing:0.8px;">Trades</div></div>'
         f'<div style="text-align:center;border-right:1px solid {BORDER};"><div style="font-size:1.6em;font-weight:800;color:{TEXT};">{wr_v}%</div><div style="font-size:0.58em;color:{TEXT2};margin-top:4px;text-transform:uppercase;letter-spacing:0.8px;">Win Rate</div></div>'
-        f'<div style="text-align:center;border-right:1px solid {BORDER};"><div style="font-size:1.6em;font-weight:800;color:{pnl_col};">{sign_pnl}${abs(week_pnl_v):,.0f}</div><div style="font-size:0.58em;color:{TEXT2};margin-top:4px;text-transform:uppercase;letter-spacing:0.8px;">Net P&L</div></div>'
         f'<div style="text-align:center;"><div style="font-size:1.6em;font-weight:800;color:{TEXT};">{avg_rr_v}R</div><div style="font-size:0.58em;color:{TEXT2};margin-top:4px;text-transform:uppercase;letter-spacing:0.8px;">Avg RR</div></div>'
         f'</div>', unsafe_allow_html=True)
 
@@ -1064,7 +1063,6 @@ elif page=='Coach':
         st.markdown(
             f'<div style="background:{BG2};border-radius:14px;padding:24px;text-align:center;margin-top:12px;">'
             f'<div style="font-size:0.92em;color:{TEXT};font-weight:600;margin-bottom:6px;">Last week: {total_v} trades · {wr_v}% WR · {sign_pnl}${abs(week_pnl_v):,.0f}</div>'
-            f'<div style="font-size:0.75em;color:{TEXT2};margin-top:4px;">Click "Run Weekly Debrief" to get your analysis from Coach</div>'
             f'</div>', unsafe_allow_html=True)
     else:
         st.markdown(
