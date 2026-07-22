@@ -563,6 +563,11 @@ div[data-testid="stNumberInput"] button svg{{fill:{TEXT} !important;stroke:{TEXT
 div[data-testid="stNumberInput"] button p{{color:{TEXT} !important;}}
 div[data-testid="stNumberInput"] > label{{color:{TEXT} !important;}}
 .cal-arrows div[data-testid="stButton"] button{{min-height:40px !important;max-height:40px !important;height:40px !important;border-radius:8px !important;padding:0 !important;margin:0 !important;}}
+div[data-testid="stExpander"] div[data-testid="stExpanderDetails"]{{background:{BG3} !important;border-radius:0 0 10px 10px !important;}}
+div[data-testid="stExpander"]{{border:1px solid {BORDER2} !important;border-radius:10px !important;}}
+div[data-testid="stExpander"] summary{{color:{TEXT} !important;}}
+div[data-testid="stExpander"] summary span{{color:{TEXT} !important;}}
+div[data-testid="stExpander"] summary p{{color:{TEXT} !important;}}
 </style>
 """
 st.markdown(css,unsafe_allow_html=True)
