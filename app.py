@@ -64,6 +64,7 @@ if 'coach_debrief' not in st.session_state: st.session_state.coach_debrief = Non
 if 'coach_profile' not in st.session_state: st.session_state.coach_profile = None
 if 'coach_character' not in st.session_state: st.session_state.coach_character = None
 if 'midweek_checkin' not in st.session_state: st.session_state.midweek_checkin = None
+if 'coach_history' not in st.session_state: st.session_state.coach_history = []
 
 ACCOUNT_SIZE = 50000
 themes = {
@@ -90,14 +91,38 @@ else:
     BORDER='rgba(0,0,0,0.05)'; BORDER2='rgba(0,0,0,0.08)'
     SIDEBAR='rgba(0,0,0,0.02)'; SIDEBAR_B='rgba(0,0,0,0.06)'; SHADOW='rgba(0,0,0,0.08)'
 
-def save_coach_memory(profile, character):
+def save_coach_memory(profile, character, debrief=None, week_label=None):
     try:
         response = requests.get(f"https://api.notion.com/v1/blocks/{COACH_MEMORY_PAGE_ID}/children", headers=headers)
+        existing_history = []
         if response.status_code == 200:
             blocks = response.json().get('results', [])
             for block in blocks:
+                if block['type'] == 'code':
+                    try:
+                        text = block['code']['rich_text'][0]['text']['content']
+                        existing = json.loads(text)
+                        if 'history' in existing:
+                            existing_history = existing['history']
+                    except: pass
                 requests.delete(f"https://api.notion.com/v1/blocks/{block['id']}", headers=headers)
-        memory = {'profile': profile, 'character': character, 'updated': datetime.now().isoformat()}
+        if debrief and week_label:
+            history_entry = {
+                'week': week_label,
+                'grade': debrief.get('grade','—'),
+                'grade_reason': debrief.get('grade_reason',''),
+                'debrief': debrief.get('debrief',''),
+                'focus_points': debrief.get('focus_points',[]),
+                'action_plan': debrief.get('action_plan',''),
+                'behavioral_patterns': debrief.get('behavioral_patterns',[]),
+                'red_flags': debrief.get('red_flags',[]),
+                'trader_character': debrief.get('trader_character',{}),
+                'saved_at': datetime.now().isoformat()
+            }
+            existing_history = [h for h in existing_history if h.get('week') != week_label]
+            existing_history.insert(0, history_entry)
+            existing_history = existing_history[:12]
+        memory = {'profile': profile, 'character': character, 'history': existing_history, 'updated': datetime.now().isoformat()}
         requests.patch(f"https://api.notion.com/v1/blocks/{COACH_MEMORY_PAGE_ID}/children", headers=headers,
             json={"children": [{"object": "block", "type": "code", "code": {"rich_text": [{"type": "text", "text": {"content": json.dumps(memory)}}], "language": "json"}}]})
         return True
@@ -106,15 +131,15 @@ def save_coach_memory(profile, character):
 def load_coach_memory():
     try:
         response = requests.get(f"https://api.notion.com/v1/blocks/{COACH_MEMORY_PAGE_ID}/children", headers=headers)
-        if response.status_code != 200: return None, None
+        if response.status_code != 200: return None, None, []
         blocks = response.json().get('results', [])
         for block in blocks:
             if block['type'] == 'code':
                 text = block['code']['rich_text'][0]['text']['content']
                 memory = json.loads(text)
-                return memory.get('profile'), memory.get('character')
-        return None, None
-    except: return None, None
+                return memory.get('profile'), memory.get('character'), memory.get('history', [])
+        return None, None, []
+    except: return None, None, []
 
 @st.cache_data(ttl=300)
 def get_all_trades():
@@ -998,19 +1023,20 @@ elif page=='Coach':
     num_accounts=st.session_state.num_accounts
 
     # Load persistent memory
-    saved_profile,saved_character=load_coach_memory()
+    saved_profile,saved_character,saved_history=load_coach_memory()
     if saved_profile: st.session_state.coach_profile=saved_profile
     if saved_character: st.session_state.coach_character=saved_character
+    if saved_history: st.session_state.coach_history=saved_history
 
-    # Coach header
+    # ===== COACH HEADER =====
     st.markdown(
-        f'<div class="coach-card" style="background:{BG2};border-radius:20px;padding:24px;margin-bottom:20px;display:flex;align-items:center;gap:20px;">'
-        f'<div class="coach-avatar" style="width:56px;height:56px;border-radius:50%;background:rgba({RGB},0.08);border:1px solid rgba({RGB},0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><span style="font-size:1.5em;">⚡</span></div>'
-        f'<div><div style="font-size:1.05em;font-weight:700;color:{TEXT};">Your AI Trading Coach</div>'
-        f'<div style="font-size:0.75em;color:{TEXT2};margin-top:3px;">Brutally honest · Tracks your patterns · Gets smarter every week</div></div>'
+        f'<div style="background:{BG2};border-radius:16px;padding:18px 22px;margin-bottom:24px;display:flex;align-items:center;gap:16px;">'
+        f'<div style="width:44px;height:44px;border-radius:50%;background:rgba({RGB},0.08);border:1px solid rgba({RGB},0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:1.2em;">⚡</div>'
+        f'<div><div style="font-size:0.95em;font-weight:700;color:{TEXT};">Your AI Trading Coach</div>'
+        f'<div style="font-size:0.7em;color:{TEXT2};margin-top:2px;">Brutally honest · Tracks your patterns · Gets smarter every week</div></div>'
         f'</div>',unsafe_allow_html=True)
 
-    # ===== TRADER CHARACTER — HERO =====
+    # ===== TRADER CHARACTER HERO =====
     character=st.session_state.coach_character
     if character and isinstance(character,dict):
         title=character.get('title','—'); tier=character.get('tier','B'); desc=character.get('desc','')
@@ -1028,14 +1054,9 @@ elif page=='Coach':
             "@keyframes charFadeUp{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}"
             f"@keyframes charGlow{{0%,100%{{box-shadow:0 0 0 rgba(0,0,0,0);}}50%{{box-shadow:0 0 30px {char_color}33;}}}}"
             "body{margin:0;padding:0;background:transparent;font-family:'Inter',sans-serif;}"
-            f"{'html{filter:invert(0);}' if IS_DARK else 'html{filter:invert(0);}'}"
-            f".char-card{{position:relative;overflow:hidden;"
-            f"background:{'rgba(255,255,255,0.02)' if IS_DARK else 'rgba(0,0,0,0.03)'};"
-            f"border:1px solid {char_color}40;border-radius:20px;padding:32px 28px;text-align:center;animation:charGlow 3s ease-in-out infinite;}}"
+            f".char-card{{position:relative;overflow:hidden;background:{'rgba(255,255,255,0.02)' if IS_DARK else 'rgba(0,0,0,0.03)'};border:1px solid {char_color}40;border-radius:20px;padding:32px 28px;text-align:center;animation:charGlow 3s ease-in-out infinite;}}"
             f".char-scan{{position:absolute;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,{char_color},transparent);animation:none;}}"
-            f".char-tier-badge{{display:inline-flex;align-items:center;gap:6px;"
-            f"background:{'rgba(255,255,255,0.03)' if IS_DARK else 'rgba(0,0,0,0.04)'};"
-            f"border:1px solid {char_color}40;border-radius:6px;padding:4px 12px;font-size:0.55em;font-weight:700;color:{char_color};letter-spacing:2px;text-transform:uppercase;animation:tierBadge 0.6s cubic-bezier(0.16,1,0.3,1) 0.1s both;animation-play-state:paused;margin-bottom:16px;}}"
+            f".char-tier-badge{{display:inline-flex;align-items:center;gap:6px;background:{'rgba(255,255,255,0.03)' if IS_DARK else 'rgba(0,0,0,0.04)'};border:1px solid {char_color}40;border-radius:6px;padding:4px 12px;font-size:0.55em;font-weight:700;color:{char_color};letter-spacing:2px;text-transform:uppercase;animation:tierBadge 0.6s cubic-bezier(0.16,1,0.3,1) 0.1s both;animation-play-state:paused;margin-bottom:16px;}}"
             f".char-title{{font-size:2.4em;font-weight:900;background:linear-gradient(135deg,{'#fff' if IS_DARK else '#111'} 30%,{char_color});-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:4px;text-transform:uppercase;animation:revealTitle 1.4s cubic-bezier(0.16,1,0.3,1) 0.3s both;animation-play-state:paused;}}"
             f".char-divider{{width:48px;height:2px;background:{char_color};margin:16px auto;opacity:0.4;animation:charFadeUp 0.5s ease 1.2s both;animation-play-state:paused;}}"
             f".char-desc{{font-size:0.82em;color:{'rgba(255,255,255,0.4)' if IS_DARK else 'rgba(0,0,0,0.5)'};font-style:italic;line-height:1.7;animation:charFadeUp 0.8s ease 1.3s both;animation-play-state:paused;max-width:340px;margin:0 auto;}}"
@@ -1059,42 +1080,43 @@ elif page=='Coach':
         )
         components.html(char_html,height=280)
 
-        # Tier rankings
-        with st.expander("Tier Rankings"):
-            tier_data=[
-                ('S','#fcd34d','Elite · Rare unlock',['The Phantom','The Oracle','The Legend']),
-                ('A','#a78bfa','Disciplined · Precise',['The Sniper','The Ghost','The Assassin','The Architect']),
-                ('B','#60a5fa','Developing · Solid',['The Maverick','The Commander','The Grinder','The Titan']),
-                ('C','#4ade80','Potential · Inconsistent',['The Prodigy','The Survivor']),
-                ('D','#f59e0b','Struggling',['The Wild Card','The Apprentice','The Berserker']),
-                ('F','#f87171','Reset required',['The Warmonger']),
-            ]
-            st.markdown(f'<div style="background:{BG3};border-radius:10px;padding:8px 12px;">',unsafe_allow_html=True)
-            for t_tier,t_color,t_desc,t_names in tier_data:
-                is_active=t_tier==tier
-                names_html=''
-                for n in t_names:
-                    if n==title: names_html+=f'<span style="color:{t_color};font-weight:700;">{n}</span>'
-                    else: names_html+=f'<span style="color:{"rgba(255,255,255,0.3)" if IS_DARK else "rgba(0,0,0,0.5)"};">{n}</span>'
-                    names_html+=' · '
-                names_html=names_html.rstrip(' · ')
-                you_badge=f'<span style="font-size:0.5em;color:{t_color};font-weight:700;background:rgba(255,255,255,0.06);border-radius:4px;padding:2px 6px;margin-left:8px;">You</span>' if is_active else ''
-                st.markdown(
-                    f'<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid {BORDER};{"background:rgba(255,255,255,0.02);border-radius:6px;padding:10px 8px;" if (is_active and IS_DARK) else ("background:rgba(0,0,0,0.04);border-radius:6px;padding:10px 8px;" if is_active else "")}">'
-                    f'<div style="width:4px;height:24px;border-radius:2px;background:{t_color};{"box-shadow:0 0 8px "+t_color+";" if is_active else ""}flex-shrink:0;"></div>'
-                    f'<div style="font-size:0.75em;font-weight:800;color:{t_color};min-width:20px;">{t_tier}</div>'
-                    f'<div style="font-size:0.62em;flex:1;">{names_html}</div>'
-                    f'{you_badge}</div>',unsafe_allow_html=True)
-            st.markdown('</div>',unsafe_allow_html=True)
-
-        # Trader profile
-        profile=st.session_state.coach_profile
-        if profile:
-          with st.expander("Your Trader Profile"):
-                st.markdown(f'<div style="font-size:0.85em;color:{TEXT};line-height:1.85;padding:8px 0;">{profile}</div>',unsafe_allow_html=True)
-    st.markdown(f'<hr class="v3-divider">',unsafe_allow_html=True)
+        # Tier rankings + profile side by side
+        tc1,tc2=st.columns(2)
+        with tc1:
+            with st.expander("Tier Rankings"):
+                tier_data=[
+                    ('S','#fcd34d','Elite · Rare unlock',['The Phantom','The Oracle','The Legend']),
+                    ('A','#a78bfa','Disciplined · Precise',['The Sniper','The Ghost','The Assassin','The Architect']),
+                    ('B','#60a5fa','Developing · Solid',['The Maverick','The Commander','The Grinder','The Titan']),
+                    ('C','#4ade80','Potential · Inconsistent',['The Prodigy','The Survivor']),
+                    ('D','#f59e0b','Struggling',['The Wild Card','The Apprentice','The Berserker']),
+                    ('F','#f87171','Reset required',['The Warmonger']),
+                ]
+                st.markdown(f'<div style="background:{BG3};border-radius:10px;padding:8px 12px;">',unsafe_allow_html=True)
+                for t_tier,t_color,t_desc,t_names in tier_data:
+                    is_active=t_tier==tier
+                    names_html=''
+                    for n in t_names:
+                        if n==title: names_html+=f'<span style="color:{t_color};font-weight:700;">{n}</span>'
+                        else: names_html+=f'<span style="color:{"rgba(255,255,255,0.3)" if IS_DARK else "rgba(0,0,0,0.5)"};">{n}</span>'
+                        names_html+=' · '
+                    names_html=names_html.rstrip(' · ')
+                    you_badge=f'<span style="font-size:0.5em;color:{t_color};font-weight:700;background:rgba(255,255,255,0.06);border-radius:4px;padding:2px 6px;margin-left:8px;">You</span>' if is_active else ''
+                    st.markdown(
+                        f'<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid {BORDER};{"background:rgba(255,255,255,0.02);border-radius:6px;padding:8px;" if (is_active and IS_DARK) else ("background:rgba(0,0,0,0.04);border-radius:6px;padding:8px;" if is_active else "")}">'
+                        f'<div style="width:3px;height:20px;border-radius:2px;background:{t_color};flex-shrink:0;"></div>'
+                        f'<div style="font-size:0.72em;font-weight:800;color:{t_color};min-width:16px;">{t_tier}</div>'
+                        f'<div style="font-size:0.58em;flex:1;">{names_html}</div>'
+                        f'{you_badge}</div>',unsafe_allow_html=True)
+                st.markdown('</div>',unsafe_allow_html=True)
+        with tc2:
+            profile=st.session_state.coach_profile
+            if profile:
+                with st.expander("Your Trader Profile"):
+                    st.markdown(f'<div style="font-size:0.82em;color:{TEXT};line-height:1.85;">{profile}</div>',unsafe_allow_html=True)
 
     # ===== DATE RANGES =====
+    st.markdown(f'<hr class="v3-divider">',unsafe_allow_html=True)
     today_date=today.date()
     days_since_sunday=(today_date.weekday()+1)%7
     last_sunday_date=today_date-pd.Timedelta(days=days_since_sunday)
@@ -1112,42 +1134,22 @@ elif page=='Coach':
     wr_v=round(wins_v/(wins_v+losses_v)*100,1) if (wins_v+losses_v)>0 else 0
     avg_rr_v=round(df_lw['R_Result'].mean(),2) if total_v>0 else 0
 
-    # ===== MID-WEEK CHECK-IN =====
-    if len(df_tw)>0:
-        st.markdown(f'<div class="v3-section">Mid-Week Check-in</div>',unsafe_allow_html=True)
-        midweek_col,_=st.columns([1,3])
-        with midweek_col:
-            midweek_btn=st.button("💬  Get Mid-Week Update",key="midweek_btn",use_container_width=True)
-        if midweek_btn:
-            if not ANTHROPIC_API_KEY:
-                st.error("Add your ANTHROPIC_API_KEY to Streamlit secrets.")
-            else:
-                with st.spinner("Coach is checking in..."):
-                    try:
-                        result=call_midweek_api(df_tw,st.session_state.coach_profile,num_accounts)
-                        if result: st.session_state.midweek_checkin=result; st.rerun()
-                    except Exception as e:
-                        st.markdown(f'<div style="background:rgba(248,113,113,0.04);border:1px solid rgba(248,113,113,0.15);border-radius:14px;padding:16px;margin-top:12px;"><div style="font-size:0.85em;color:#f87171;">Coach unavailable — try again in a moment.</div></div>',unsafe_allow_html=True)
-        if st.session_state.get('midweek_checkin'):
-            mc=st.session_state.midweek_checkin
-            st.markdown(
-                f'<div style="background:{BG2};border-radius:14px;padding:20px;border-left:3px solid {ACCENT};margin-top:12px;">'
-                f'<div style="font-size:0.58em;color:{TEXT2};font-weight:600;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px;">Coach · Mid-Week · {len(df_tw)} trades so far</div>'
-                f'<div style="font-size:0.88em;color:{TEXT};line-height:1.8;">{mc.get("checkin","")}</div>'
-                f'<div style="margin-top:12px;padding-top:12px;border-top:1px solid {BORDER};font-size:0.82em;color:{ACCENT};">→ {mc.get("focus","")}</div>'
-                f'</div>',unsafe_allow_html=True)
-
-    # ===== WEEKLY DEBRIEF =====
-    st.markdown(f'<div class="v3-section">Weekly Debrief</div>',unsafe_allow_html=True)
-    run_col,_=st.columns([1,3])
-    with run_col:
+    # ===== ACTIONS ROW =====
+    st.markdown(f'<div class="v3-section">This Week</div>',unsafe_allow_html=True)
+    btn_col1,btn_col2,_=st.columns([1,1,2])
+    with btn_col1:
         run_btn=st.button("⚡  Run Weekly Debrief",key="run_debrief",use_container_width=True)
+    with btn_col2:
+        if len(df_tw)>0:
+            midweek_btn=st.button("💬  Mid-Week Check-in",key="midweek_btn",use_container_width=True)
+        else:
+            midweek_btn=False
 
     if run_btn:
         if total_v==0:
             st.markdown(f'<div style="background:{BG2};border-radius:14px;padding:20px;color:{TEXT2};font-size:0.88em;margin-top:12px;">No trades found for last week ({last_monday_date.strftime("%b %d")} – {last_sunday_date.strftime("%b %d")}). Log some trades and come back!</div>',unsafe_allow_html=True)
         elif not ANTHROPIC_API_KEY:
-            st.error("Add your ANTHROPIC_API_KEY to Streamlit secrets to enable Coach.")
+            st.error("Add your ANTHROPIC_API_KEY to Streamlit secrets.")
         else:
             with st.spinner("Coach is reviewing your week..."):
                 try:
@@ -1156,52 +1158,114 @@ elif page=='Coach':
                         st.session_state.coach_debrief=result
                         if result.get('updated_profile'): st.session_state.coach_profile=result['updated_profile']
                         if result.get('trader_character'): st.session_state.coach_character=result['trader_character']
-                        save_coach_memory(st.session_state.coach_profile,st.session_state.coach_character)
+                        week_label=f"{last_monday_date.strftime('%b %d')} – {last_sunday_date.strftime('%b %d %Y')}"
+                        save_coach_memory(st.session_state.coach_profile,st.session_state.coach_character,result,week_label)
                         st.rerun()
                     else:
                         st.markdown(f'<div style="background:rgba(167,139,250,0.04);border:1px solid rgba(167,139,250,0.15);border-radius:14px;padding:20px;text-align:center;margin-top:12px;"><div style="font-size:1.2em;margin-bottom:8px;">⚡</div><div style="font-size:0.88em;font-weight:600;color:rgba(167,139,250,0.9);margin-bottom:6px;">Coach is unavailable right now</div><div style="font-size:0.7em;color:{TEXT2};">Check your ANTHROPIC_API_KEY in Streamlit secrets.</div></div>',unsafe_allow_html=True)
                 except Exception as e:
                     st.markdown(f'<div style="background:rgba(248,113,113,0.04);border:1px solid rgba(248,113,113,0.15);border-radius:14px;padding:20px;text-align:center;margin-top:12px;"><div style="font-size:0.88em;font-weight:600;color:#f87171;margin-bottom:6px;">Something went wrong</div><div style="font-size:0.7em;color:{TEXT2};">{str(e)}</div></div>',unsafe_allow_html=True)
 
+    if midweek_btn:
+        if not ANTHROPIC_API_KEY:
+            st.error("Add your ANTHROPIC_API_KEY to Streamlit secrets.")
+        else:
+            with st.spinner("Coach is checking in..."):
+                try:
+                    result=call_midweek_api(df_tw,st.session_state.coach_profile,num_accounts)
+                    if result: st.session_state.midweek_checkin=result; st.rerun()
+                except Exception as e:
+                    st.markdown(f'<div style="background:rgba(248,113,113,0.04);border:1px solid rgba(248,113,113,0.15);border-radius:14px;padding:16px;margin-top:12px;"><div style="font-size:0.85em;color:#f87171;">Coach unavailable — try again in a moment.</div></div>',unsafe_allow_html=True)
+
+    if st.session_state.get('midweek_checkin'):
+        mc=st.session_state.midweek_checkin
+        st.markdown(
+            f'<div style="background:{BG2};border-radius:14px;padding:20px;border-left:3px solid {ACCENT};margin-top:12px;">'
+            f'<div style="font-size:0.58em;color:{TEXT2};font-weight:600;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px;">Coach · Mid-Week · {len(df_tw)} trades so far</div>'
+            f'<div style="font-size:0.88em;color:{TEXT};line-height:1.8;">{mc.get("checkin","")}</div>'
+            f'<div style="margin-top:12px;padding-top:12px;border-top:1px solid {BORDER};font-size:0.82em;color:{ACCENT};">→ {mc.get("focus","")}</div>'
+            f'</div>',unsafe_allow_html=True)
+
+    # ===== DEBRIEF RESULTS =====
     cached=st.session_state.coach_debrief
     if cached:
         grade=cached.get('grade','—'); grade_reason=cached.get('grade_reason','')
         grade_color='#4ade80' if grade in ['A+','A'] else ('#fcd34d' if grade in ['B+','B'] else ('#f59e0b' if grade in ['C+','C'] else '#f87171'))
+        st.markdown(f'<div class="v3-section">Last Debrief · {last_monday_date.strftime("%b %d")} – {last_sunday_date.strftime("%b %d")}</div>',unsafe_allow_html=True)
         st.markdown(
-            f'<div class="coach-card" style="background:{BG2};border-radius:16px;padding:20px 24px;margin-bottom:14px;display:flex;align-items:center;gap:16px;animation-delay:0.1s;">'
+            f'<div style="background:{BG2};border-radius:16px;padding:20px 24px;margin-bottom:14px;display:flex;align-items:center;gap:16px;">'
             f'<div style="font-size:2em;font-weight:800;color:{grade_color};min-width:52px;">{grade}</div>'
             f'<div style="width:1px;height:36px;background:{BORDER};"></div>'
             f'<div style="font-size:0.85em;color:{TEXT2};font-style:italic;line-height:1.5;">{grade_reason}</div>'
             f'</div>',unsafe_allow_html=True)
         debrief_text=cached.get('debrief','')
         st.markdown(
-            f'<div class="coach-message" style="background:{BG2};border-radius:16px;padding:24px;margin-bottom:14px;border-left:3px solid {ACCENT};">'
-            f'<div style="font-size:0.58em;color:{TEXT2};font-weight:600;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:14px;">Coach · Weekly Debrief · {last_monday_date.strftime("%b %d")} – {last_sunday_date.strftime("%b %d")}</div>'
+            f'<div style="background:{BG2};border-radius:16px;padding:24px;margin-bottom:14px;border-left:3px solid {ACCENT};">'
             f'<div style="color:{TEXT};line-height:1.85;font-size:0.92em;">{debrief_text}</div>'
             f'</div>',unsafe_allow_html=True)
         fps=cached.get('focus_points',[])
         if fps:
-            st.markdown(f'<div style="font-size:0.65em;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:{TEXT3};margin:20px 0 10px;">Your {len(fps)} Focus Points This Week</div>',unsafe_allow_html=True)
+            st.markdown(f'<div style="font-size:0.65em;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:{TEXT3};margin:20px 0 10px;">Focus Points</div>',unsafe_allow_html=True)
             for i,fp in enumerate(fps):
-                st.markdown(f'<div class="focus-item" style="background:{BG2};border-radius:12px;padding:14px 16px;margin-bottom:8px;display:flex;gap:14px;align-items:flex-start;animation-delay:{i*80}ms;"><div style="width:26px;height:26px;border-radius:50%;background:rgba({RGB},0.08);border:1px solid rgba({RGB},0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:0.72em;font-weight:700;color:{ACCENT};">{i+1}</div><div style="font-size:0.85em;color:{TEXT};line-height:1.7;">{fp}</div></div>',unsafe_allow_html=True)
+                st.markdown(f'<div style="background:{BG2};border-radius:12px;padding:14px 16px;margin-bottom:8px;display:flex;gap:14px;align-items:flex-start;"><div style="width:26px;height:26px;border-radius:50%;background:rgba({RGB},0.08);border:1px solid rgba({RGB},0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:0.72em;font-weight:700;color:{ACCENT};">{i+1}</div><div style="font-size:0.85em;color:{TEXT};line-height:1.7;">{fp}</div></div>',unsafe_allow_html=True)
         action=cached.get('action_plan','')
         if action:
             st.markdown(f'<div style="font-size:0.65em;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:{TEXT3};margin:20px 0 10px;">Action Plan</div>',unsafe_allow_html=True)
-            st.markdown(f'<div class="focus-item" style="background:rgba({RGB},0.04);border:1px solid rgba({RGB},0.1);border-radius:12px;padding:16px;margin-bottom:8px;"><div style="font-size:0.88em;color:{TEXT};line-height:1.7;">→ {action}</div></div>',unsafe_allow_html=True)
+            st.markdown(f'<div style="background:rgba({RGB},0.04);border:1px solid rgba({RGB},0.1);border-radius:12px;padding:16px;margin-bottom:8px;"><div style="font-size:0.88em;color:{TEXT};line-height:1.7;">→ {action}</div></div>',unsafe_allow_html=True)
         patterns=[p for p in cached.get('behavioral_patterns',[]) if p]
         if patterns:
             st.markdown(f'<div style="font-size:0.65em;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:{TEXT3};margin:20px 0 10px;">Behavioral Patterns</div>',unsafe_allow_html=True)
             for i,p in enumerate(patterns):
-                st.markdown(f'<div class="pattern-item" style="background:rgba(252,211,77,0.03);border:1px solid rgba(252,211,77,0.1);border-radius:12px;padding:14px 16px;margin-bottom:8px;animation-delay:{i*80}ms;"><div style="font-size:0.85em;color:{TEXT};line-height:1.7;">{p}</div></div>',unsafe_allow_html=True)
+                st.markdown(f'<div style="background:rgba(252,211,77,0.03);border:1px solid rgba(252,211,77,0.1);border-radius:12px;padding:14px 16px;margin-bottom:8px;"><div style="font-size:0.85em;color:{TEXT};line-height:1.7;">{p}</div></div>',unsafe_allow_html=True)
         red_flags=[r for r in cached.get('red_flags',[]) if r]
         if red_flags:
             st.markdown(f'<div style="font-size:0.65em;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:{TEXT3};margin:20px 0 10px;">Red Flags</div>',unsafe_allow_html=True)
             for i,rf in enumerate(red_flags):
-                st.markdown(f'<div class="pattern-item" style="background:rgba(248,113,113,0.03);border:1px solid rgba(248,113,113,0.1);border-radius:12px;padding:14px 16px;margin-bottom:8px;animation-delay:{i*80}ms;"><div style="font-size:0.85em;color:{TEXT};line-height:1.7;">⚠ {rf}</div></div>',unsafe_allow_html=True)
+                st.markdown(f'<div style="background:rgba(248,113,113,0.03);border:1px solid rgba(248,113,113,0.1);border-radius:12px;padding:14px 16px;margin-bottom:8px;"><div style="font-size:0.85em;color:{TEXT};line-height:1.7;">⚠ {rf}</div></div>',unsafe_allow_html=True)
         st.markdown(f'<div style="margin-top:16px;"></div>',unsafe_allow_html=True)
         if st.button("↺  Clear & Re-run",key="clear_debrief",use_container_width=False):
             st.session_state.coach_debrief=None; st.rerun()
     elif total_v==0:
-        st.markdown(f'<div style="background:{BG2};border-radius:14px;padding:32px;text-align:center;margin-top:12px;"><div style="font-size:1.2em;margin-bottom:10px;">⚡</div><div style="font-size:0.92em;color:{TEXT};font-weight:600;margin-bottom:6px;">No trades last week</div><div style="font-size:0.75em;color:{TEXT2};">Keep logging trades in Notion — Coach will analyse them every Sunday</div></div>',unsafe_allow_html=True)
+        st.markdown(
+            f'<div style="background:{BG2};border-radius:14px;padding:32px;text-align:center;margin-top:12px;">'
+            f'<div style="font-size:1.2em;margin-bottom:10px;">⚡</div>'
+            f'<div style="font-size:0.92em;color:{TEXT};font-weight:600;margin-bottom:6px;">No trades last week</div>'
+            f'<div style="font-size:0.75em;color:{TEXT2};">Keep logging trades in Notion — Coach will analyse them every Sunday</div>'
+            f'</div>',unsafe_allow_html=True)
+
+    # ===== COACH HISTORY =====
+    history=st.session_state.coach_history
+    if history:
+        st.markdown(f'<div class="v3-section">Debrief History</div>',unsafe_allow_html=True)
+        for i,h in enumerate(history):
+            h_grade=h.get('grade','—')
+            h_grade_color='#4ade80' if h_grade in ['A+','A'] else ('#fcd34d' if h_grade in ['B+','B'] else ('#f59e0b' if h_grade in ['C+','C'] else '#f87171'))
+            h_char=h.get('trader_character',{})
+            h_tier=h_char.get('tier','—') if h_char else '—'
+            h_title=h_char.get('title','—') if h_char else '—'
+            h_tier_colors={'S':'#fcd34d','A':'#a78bfa','B':'#60a5fa','C':'#4ade80','D':'#f59e0b','F':'#f87171'}
+            h_color=h_tier_colors.get(h_tier,'#94a3b8')
+            h_week=h.get('week','—')
+            h_debrief=h.get('debrief','')[:160]+'…' if len(h.get('debrief',''))>160 else h.get('debrief','')
+            h_fps=h.get('focus_points',[])
+            h_action=h.get('action_plan','')
+            connector=f'<div style="width:1px;height:12px;background:{BORDER};margin-left:19px;"></div>' if i<len(history)-1 else ''
+            st.markdown(
+                f'<div style="display:flex;gap:14px;align-items:flex-start;">'
+                f'<div style="display:flex;flex-direction:column;align-items:center;flex-shrink:0;">'
+                f'<div style="width:10px;height:10px;border-radius:50%;background:{h_color};margin-top:18px;{"box-shadow:0 0 8px "+h_color+"66;" if i==0 else ""}"></div>'
+                f'{"<div style=\\"width:1px;height:calc(100% - 10px);background:"+BORDER+";margin-top:4px;\\"></div>" if i<len(history)-1 else ""}'
+                f'</div>'
+                f'<div style="flex:1;background:{BG2};border-radius:14px;padding:16px 18px;margin-bottom:10px;">'
+                f'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">'
+                f'<div>'
+                f'<div style="font-size:0.62em;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:{h_color};">{h_tier} · {h_title}</div>'
+                f'<div style="font-size:0.6em;color:{TEXT3};margin-top:2px;">{h_week}</div>'
+                f'</div>'
+                f'<div style="font-size:1.4em;font-weight:800;color:{h_grade_color};">{h_grade}</div>'
+                f'</div>'
+                f'<div style="font-size:0.8em;color:{TEXT2};line-height:1.7;margin-bottom:10px;">{h_debrief}</div>'
+                f'{"<div style=\\"font-size:0.72em;color:"+ACCENT+";\\">→ "+h_action+"</div>" if h_action else ""}'
+                f'</div></div>',unsafe_allow_html=True)
 
 st.markdown('</div>',unsafe_allow_html=True)
