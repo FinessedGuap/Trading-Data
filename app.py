@@ -704,14 +704,6 @@ setTimeout(function(){{
         cur_color_s='#4ade80' if cur_type_s=='W' else ('#f87171' if cur_type_s=='L' else ACCENT)
         cur_label_s='Win Streak' if cur_type_s=='W' else ('Loss Streak' if cur_type_s=='L' else 'Streak')
 
-        # Top stats
-        st.markdown(
-            f'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px;">'
-            f'<div class="v3-card" style="animation-delay:0ms;"><div style="font-size:1.6em;font-weight:800;color:#4ade80;">{best_win["length"] if best_win else 0}</div><div style="font-size:0.58em;color:{TEXT2};margin-top:4px;text-transform:uppercase;letter-spacing:0.8px;">Best Win Streak</div><div style="font-size:0.58em;color:{TEXT3};margin-top:3px;">{"+" + str(best_win["total_r"]) + "R · " + best_win["start_date"].strftime("%b %d") + " – " + best_win["end_date"].strftime("%b %d") if best_win else "—"}</div></div>'
-            f'<div class="v3-card" style="animation-delay:60ms;"><div style="font-size:1.6em;font-weight:800;color:#f87171;">{worst_loss["length"] if worst_loss else 0}</div><div style="font-size:0.58em;color:{TEXT2};margin-top:4px;text-transform:uppercase;letter-spacing:0.8px;">Worst Loss Streak</div><div style="font-size:0.58em;color:{TEXT3};margin-top:3px;">{str(worst_loss["total_r"]) + "R · " + worst_loss["start_date"].strftime("%b %d") + " – " + worst_loss["end_date"].strftime("%b %d") if worst_loss else "—"}</div></div>'
-            f'<div class="v3-card" style="animation-delay:120ms;"><div style="font-size:1.6em;font-weight:800;color:{cur_color_s};">{cur}</div><div style="font-size:0.58em;color:{TEXT2};margin-top:4px;text-transform:uppercase;letter-spacing:0.8px;">Current {cur_label_s}</div><div style="font-size:0.58em;color:{TEXT3};margin-top:3px;">Ongoing</div></div>'
-            f'</div>',unsafe_allow_html=True)
-
         # Streak bar chart
         if all_results:
             bar_html='<div style="display:flex;gap:3px;align-items:flex-end;height:80px;margin-bottom:16px;overflow:hidden;">'
