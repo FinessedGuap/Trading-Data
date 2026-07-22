@@ -725,25 +725,6 @@ setTimeout(function(){{
                 f'<div style="font-size:0.6em;color:{TEXT3};text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">Streak History</div>'
                 f'{bar_html}</div>',unsafe_allow_html=True)
             
-        # All streaks list
-        all_streaks_sorted=sorted(streaks,key=lambda x:x['length'],reverse=True)[:6]
-        rows_html=''
-        for i,s in enumerate(all_streaks_sorted):
-            color='#4ade80' if s['type']=='W' else '#f87171'
-            sign='+' if s['total_r']>=0 else ''
-            label=f"{s['length']} Win Streak" if s['type']=='W' else f"{s['length']} Loss Streak"
-            dates=f"{s['start_date'].strftime('%b %d')} – {s['end_date'].strftime('%b %d')}"
-            rc=RANK_COLORS[i] if i<len(RANK_COLORS) else TEXT3
-            rows_html+=(
-                f'<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid {BORDER};">'
-                f'<span style="color:{rc};font-size:0.68em;font-weight:700;min-width:20px;">#{i+1}</span>'
-                f'<div style="width:8px;height:8px;border-radius:50%;background:{color};flex-shrink:0;"></div>'
-                f'<div style="flex:1;"><div style="font-size:0.82em;font-weight:600;color:{color};">{label}</div>'
-                f'<div style="font-size:0.62em;color:{TEXT3};margin-top:2px;">{dates} · {sign}{s["total_r"]}R</div></div>'
-                f'<span style="font-size:1em;font-weight:800;color:{color};">{s["length"]}{"W" if s["type"]=="W" else "L"}</span>'
-                f'</div>')
-        if rows_html:
-            st.markdown(f'<div class="v3-panel">{rows_html}</div>',unsafe_allow_html=True)
     else:
         st.markdown(f'<div style="color:{TEXT2};font-size:0.85em;padding:12px 0;">Not enough data yet.</div>',unsafe_allow_html=True)
     st.markdown(f'<div class="v3-section">Recent Trades</div>',unsafe_allow_html=True)
