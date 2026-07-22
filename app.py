@@ -558,11 +558,10 @@ div[data-testid="stButton"] button:hover{{background:{BG3} !important;transform:
 .checklist-item{{display:flex;align-items:flex-start;gap:12px;padding:10px 0;border-bottom:1px solid {BORDER};animation:slideInLeft 0.4s cubic-bezier(0.16,1,0.3,1) both;}}
 .setup-row{{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid {BORDER};animation:staggerIn 0.4s cubic-bezier(0.16,1,0.3,1) both;}}
 div[data-testid="stNumberInput"] input{{background:{BG2} !important;border:1px solid {BORDER2} !important;border-radius:8px !important;color:{TEXT} !important;}}
-div[data-testid="stNumberInput"] button{{background:{BG2} !important;border:1px solid {BORDER2} !important;color:{TEXT} !important;}}
-div[data-testid="stNumberInput"] svg{{fill:{TEXT} !important;}}
-div[data-testid="stNumberInput"] p{{color:{TEXT} !important;}}
-div[data-testid="stNumberInput"] label{{color:{TEXT} !important;}}
-div[data-testid="stNumberInput"] *{{color:{TEXT} !important;}}
+div[data-testid="stNumberInput"] button{{background:{BG2} !important;border:1px solid {BORDER2} !important;color:{TEXT} !important;box-shadow:none !important;}}
+div[data-testid="stNumberInput"] button svg{{fill:{TEXT} !important;stroke:{TEXT} !important;}}
+div[data-testid="stNumberInput"] button p{{color:{TEXT} !important;}}
+div[data-testid="stNumberInput"] > label{{color:{TEXT} !important;}}
 .cal-arrows div[data-testid="stButton"] button{{min-height:40px !important;max-height:40px !important;height:40px !important;border-radius:8px !important;padding:0 !important;margin:0 !important;}}
 </style>
 """
@@ -989,7 +988,7 @@ elif page=='Coach':
                 names_html=names_html.rstrip(' · ')
                 you_badge=f'<span style="font-size:0.5em;color:{t_color};font-weight:700;background:rgba(255,255,255,0.06);border-radius:4px;padding:2px 6px;margin-left:8px;">You</span>' if is_active else ''
                 st.markdown(
-                    f'<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid {BORDER};{"background:rgba(255,255,255,0.02);border-radius:6px;padding:10px 8px;" if (is_active and IS_DARK) else ("background:rgba(0,0,0,0.03);border-radius:6px;padding:10px 8px;" if is_active else "")}">'
+                    f'<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid {BORDER};{"background:rgba(255,255,255,0.02);border-radius:6px;padding:10px 8px;" if (is_active and IS_DARK) else ("background:rgba(0,0,0,0.04);border-radius:6px;padding:10px 8px;" if is_active else "")}">'
                     f'<div style="width:4px;height:24px;border-radius:2px;background:{t_color};{"box-shadow:0 0 8px "+t_color+";" if is_active else ""}flex-shrink:0;"></div>'
                     f'<div style="font-size:0.75em;font-weight:800;color:{t_color};min-width:20px;">{t_tier}</div>'
                     f'<div style="font-size:0.62em;flex:1;">{names_html}</div>'
@@ -998,8 +997,8 @@ elif page=='Coach':
         # Trader profile
         profile=st.session_state.coach_profile
         if profile:
-           with st.expander("Your Trader Profile"):
-                st.markdown(f'<div style="font-size:0.85em;color:{TEXT};line-height:1.85;padding:8px 0;opacity:0.7;">{profile}</div>',unsafe_allow_html=True)
+          with st.expander("Your Trader Profile"):
+                st.markdown(f'<div style="font-size:0.85em;color:{TEXT};line-height:1.85;padding:8px 0;">{profile}</div>',unsafe_allow_html=True)
     st.markdown(f'<hr class="v3-divider">',unsafe_allow_html=True)
 
     # ===== DATE RANGES =====
