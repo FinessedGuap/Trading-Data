@@ -660,6 +660,79 @@ setTimeout(function(){{
         for j,(col,(lbl,val)) in enumerate(zip(cols,row)):
             col.markdown(f'<div class="v3-card" style="animation-delay:{j*40}ms;"><div class="v3-val">{val}</div><div class="v3-lbl" style="color:{current["color"]};">{lbl}</div></div>',unsafe_allow_html=True)
         st.write("")
+    # ===== STREAK TRACKER =====
+    st.markdown(f'<div class="v3-section">Streak Tracker</div>',unsafe_allow_html=True)
+
+    all_results=main_stats.get('trade_results',[])
+    all_r=df_main['R_Result'].dropna().tolist()
+    all_dates=df_main.dropna(subset=['R_Result','Date'])['Date'].tolist()
+
+    # Find all streaks
+    def find_all_streaks(results, dates, r_vals):
+        streaks=[]
+        if not results: return streaks
+        cur_type=results[0]; cur_start=0; cur_r=r_vals[0]
+        for i in range(1,len(results)):
+            if results[i]==results[i-1]:
+                cur_r+=r_vals[i]
+            else:
+                length=i-cur_start
+                if cur_type in ['W','L']:
+                    streaks.append({
+                        'type':cur_type,'length':length,
+                        'start_date':dates[cur_start],'end_date':dates[i-1],
+                        'total_r':round(cur_r,2)
+                    })
+                cur_type=results[i]; cur_start=i; cur_r=r_vals[i]
+        # last streak
+        length=len(results)-cur_start
+        if cur_type in ['W','L']:
+            streaks.append({
+                'type':cur_type,'length':length,
+                'start_date':dates[cur_start],'end_date':dates[-1],
+                'total_r':round(cur_r,2)
+            })
+        return streaks
+
+    if all_results and all_dates:
+        streaks=find_all_streaks(all_results,all_dates,all_r)
+        win_streaks=sorted([s for s in streaks if s['type']=='W'],key=lambda x:x['length'],reverse=True)
+        loss_streaks=sorted([s for s in streaks if s['type']=='L'],key=lambda x:x['length'],reverse=True)
+        best_win=win_streaks[0] if win_streaks else None
+        worst_loss=loss_streaks[0] if loss_streaks else None
+        cur=main_stats.get('cur_streak',0); cur_type_s=main_stats.get('cur_streak_type','—')
+        cur_color_s='#4ade80' if cur_type_s=='W' else ('#f87171' if cur_type_s=='L' else ACCENT)
+        cur_label_s='Win Streak' if cur_type_s=='W' else ('Loss Streak' if cur_type_s=='L' else 'Streak')
+
+        # Top stats
+        st.markdown(
+            f'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px;">'
+            f'<div class="v3-card" style="animation-delay:0ms;"><div style="font-size:1.6em;font-weight:800;color:#4ade80;">{best_win["length"] if best_win else 0}</div><div style="font-size:0.58em;color:{TEXT2};margin-top:4px;text-transform:uppercase;letter-spacing:0.8px;">Best Win Streak</div><div style="font-size:0.58em;color:{TEXT3};margin-top:3px;">{"+" + str(best_win["total_r"]) + "R · " + best_win["start_date"].strftime("%b %d") + " – " + best_win["end_date"].strftime("%b %d") if best_win else "—"}</div></div>'
+            f'<div class="v3-card" style="animation-delay:60ms;"><div style="font-size:1.6em;font-weight:800;color:#f87171;">{worst_loss["length"] if worst_loss else 0}</div><div style="font-size:0.58em;color:{TEXT2};margin-top:4px;text-transform:uppercase;letter-spacing:0.8px;">Worst Loss Streak</div><div style="font-size:0.58em;color:{TEXT3};margin-top:3px;">{str(worst_loss["total_r"]) + "R · " + worst_loss["start_date"].strftime("%b %d") + " – " + worst_loss["end_date"].strftime("%b %d") if worst_loss else "—"}</div></div>'
+            f'<div class="v3-card" style="animation-delay:120ms;"><div style="font-size:1.6em;font-weight:800;color:{cur_color_s};">{cur}</div><div style="font-size:0.58em;color:{TEXT2};margin-top:4px;text-transform:uppercase;letter-spacing:0.8px;">Current {cur_label_s}</div><div style="font-size:0.58em;color:{TEXT3};margin-top:3px;">Ongoing</div></div>'
+            f'</div>',unsafe_allow_html=True)
+
+        # All streaks list
+        all_streaks_sorted=sorted(streaks,key=lambda x:x['length'],reverse=True)[:6]
+        rows_html=''
+        for i,s in enumerate(all_streaks_sorted):
+            color='#4ade80' if s['type']=='W' else '#f87171'
+            sign='+' if s['total_r']>=0 else ''
+            label=f"{s['length']} Win Streak" if s['type']=='W' else f"{s['length']} Loss Streak"
+            dates=f"{s['start_date'].strftime('%b %d')} – {s['end_date'].strftime('%b %d')}"
+            rc=RANK_COLORS[i] if i<len(RANK_COLORS) else TEXT3
+            rows_html+=(
+                f'<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid {BORDER};">'
+                f'<span style="color:{rc};font-size:0.68em;font-weight:700;min-width:20px;">#{i+1}</span>'
+                f'<div style="width:8px;height:8px;border-radius:50%;background:{color};flex-shrink:0;"></div>'
+                f'<div style="flex:1;"><div style="font-size:0.82em;font-weight:600;color:{color};">{label}</div>'
+                f'<div style="font-size:0.62em;color:{TEXT3};margin-top:2px;">{dates} · {sign}{s["total_r"]}R</div></div>'
+                f'<span style="font-size:1em;font-weight:800;color:{color};">{s["length"]}{"W" if s["type"]=="W" else "L"}</span>'
+                f'</div>')
+        if rows_html:
+            st.markdown(f'<div class="v3-panel">{rows_html}</div>',unsafe_allow_html=True)
+    else:
+        st.markdown(f'<div style="color:{TEXT2};font-size:0.85em;padding:12px 0;">Not enough data yet.</div>',unsafe_allow_html=True)
     st.markdown(f'<div class="v3-section">Recent Trades</div>',unsafe_allow_html=True)
     tr=main_stats.get('trade_results',[])
     streak_html=f'<div style="display:flex;gap:3px;overflow-x:auto;padding-bottom:6px;scrollbar-width:none;margin-bottom:10px;">'
