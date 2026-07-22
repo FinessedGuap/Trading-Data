@@ -707,8 +707,17 @@ elif page=='P&L Tracker':
     st.markdown(f'<div style="font-size:1.5em;font-weight:700;color:{TEXT};margin-bottom:20px;">P&L Tracker</div>',unsafe_allow_html=True)
     _,num_col,_=st.columns([2,1,2])
     with num_col:
-        num_accounts=st.number_input("Accounts",min_value=1,max_value=50,value=st.session_state.num_accounts,step=1)
-        st.session_state.num_accounts=num_accounts
+        st.markdown(f'<div style="font-size:0.7em;color:{TEXT2};text-align:center;margin-bottom:6px;">Number of Accounts</div>',unsafe_allow_html=True)
+        acol1,acol2,acol3=st.columns([1,1,1])
+        with acol1:
+            if st.button("−",key="acc_down",use_container_width=True):
+                if st.session_state.num_accounts>1: st.session_state.num_accounts-=1; st.rerun()
+        with acol2:
+            st.markdown(f'<div style="text-align:center;font-size:1.4em;font-weight:700;color:{TEXT};padding:6px 0;">{st.session_state.num_accounts}</div>',unsafe_allow_html=True)
+        with acol3:
+            if st.button("+",key="acc_up",use_container_width=True):
+                if st.session_state.num_accounts<50: st.session_state.num_accounts+=1; st.rerun()
+        num_accounts=st.session_state.num_accounts
     total_capital=ACCOUNT_SIZE*num_accounts
     if len(df_funded)>0 and 'R_Result' in df_funded.columns:
         df_fc=df_funded.dropna(subset=['R_Result','Date']).copy().sort_values('Date').reset_index(drop=True)
@@ -978,6 +987,7 @@ elif page=='Coach':
                 ('D','#f59e0b','Struggling',['The Wild Card','The Apprentice','The Berserker']),
                 ('F','#f87171','Reset required',['The Warmonger']),
             ]
+            st.markdown(f'<div style="background:{BG3};border-radius:10px;padding:8px 12px;">',unsafe_allow_html=True)
             for t_tier,t_color,t_desc,t_names in tier_data:
                 is_active=t_tier==tier
                 names_html=''
@@ -993,6 +1003,7 @@ elif page=='Coach':
                     f'<div style="font-size:0.75em;font-weight:800;color:{t_color};min-width:20px;">{t_tier}</div>'
                     f'<div style="font-size:0.62em;flex:1;">{names_html}</div>'
                     f'{you_badge}</div>',unsafe_allow_html=True)
+            st.markdown('</div>',unsafe_allow_html=True)
 
         # Trader profile
         profile=st.session_state.coach_profile
