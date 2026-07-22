@@ -1264,7 +1264,7 @@ elif page=='Coach':
                 f'<div style="font-size:1.4em;font-weight:800;color:{h_grade_color};">{h_grade}</div>'
                 f'</div>'
                 f'<div style="font-size:0.8em;color:{TEXT2};line-height:1.7;margin-bottom:10px;">{h_debrief}</div>'
-                f'{"<div style=\\"font-size:0.72em;color:"+ACCENT+";\\">→ "+h_action+"</div>" if h_action else ""}'
+                f'{"<div style=\'font-size:0.72em;color:"+ACCENT+"\'>→ "+h_action+"</div>" if h_action else ""}'
                 f'</div></div>',unsafe_allow_html=True)
 
 st.markdown('</div>',unsafe_allow_html=True)
