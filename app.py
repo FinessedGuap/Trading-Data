@@ -714,11 +714,11 @@ setTimeout(function(){{
 
         # Streak bar chart
         if all_results:
-            bar_html='<div style="display:flex;gap:3px;align-items:flex-end;height:60px;margin-bottom:16px;overflow:hidden;">'
+            bar_html='<div style="display:flex;gap:3px;align-items:flex-end;height:80px;margin-bottom:16px;overflow:hidden;">'
             max_len=max((s['length'] for s in streaks),default=1)
             for s in streaks[-30:]:
                 color='rgba(74,222,128,0.7)' if s['type']=='W' else 'rgba(248,113,113,0.7)'
-                height=max(8,round((s['length']/max_len)*56))
+                height=max(8,round((s['length']/max_len)*76))
                 bar_html+=f'<div style="flex:1;min-width:6px;height:{height}px;background:{color};border-radius:3px 3px 0 0;"></div>'
             bar_html+='</div>'
             st.markdown(f'<div class="v3-panel" style="padding:16px 20px;">'
