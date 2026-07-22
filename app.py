@@ -712,6 +712,19 @@ setTimeout(function(){{
             f'<div class="v3-card" style="animation-delay:120ms;"><div style="font-size:1.6em;font-weight:800;color:{cur_color_s};">{cur}</div><div style="font-size:0.58em;color:{TEXT2};margin-top:4px;text-transform:uppercase;letter-spacing:0.8px;">Current {cur_label_s}</div><div style="font-size:0.58em;color:{TEXT3};margin-top:3px;">Ongoing</div></div>'
             f'</div>',unsafe_allow_html=True)
 
+        # Streak bar chart
+        if all_results:
+            bar_html='<div style="display:flex;gap:3px;align-items:flex-end;height:60px;margin-bottom:16px;overflow:hidden;">'
+            max_len=max((s['length'] for s in streaks),default=1)
+            for s in streaks[-30:]:
+                color='rgba(74,222,128,0.7)' if s['type']=='W' else 'rgba(248,113,113,0.7)'
+                height=max(8,round((s['length']/max_len)*56))
+                bar_html+=f'<div style="flex:1;min-width:6px;height:{height}px;background:{color};border-radius:3px 3px 0 0;"></div>'
+            bar_html+='</div>'
+            st.markdown(f'<div class="v3-panel" style="padding:16px 20px;">'
+                f'<div style="font-size:0.6em;color:{TEXT3};text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">Streak History</div>'
+                f'{bar_html}</div>',unsafe_allow_html=True)
+            
         # All streaks list
         all_streaks_sorted=sorted(streaks,key=lambda x:x['length'],reverse=True)[:6]
         rows_html=''
