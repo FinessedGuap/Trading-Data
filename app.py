@@ -558,6 +558,8 @@ div[data-testid="stButton"] button:hover{{background:{BG3} !important;transform:
 .checklist-item{{display:flex;align-items:flex-start;gap:12px;padding:10px 0;border-bottom:1px solid {BORDER};animation:slideInLeft 0.4s cubic-bezier(0.16,1,0.3,1) both;}}
 .setup-row{{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid {BORDER};animation:staggerIn 0.4s cubic-bezier(0.16,1,0.3,1) both;}}
 div[data-testid="stNumberInput"] input{{background:{BG2} !important;border:1px solid {BORDER2} !important;border-radius:8px !important;color:{TEXT} !important;}}
+div[data-testid="stNumberInput"] button{{background:{BG2} !important;border:1px solid {BORDER2} !important;color:{TEXT} !important;}}
+div[data-testid="stNumberInput"] svg{{fill:{TEXT} !important;}}
 .cal-arrows div[data-testid="stButton"] button{{min-height:40px !important;max-height:40px !important;height:40px !important;border-radius:8px !important;padding:0 !important;margin:0 !important;}}
 </style>
 """
@@ -933,15 +935,20 @@ elif page=='Coach':
             "@keyframes charFadeUp{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}"
             f"@keyframes charGlow{{0%,100%{{box-shadow:0 0 0 rgba(0,0,0,0);}}50%{{box-shadow:0 0 30px {char_color}33;}}}}"
             "body{margin:0;padding:0;background:transparent;font-family:'Inter',sans-serif;}"
-            f".char-card{{position:relative;overflow:hidden;background:rgba(255,255,255,0.02);border:1px solid {char_color}40;border-radius:20px;padding:32px 28px;text-align:center;animation:charGlow 3s ease-in-out infinite;}}"
+            f"{'html{filter:invert(0);}' if IS_DARK else 'html{filter:invert(0);}'}"
+            f".char-card{{position:relative;overflow:hidden;"
+            f"background:{'rgba(255,255,255,0.02)' if IS_DARK else 'rgba(0,0,0,0.03)'};"
+            f"border:1px solid {char_color}40;border-radius:20px;padding:32px 28px;text-align:center;animation:charGlow 3s ease-in-out infinite;}}"
             f".char-scan{{position:absolute;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,{char_color},transparent);animation:none;}}"
-            f".char-tier-badge{{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,0.03);border:1px solid {char_color}40;border-radius:6px;padding:4px 12px;font-size:0.55em;font-weight:700;color:{char_color};letter-spacing:2px;text-transform:uppercase;animation:tierBadge 0.6s cubic-bezier(0.16,1,0.3,1) 0.1s both;animation-play-state:paused;margin-bottom:16px;}}"
-            f".char-title{{font-size:2.4em;font-weight:900;background:linear-gradient(135deg,#fff 30%,{char_color});-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:4px;text-transform:uppercase;animation:revealTitle 1.4s cubic-bezier(0.16,1,0.3,1) 0.3s both;animation-play-state:paused;}}"
+            f".char-tier-badge{{display:inline-flex;align-items:center;gap:6px;"
+            f"background:{'rgba(255,255,255,0.03)' if IS_DARK else 'rgba(0,0,0,0.04)'};"
+            f"border:1px solid {char_color}40;border-radius:6px;padding:4px 12px;font-size:0.55em;font-weight:700;color:{char_color};letter-spacing:2px;text-transform:uppercase;animation:tierBadge 0.6s cubic-bezier(0.16,1,0.3,1) 0.1s both;animation-play-state:paused;margin-bottom:16px;}}"
+            f".char-title{{font-size:2.4em;font-weight:900;background:linear-gradient(135deg,{'#fff' if IS_DARK else '#111'} 30%,{char_color});-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:4px;text-transform:uppercase;animation:revealTitle 1.4s cubic-bezier(0.16,1,0.3,1) 0.3s both;animation-play-state:paused;}}"
             f".char-divider{{width:48px;height:2px;background:{char_color};margin:16px auto;opacity:0.4;animation:charFadeUp 0.5s ease 1.2s both;animation-play-state:paused;}}"
-            ".char-desc{font-size:0.82em;color:rgba(255,255,255,0.4);font-style:italic;line-height:1.7;animation:charFadeUp 0.8s ease 1.3s both;animation-play-state:paused;max-width:340px;margin:0 auto;}"
-            ".char-stats{display:flex;justify-content:center;gap:24px;margin-top:20px;animation:charFadeUp 0.6s ease 1.6s both;animation-play-state:paused;}"
-            ".char-stat{text-align:center;}.char-stat-label{font-size:0.48em;color:rgba(255,255,255,0.2);text-transform:uppercase;letter-spacing:1px;margin-bottom:5px;}"
-            ".char-stat-bar-bg{width:64px;height:3px;background:rgba(255,255,255,0.06);border-radius:2px;}"
+            f".char-desc{{font-size:0.82em;color:{'rgba(255,255,255,0.4)' if IS_DARK else 'rgba(0,0,0,0.5)'};font-style:italic;line-height:1.7;animation:charFadeUp 0.8s ease 1.3s both;animation-play-state:paused;max-width:340px;margin:0 auto;}}"
+            f".char-stats{{display:flex;justify-content:center;gap:24px;margin-top:20px;animation:charFadeUp 0.6s ease 1.6s both;animation-play-state:paused;}}"
+            f".char-stat{{text-align:center;}}.char-stat-label{{font-size:0.48em;color:{'rgba(255,255,255,0.2)' if IS_DARK else 'rgba(0,0,0,0.35)'};text-transform:uppercase;letter-spacing:1px;margin-bottom:5px;}}"
+            f".char-stat-bar-bg{{width:64px;height:3px;background:{'rgba(255,255,255,0.06)' if IS_DARK else 'rgba(0,0,0,0.08)'};border-radius:2px;}}"
             f".char-stat-bar-fill{{height:3px;background:{char_color};border-radius:2px;}}"
             "</style></head><body><div class='char-card'><div class='char-scan'></div>"
             f"<div class='char-tier-badge'>&#x2B23; {tier_label}</div>"
@@ -974,7 +981,7 @@ elif page=='Coach':
                 names_html=''
                 for n in t_names:
                     if n==title: names_html+=f'<span style="color:{t_color};font-weight:700;">{n}</span>'
-                    else: names_html+=f'<span style="color:rgba(255,255,255,0.3);">{n}</span>'
+                    else: names_html+=f'<span style="color:{"rgba(255,255,255,0.3)" if IS_DARK else "rgba(0,0,0,0.35)"};">{n}</span>'
                     names_html+=' · '
                 names_html=names_html.rstrip(' · ')
                 you_badge=f'<span style="font-size:0.5em;color:{t_color};font-weight:700;background:rgba(255,255,255,0.06);border-radius:4px;padding:2px 6px;margin-left:8px;">You</span>' if is_active else ''
