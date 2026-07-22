@@ -721,16 +721,34 @@ setTimeout(function(){{
         st.markdown(f'<div style="color:{TEXT2};font-size:0.85em;padding:12px 0;">Not enough data yet.</div>',unsafe_allow_html=True)
     st.markdown(f'<div class="v3-section">Recent Trades</div>',unsafe_allow_html=True)
     tr=main_stats.get('trade_results',[])
-    streak_html=f'<div style="display:flex;gap:3px;overflow-x:auto;padding-bottom:6px;scrollbar-width:none;margin-bottom:10px;">'
+    streak_html=f'<div id="streak-container" style="display:flex;gap:3px;overflow-x:auto;padding-bottom:6px;scrollbar-width:none;margin-bottom:10px;">'
     for i,r in enumerate(tr):
         is_last=i==len(tr)-1
         bg='rgba(74,222,128,0.85)' if r=='W' else ('rgba(248,113,113,0.75)' if r=='L' else f'rgba({RGB},0.3)')
         tc='#000' if r=='W' else '#fff'
         cls='streak-box active' if is_last else 'streak-box'
-        streak_html+=f'<div class="{cls}" style="background:{bg};color:{tc};animation-delay:{i*25}ms;flex-shrink:0;">{r}</div>'
-    streak_html+=f'<div class="streak-box" style="background:{BG2};color:{TEXT3};border:1px dashed {BORDER2};flex-shrink:0;">?</div></div>'
+        streak_html+=f'<div class="{cls}" style="background:{bg};color:{tc};animation-delay:{i*25}ms;animation-play-state:paused;flex-shrink:0;">{r}</div>'
+    streak_html+=f'<div class="streak-box" style="background:{BG2};color:{TEXT3};border:1px dashed {BORDER2};flex-shrink:0;animation-play-state:paused;">?</div></div>'
     streak_html+=f'<div style="font-size:0.75em;color:{TEXT2};">Current streak: <span style="color:{cur_color};font-weight:600;">{cur} {cur_type}</span></div>'
     st.markdown(f'<div class="v3-panel">{streak_html}</div>',unsafe_allow_html=True)
+    components.html(f"""
+<script>
+setTimeout(function(){{
+    var container=window.parent.document.getElementById('streak-container');
+    if(!container)return;
+    var obs=new IntersectionObserver(function(entries){{
+        entries.forEach(function(e){{
+            if(e.isIntersecting){{
+                var boxes=container.querySelectorAll('.streak-box');
+                boxes.forEach(function(b){{b.style.animationPlayState='running';}});
+                obs.unobserve(e.target);
+            }}
+        }});
+    }},{{threshold:0.2}});
+    obs.observe(container);
+}},200);
+</script>
+    """,height=0)
     st.markdown(f'<div class="v3-section">Month vs Month</div>',unsafe_allow_html=True)
     months=sorted(monthly_r.keys())[-4:]
     if months:
