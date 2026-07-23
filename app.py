@@ -424,8 +424,8 @@ Respond ONLY in this exact JSON format with no other text:
   "grade": "A+/A/B+/B/C+/C/D/F",
   "grade_reason": "One honest sentence explaining the grade.",
   "trader_character": {{
-    "title": "Pick ONE title from: The Phantom, The Oracle, The Legend (S), The Sniper, The Ghost, The Assassin, The Architect (A), The Strategist, The Commander, The Grinder, The Titan (B), The Maverick, The Prodigy, The Survivor (C), The Wild Card, The Apprentice, The Berserker (D), The Warmonger (F). Be honest.",
-    "tier": "S, A, B, C, D, or F",
+    "title": "Pick ONE title AND its matching tier. S tier titles: The Phantom, The Oracle, The Legend. A tier titles: The Sniper, The Ghost, The Assassin, The Architect. B tier titles: The Maverick, The Commander, The Grinder, The Titan. C tier titles: The Prodigy, The Survivor. D tier titles: The Wild Card, The Apprentice, The Berserker. F tier: The Warmonger. The title and tier MUST match — if you pick The Maverick the tier MUST be B.",
+    "tier": "MUST match the tier of the title you picked above. S/A/B/C/D/F",
     "desc": "One punchy sentence max 12 words.",
     "stats": {{"patience": 0, "discipline": 0, "edge": 0}}
   }}
