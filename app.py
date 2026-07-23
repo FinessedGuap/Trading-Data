@@ -146,6 +146,7 @@ def load_coach_memory():
             memory = json.loads(full_text)
             return memory.get('profile'), memory.get('character'), memory.get('history', [])
         return None, None, []
+    except: return None, None, []
 
 @st.cache_data(ttl=300)
 def get_all_trades():
