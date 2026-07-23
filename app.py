@@ -111,11 +111,11 @@ def save_coach_memory(profile, character, debrief=None, week_label=None):
                 'week': week_label,
                 'grade': debrief.get('grade','—'),
                 'grade_reason': debrief.get('grade_reason',''),
-                'debrief': debrief.get('debrief',''),
-                'focus_points': debrief.get('focus_points',[]),
-                'action_plan': debrief.get('action_plan',''),
-                'behavioral_patterns': debrief.get('behavioral_patterns',[]),
-                'red_flags': debrief.get('red_flags',[]),
+                'debrief': debrief.get('debrief','')[:300],
+                'focus_points': debrief.get('focus_points',[])[:3],
+                'action_plan': debrief.get('action_plan','')[:200],
+                'behavioral_patterns': [p[:150] for p in debrief.get('behavioral_patterns',[]) if p][:2],
+                'red_flags': [r[:150] for r in debrief.get('red_flags',[]) if r][:2],
                 'trader_character': debrief.get('trader_character',{}),
                 'saved_at': datetime.now().isoformat()
             }
@@ -123,8 +123,13 @@ def save_coach_memory(profile, character, debrief=None, week_label=None):
             existing_history.insert(0, history_entry)
             existing_history = existing_history[:12]
         memory = {'profile': profile, 'character': character, 'history': existing_history, 'updated': datetime.now().isoformat()}
+        memory_str = json.dumps(memory)
+        # Notion rich text limit is 2000 chars per block — split if needed
+        chunk_size = 1900
+        chunks = [memory_str[i:i+chunk_size] for i in range(0, len(memory_str), chunk_size)]
+        children = [{"object": "block", "type": "code", "code": {"rich_text": [{"type": "text", "text": {"content": chunk}}], "language": "json"}} for chunk in chunks]
         requests.patch(f"https://api.notion.com/v1/blocks/{COACH_MEMORY_PAGE_ID}/children", headers=headers,
-            json={"children": [{"object": "block", "type": "code", "code": {"rich_text": [{"type": "text", "text": {"content": json.dumps(memory)}}], "language": "json"}}]})
+            json={"children": children})
         return True
     except: return False
 
@@ -133,13 +138,14 @@ def load_coach_memory():
         response = requests.get(f"https://api.notion.com/v1/blocks/{COACH_MEMORY_PAGE_ID}/children", headers=headers)
         if response.status_code != 200: return None, None, []
         blocks = response.json().get('results', [])
+        full_text = ''
         for block in blocks:
             if block['type'] == 'code':
-                text = block['code']['rich_text'][0]['text']['content']
-                memory = json.loads(text)
-                return memory.get('profile'), memory.get('character'), memory.get('history', [])
+                full_text += block['code']['rich_text'][0]['text']['content']
+        if full_text:
+            memory = json.loads(full_text)
+            return memory.get('profile'), memory.get('character'), memory.get('history', [])
         return None, None, []
-    except: return None, None, []
 
 @st.cache_data(ttl=300)
 def get_all_trades():
