@@ -1048,8 +1048,7 @@ elif page=='Coach':
     if character and isinstance(character,dict):
         title=character.get('title','—'); tier=character.get('tier','B'); desc=character.get('desc','')
         stats=character.get('stats',{'patience':50,'discipline':50,'edge':50})
-        patience=stats.get('patience',50); discipline=stats.get('discipline',50); edge=stats.get('edge',50)
-        st.write(f"Stats: {stats} | patience={patience} discipline={discipline} edge={edge}")
+        patience=min(stats.get('patience',50)*10,100); discipline=min(stats.get('discipline',50)*10,100); edge=min(stats.get('edge',50)*10,100)
         tier_colors={'S':'#fcd34d','A':'#a78bfa','B':'#60a5fa','C':'#4ade80','D':'#f59e0b','F':'#f87171'}
         tier_labels={'S':'S Tier · Elite','A':'A Tier · Disciplined','B':'B Tier · Developing','C':'C Tier · Potential','D':'D Tier · Struggling','F':'F Tier · Reset Required'}
         char_color=tier_colors.get(tier,'#94a3b8'); tier_label=tier_labels.get(tier,'Unknown')
