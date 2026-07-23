@@ -1027,6 +1027,7 @@ elif page=='Coach':
     if saved_profile: st.session_state.coach_profile=saved_profile
     if saved_character: st.session_state.coach_character=saved_character
     if saved_history: st.session_state.coach_history=saved_history
+    st.write(f"History loaded: {len(st.session_state.coach_history)} entries")
 
     # ===== COACH HEADER =====
     st.markdown(
